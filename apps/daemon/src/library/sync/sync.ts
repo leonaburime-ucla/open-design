@@ -28,7 +28,7 @@ import type Database from 'better-sqlite3';
 import type { LibraryAssetKind, LibrarySourceKind } from '@open-design/contracts';
 import { listConversations, listMessages, listProjects } from '../../db.js';
 import { listDesignSystems } from '../../design-systems/index.js';
-import { listFiles, resolveProjectDir } from '../../projects.js';
+import { listFiles, resolveProjectDir } from '../../project/index.js';
 import { registerLibraryAsset } from '../assets/index.js';
 import { findReferencedAssetByOrigin, hasDesignSystemSource } from '../store/index.js';
 

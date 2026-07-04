@@ -61,7 +61,7 @@ import fs from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 import Database from 'better-sqlite3';
-import { projectDir } from './project/index.js';
+import { projectDir } from '../../project/index.js';
 
 const SCHEMA_VERSION = 2;
 const TRANSCRIPT_FILENAME = '.transcript.jsonl';

@@ -1,7 +1,7 @@
 import type { Express } from 'express';
 import fs from 'node:fs';
 import { SIDECAR_ENV } from '@open-design/sidecar-proto';
-import { installCodexMcp, probeCodexInstall, uninstallCodexMcp } from '../codex-cli.js';
+import { installCodexMcp, probeCodexInstall, uninstallCodexMcp } from '../codex/index.js';
 import {
   buildMcpInstallPayload,
   MCP_TEMPLATES,

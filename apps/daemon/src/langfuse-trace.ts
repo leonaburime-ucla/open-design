@@ -32,7 +32,6 @@ import type {
   RunTelemetryTimestamps,
   RunTimingAnalytics,
 } from './run/index.js';
-import { readTelemetryEnvironment } from './telemetry-environment.js';
 
 // Langfuse US region: confirmed by an end-to-end smoke on 2026-05-07 — the
 // project's keys authenticate against `us.cloud.langfuse.com` only. EU host

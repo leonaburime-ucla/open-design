@@ -12,7 +12,7 @@ import type {
   DesktopExportPdfInput,
 } from '@open-design/sidecar-proto';
 
-import { readProjectFile } from './project/index.js';
+import { readProjectFile } from '../../project/index.js';
 
 /** Options for {@link buildDesktopPdfExportInput}: project identity, the HTML artifact, and deck/title hints. */
 export interface BuildDesktopPdfExportInputOptions {

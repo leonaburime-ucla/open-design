@@ -48,7 +48,7 @@ import {
   type LibraryAssetRecord,
   type ReconcileLibraryResult,
 } from '../library/index.js';
-import { ensureProjectSubdir } from '../projects.js';
+import { ensureProjectSubdir } from '../project/index.js';
 
 export interface RegisterLibraryRoutesDeps
   extends RouteDeps<

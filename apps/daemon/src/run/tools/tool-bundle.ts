@@ -1,6 +1,6 @@
-import type { McpAuthMode, McpServerConfig, McpTransport } from './mcp/index.js';
-import type { RuntimeAgentDef } from './runtimes/types.js';
-import { sanitizeMcpConfig, sanitizeMcpServer } from './mcp/index.js';
+import type { McpAuthMode, McpServerConfig, McpTransport } from '../../mcp/index.js';
+import type { RuntimeAgentDef } from '../../runtimes/types.js';
+import { sanitizeMcpConfig, sanitizeMcpServer } from '../../mcp/index.js';
 
 /** @module run/tools/tool-bundle — MCP tool bundle parsing, validation, and external-MCP resolution for agent run startup. */
 

@@ -40,7 +40,7 @@ import {
   resolveProjectDir,
   validateProjectPath,
 } from './project/index.js';
-import { exportProjectTranscript } from './transcript-export.js';
+import { exportProjectTranscript } from './export/index.js';
 import { googleGenerateContentUrl } from './integrations/google-models.js';
 
 // Re-export the request/response types so existing daemon-internal

@@ -1,0 +1,11 @@
+cell_id	agent	judgment_category	seed_type	difficulty	requirement	rationale	seed_ids
+ARCH-COV-AXIS-FN-01	software-architect	A: Axis Activation	fatal_invariant	T2	required	Compliance axis activation is non-negotiable when SOC 2 and traceability are in scope	SEED-ARCH-01
+ARCH-COV-AXIS-FP-01	software-architect	A: Axis Activation	negative_control	T3	required	Must distinguish multi-customer from multi-tenant architecture	SEED-ARCH-02
+ARCH-COV-SCORE-HIGH-01	software-architect	B: Score Calibration	standard	T3	required	Domain fit must not override team operational reality in operability scoring	SEED-ARCH-03
+ARCH-COV-BLOCK-01	software-architect	C: Blocking Rules	fatal_invariant	T2	required	Critical axis = 1 without mitigation must trigger blocking rule	SEED-ARCH-04
+ARCH-COV-SCORE-LOW-01	software-architect	B: Score Calibration	standard	T3	required	Must not reflexively undervalue simple architectures that fit team and constitution	SEED-ARCH-05
+ARCH-COV-CONF-01	software-architect	E: Confidence	standard	T2	required	Available evidence must be used — do not default everything to assumed	SEED-ARCH-06
+ARCH-COV-ADAPT-01	software-architect	D: Adaptability First	standard	T3	required	Same Fit Band must invoke tiebreaker rule explicitly	SEED-ARCH-07
+ARCH-COV-TRADE-01	software-architect	F: Tradeoff Credibility	standard	T2	required	Winner must acknowledge a genuine weakness and sacrifice	SEED-ARCH-08
+ARCH-COV-MIGRATE-01	software-architect	G: Migration Safety	standard	T2	required	Brownfield migration requires path reasoning, not just target description	SEED-ARCH-09
+ARCH-COV-SKILL-01	software-architect	H: Conditional Skills	standard	T1	required	Must activate relevant skills and explicitly exclude irrelevant ones	SEED-ARCH-10
