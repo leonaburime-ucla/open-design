@@ -11,7 +11,7 @@ import {
   buildScreenshotPptx,
   decodeSlideDataUrls,
   readSlideFiles,
-} from '../src/deck-export.js';
+} from '../src/export/index.js';
 
 // 1x1 transparent PNG.
 const PNG_BASE64 =
