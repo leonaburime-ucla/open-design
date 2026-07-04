@@ -51,29 +51,14 @@ export type CapabilityBarrelDomain = {
 //   (7) The domain root barrel (root/index.ts) must use explicit named re-exports; `export *`
 //       from a subdir hides the public surface and silently swallows name collisions.
 // Reference implementation: apps/daemon/src/design-systems/ (see its README.md).
+// Each capability-barrel PR registers only the domain it actually splits, so
+// `pnpm guard` enforces exactly what exists on that branch. This PR splits the
+// `run` domain; the `design-systems` and `mcp` domains are still flat here and
+// register in their own PRs (design-systems: #5088, mcp: #5135). Enforcing a
+// domain whose split is absent would false-positive on the surviving flat files
+// (e.g. `design-systems/import.ts`). The registrations accumulate as the sibling
+// splits land on main.
 export const CAPABILITY_BARREL_DOMAINS: CapabilityBarrelDomain[] = [
-  {
-    name: 'design-systems',
-    root: 'apps/daemon/src/design-systems',
-    subdirs: ['core', 'catalog', 'user', 'import', 'tokens', 'jobs'],
-    foundation: 'core',
-    allowedEdges: [
-      ['user', 'catalog'],
-      ['import', 'tokens'],
-      ['jobs', 'user'],
-      ['jobs', 'catalog'],
-    ],
-  },
-  {
-    name: 'mcp',
-    root: 'apps/daemon/src/mcp',
-    subdirs: ['core', 'client', 'agent-install', 'live-artifacts'],
-    foundation: 'core',
-    // Pure star: the client, agent-install, and live-artifacts concerns are mutually
-    // independent and lean only on the `core` kernel (config / oauth / tokens /
-    // install-info), so there are no cross-sibling edges to declare.
-    allowedEdges: [],
-  },
   {
     name: 'run',
     root: 'apps/daemon/src/run',

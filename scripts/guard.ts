@@ -3,6 +3,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import ts from "typescript";
 
+import { checkCapabilityBarrelImports } from "./check-barrel-imports.ts";
 import { checkCrossAppImports } from "./check-cross-app-imports.ts";
 import { checkDesignSystemManifests } from "./check-design-system-manifests.ts";
 import { checkDesignSystemPackageQuality } from "./check-design-system-package-quality.ts";
@@ -1298,6 +1299,7 @@ const checks: GuardCheck[] = [
   { name: "package dependency specs", run: checkPackageDependencySpecs },
   { name: "product neutrality", run: checkProductNeutrality },
   { name: "cross-app imports", run: checkCrossAppImports },
+  { name: "capability-barrel imports", run: checkCapabilityBarrelImports },
   { name: "test layout", run: checkTestLayout },
   { name: "e2e layout", run: checkE2eLayout },
   { name: "web test layout", run: checkWebTestLayout },
