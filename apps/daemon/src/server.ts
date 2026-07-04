@@ -3,7 +3,7 @@ import express from 'express';
 import multer from 'multer';
 import { sendMulterError, uniqueUploadFileName } from './upload/multer-helpers.js';
 import JSZip from 'jszip';
-import { execFile, spawn } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { randomId, sanitizeSlug } from './identifiers.js';
 import path from 'node:path';
@@ -150,11 +150,7 @@ import {
 } from './skills.js';
 import { validateLinkedDirs } from './linked-dirs.js';
 
-import {
-  buildWindowsFolderDialogCommand,
-  parseFolderDialogStdout,
-  parseLinuxFolderDialogResult,
-} from './native-folder-dialog.js';
+import { openNativeFolderDialog } from './native-folder-dialog.js';
 import {
   AssetCacheError,
   assetCacheRewriteUrl,
@@ -834,49 +830,9 @@ import {
   setLiveArtifactPreviewHeaders,
 } from './daemon-request-guards.js';
 
-function openNativeFolderDialog() {
-  return new Promise((resolve, reject) => {
-    const platform = process.platform;
-    if (platform === 'darwin') {
-      // `choose folder` is handled specially by the system: it presents a fully
-      // interactive standard navigation panel that reliably takes key focus
-      // (unlike a JXA-driven NSOpenPanel from background-only osascript, which
-      // renders but can't be clicked). That standard panel already includes a
-      // "New Folder" button in the bottom-left, so users can create a folder
-      // inline without any extra wiring.
-      execFile(
-        'osascript',
-        ['-e', 'POSIX path of (choose folder with prompt "Select a code folder to link")'],
-        { timeout: 120_000 },
-        (err, stdout) => {
-          if (err) return resolve(null);
-          const p = stdout.trim().replace(/\/$/, '');
-          resolve(p || null);
-        },
-      );
-    } else if (platform === 'linux') {
-      execFile(
-        'zenity',
-        ['--file-selection', '--directory', '--title=Select a code folder to link'],
-        { timeout: 120_000 },
-        (err, stdout, stderr) => {
-          try {
-            resolve(parseLinuxFolderDialogResult(err, stdout, stderr));
-          } catch (folderDialogError) {
-            reject(folderDialogError);
-          }
-        },
-      );
-    } else if (platform === 'win32') {
-      const command = buildWindowsFolderDialogCommand();
-      execFile(command.command, command.args, { timeout: 120_000 }, (err, stdout) => {
-        resolve(parseFolderDialogStdout(err, stdout));
-      });
-    } else {
-      resolve(null);
-    }
-  });
-}
+// openNativeFolderDialog was extracted to ./native-folder-dialog.ts alongside
+// its parse/build helpers (strangler-fig slice). Imported back above for the
+// nativeDialog deps bundle.
 
 /**
  * @param {ApiErrorCode} code

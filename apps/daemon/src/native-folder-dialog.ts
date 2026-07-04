@@ -1,3 +1,5 @@
+import { execFile } from 'node:child_process';
+
 export interface NativeFolderDialogCommand {
   command: string;
   args: string[];
@@ -71,4 +73,56 @@ export function parseLinuxFolderDialogResult(error: unknown, stdout: string, std
 
   const selectedPath = stdout.trim();
   return selectedPath.length > 0 ? selectedPath : null;
+}
+
+/**
+ * Opens the OS-native folder picker and resolves the selected absolute path
+ * (or null when cancelled/unsupported). Orchestrates the platform command
+ * plus the parse/build helpers above. Extracted verbatim from server.ts
+ * (strangler-fig slice) so the full native-folder-dialog concern lives in one
+ * typechecked module; server.ts imports it back for the nativeDialog deps
+ * bundle.
+ */
+export function openNativeFolderDialog(): Promise<string | null> {
+  return new Promise((resolve, reject) => {
+    const platform = process.platform;
+    if (platform === 'darwin') {
+      // `choose folder` is handled specially by the system: it presents a fully
+      // interactive standard navigation panel that reliably takes key focus
+      // (unlike a JXA-driven NSOpenPanel from background-only osascript, which
+      // renders but can't be clicked). That standard panel already includes a
+      // "New Folder" button in the bottom-left, so users can create a folder
+      // inline without any extra wiring.
+      execFile(
+        'osascript',
+        ['-e', 'POSIX path of (choose folder with prompt "Select a code folder to link")'],
+        { timeout: 120_000 },
+        (err, stdout) => {
+          if (err) return resolve(null);
+          const p = stdout.trim().replace(/\/$/, '');
+          resolve(p || null);
+        },
+      );
+    } else if (platform === 'linux') {
+      execFile(
+        'zenity',
+        ['--file-selection', '--directory', '--title=Select a code folder to link'],
+        { timeout: 120_000 },
+        (err, stdout, stderr) => {
+          try {
+            resolve(parseLinuxFolderDialogResult(err, stdout, stderr));
+          } catch (folderDialogError) {
+            reject(folderDialogError);
+          }
+        },
+      );
+    } else if (platform === 'win32') {
+      const command = buildWindowsFolderDialogCommand();
+      execFile(command.command, command.args, { timeout: 120_000 }, (err, stdout) => {
+        resolve(parseFolderDialogStdout(err, stdout));
+      });
+    } else {
+      resolve(null);
+    }
+  });
 }
