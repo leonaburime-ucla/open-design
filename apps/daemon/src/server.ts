@@ -200,10 +200,8 @@ import {
   pluginPromptBlock,
   pruneExpiredSnapshots,
   readPluginLockfile,
-  registerBundledPlugins,
   restoreProjectSnapshotLink,
   resolvePluginSnapshot,
-  startSnapshotGc,
   uninstallPlugin,
 } from './plugins/index.js';
 import { marketplaceRegistryIdFromUrl } from './plugins/marketplaces.js';
@@ -211,7 +209,6 @@ import { marketplaceRegistryIdFromUrl } from './plugins/marketplaces.js';
 import { ingestRoutineConnectorEvolution } from './automation/index.js';
 
 import { loadCritiqueConfigFromEnv } from './critique/config.js';
-import { reconcileStaleRuns } from './critique/persistence.js';
 
 import { createRunRegistry } from './critique/run-registry.js';
 import { handleCritiqueInterrupt } from './critique/interrupt-handler.js';
@@ -267,14 +264,11 @@ import {
 import { readMaskedConfig, writeConfig } from './media/config.js';
 import {
   listMediaTasksByProject,
-  listRecentMediaTasks,
-  reconcileMediaTasksOnBoot,
 } from './media/tasks.js';
 import {
   appendTaskProgress,
   createMediaTask,
   getLiveMediaTask,
-  hydrateMediaTask,
   mediaTaskSnapshot,
   mediaTasks,
   notifyTaskWaiters,
@@ -379,7 +373,6 @@ import {
   listLiveArtifacts,
   listLiveArtifactRefreshLogEntries,
   readLiveArtifactCode,
-  recoverStaleLiveArtifactRefreshes,
   updateLiveArtifact,
 } from './live-artifacts/store.js';
 import {
@@ -541,9 +534,6 @@ function renderPluginBriefTemplate(template, inputs = {}) {
 // site below. OFFICIAL_MARKETPLACE_ID is imported back for its startServer use.
 import {
   OFFICIAL_MARKETPLACE_ID,
-  defaultMarketplaceSeedConfig,
-  bundledPluginRegistrySource,
-  marketplaceSeedManifestText,
   createMarketplaceFetcher,
 } from './server/marketplace/index.js';
 
@@ -697,6 +687,13 @@ const critiqueRunRegistry = createRunRegistry();
 // `export { … } from` would only re-export without binding it locally.
 import { buildAgentRuntimeEnv, createAgentRuntimeToolPrompt } from './server/runtime-env/index.js';
 export { createAgentRuntimeToolPrompt };
+
+// Boot-time DB reconcile + registry seed (critique/media reconcile, bundled
+// plugin registration, marketplace seed, snapshot GC, warm probes, live-artifact
+// recovery) was extracted to ./server/bootstrap/boot-reconcile.ts. startServer
+// threads the db + the two daemon-init singletons (orbitService, critiqueCfg) it
+// closes over.
+import { runBootReconcileAndSeed } from './server/bootstrap/index.js';
 
 export function createAgentRuntimeEnv(
   baseEnv: NodeJS.ProcessEnv | Record<string, string | undefined>,
@@ -1156,134 +1153,10 @@ export async function startServer({
   });
   let daemonUrl = `http://127.0.0.1:${port}`;
 
-  // Boot reconcile: any critique_runs row left in 'running' state by a prior
-  // daemon crash gets flipped to 'interrupted' with rounds_json.recoveryReason
-  // = 'daemon_restart' so the spec's daemon-restart-mid-run failure mode is
-  // honored on every boot. staleAfterMs comes from CritiqueConfig, not a
-  // hardcoded constant.
-  const reconciledStaleRuns = reconcileStaleRuns(db, { staleAfterMs: critiqueCfg.totalTimeoutMs });
-  if (reconciledStaleRuns > 0) {
-    console.warn(`[critique] reconcileStaleRuns flipped ${reconciledStaleRuns} stale running row(s) to interrupted`);
-  }
-  const mediaReconcile = reconcileMediaTasksOnBoot(db, {
-    terminalTtlMs: TASK_TTL_AFTER_DONE_MS,
-  });
-  if (mediaReconcile.interrupted > 0 || mediaReconcile.deleted > 0) {
-    console.warn(
-      `[media] reconcileMediaTasksOnBoot interrupted ${mediaReconcile.interrupted} task(s), ` +
-        `deleted ${mediaReconcile.deleted} expired terminal task(s)`,
-    );
-  }
-  mediaTasks.clear();
-  for (const row of listRecentMediaTasks(db, { terminalTtlMs: TASK_TTL_AFTER_DONE_MS })) {
-    hydrateMediaTask(row);
-  }
-
-  if (process.env.OD_CODEX_DISABLE_PLUGINS === '1') {
-    console.log('[od] Codex plugins disabled via OD_CODEX_DISABLE_PLUGINS=1');
-  }
-
-  let bundledMarketplaceEntries = [];
-  // Plan §3.I3 / spec §23.3.5 — register every plugin under
-  // <resourceRoot>/plugins/_official/** in packaged runs, or
-  // <projectRoot>/plugins/_official/** in workspace runs, as bundled plugins. The walker
-  // is idempotent (upserts on every boot) so a daemon upgrade rotates
-  // the bundled set in lockstep with the code. ENOENT is silent —
-  // running the daemon outside the dev tree just skips this step.
-  try {
-    const result = await registerBundledPlugins({
-      db,
-      bundledRoot: BUNDLED_PLUGINS_DIR,
-      marketplaceProvenance: {
-        sourceMarketplaceId: OFFICIAL_MARKETPLACE_ID,
-        marketplaceTrust:    'official',
-        entryNamePrefix:     'open-design',
-      },
-    });
-    bundledMarketplaceEntries = result.registered.map((plugin) => ({
-      name:        `open-design/${plugin.id}`,
-      title:       plugin.title,
-      title_i18n:  plugin.manifest.title_i18n,
-      description: plugin.manifest.description,
-      description_i18n: plugin.manifest.description_i18n,
-      version:     plugin.version,
-      source:      bundledPluginRegistrySource(plugin.source, BUNDLED_PLUGINS_DIR, PROJECT_ROOT),
-      publisher:   { id: 'open-design', url: 'https://open-design.ai' },
-      homepage:    plugin.manifest.homepage,
-      license:     plugin.manifest.license,
-      tags:        plugin.manifest.tags,
-      capabilitiesSummary: Array.isArray(plugin.manifest.od?.capabilities)
-        ? plugin.manifest.od.capabilities
-        : undefined,
-    }));
-    if (result.registered.length > 0) {
-      console.log(`[plugins] registered ${result.registered.length} bundled plugin(s)`);
-    }
-    if (result.warnings.length > 0) {
-      for (const w of result.warnings) console.warn(`[plugins] bundled warn: ${w}`);
-    }
-  } catch (err) {
-    console.warn(`[plugins] bundled registration failed: ${(err)?.message ?? err}`);
-  }
-
-  try {
-    const seedDirs = await fs.promises.readdir(PLUGIN_REGISTRY_DIR, { withFileTypes: true }).catch((err) => {
-      if (err?.code === 'ENOENT') return [];
-      throw err;
-    });
-    const { ensureMarketplaceManifest } = await import('./plugins/marketplaces.js');
-    for (const dirent of seedDirs) {
-      if (!dirent.isDirectory()) continue;
-      const id = dirent.name;
-      const manifestText = await marketplaceSeedManifestText(id, bundledMarketplaceEntries, PLUGIN_REGISTRY_DIR);
-      if (!manifestText) continue;
-      const configured = defaultMarketplaceSeedConfig(id);
-      const result = ensureMarketplaceManifest(db, {
-        id,
-        url: configured.url,
-        trust: configured.trust,
-        manifestText,
-      });
-      if (result.ok) {
-        console.log(`[plugins] seeded ${id} registry source (${result.row.manifest.plugins.length} plugin(s))`);
-      } else {
-        console.warn(`[plugins] ${id} registry seed failed: ${result.message}`);
-      }
-    }
-  } catch (err) {
-    console.warn(`[plugins] registry seed failed: ${(err)?.message ?? err}`);
-  }
-
-  // Plan §3.A5 / spec §16 Phase 5 / PB2: periodic snapshot GC. Disabled
-  // when OD_SNAPSHOT_GC_INTERVAL_MS is 0; otherwise one-time bootstrap
-  // sweep + interval. The function returns a NOOP_HANDLE when disabled
-  // so we don't have to branch on the result.
-  const snapshotGc = startSnapshotGc({ db });
-  // One immediate sweep so a daemon that just gained the ALTER doesn't
-  // wait the full interval before reaping pre-existing expired rows.
-  try {
-    const initialSweep = pruneExpiredSnapshots(db);
-    if (initialSweep.removed > 0) {
-      console.log(`[plugins] snapshot GC startup sweep removed ${initialSweep.removed} row(s)`);
-    }
-  } catch (err) {
-    console.warn(`[plugins] snapshot GC startup sweep failed: ${(err)?.message ?? err}`);
-  }
-  void snapshotGc; // keep handle alive for the daemon's lifetime
-
-  // Warm agent-capability probes (e.g. whether the installed Claude Code
-  // build advertises --include-partial-messages) so the first /api/chat
-  // hits a populated cache even if /api/agents hasn't been called yet.
-  void readAppConfig(RUNTIME_DATA_DIR)
-    .then((config) => {
-      orbitService.configure(config.orbit);
-      return detectAgents(config.agentCliEnv ?? {});
-    })
-    .catch(() => detectAgents().catch(() => {}));
-
-  await recoverStaleLiveArtifactRefreshes({ projectsRoot: PROJECTS_DIR }).catch((error) => {
-    console.warn('[od] Failed to recover stale live artifact refreshes:', error);
-  });
+  // Boot-time DB reconcile + registry seed. See ./server/bootstrap/boot-reconcile.ts.
+  // Returns the bundled-plugin marketplace entries that the plugin-marketplace
+  // routes below register.
+  const bundledMarketplaceEntries = await runBootReconcileAndSeed({ db, orbitService, critiqueCfg });
 
   if (fs.existsSync(STATIC_DIR)) {
     app.use(express.static(STATIC_DIR));
