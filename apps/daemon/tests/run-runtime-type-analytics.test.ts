@@ -9,7 +9,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { deriveConfigureGlobals } from '@open-design/contracts/analytics';
-import { runtimeTypeForRunAnalytics } from '../src/run-analytics-observability.js';
+import { runtimeTypeForRunAnalytics } from '../src/run/index.js';
 
 describe('runtime_type on daemon run analytics', () => {
   it('lets a client byok hint override the daemon BYOK-blind derivation', () => {

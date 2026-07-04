@@ -43,7 +43,7 @@ vi.mock('../src/runtimes/auth.js', () => ({
 import {
   classifyRunFailure,
   type RunEventForFailureClassification,
-} from '../src/run-failure-classification.js';
+} from '../src/run/index.js';
 
 function errorEvent(
   code: string,

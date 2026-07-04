@@ -299,13 +299,15 @@ import { subscribe as subscribeFileEvents } from './project-watchers.js';
 import { renderDesignSystemPreview } from './design-systems/preview.js';
 import { renderDesignSystemShowcase } from './design-systems/showcase.js';
 import { createChatRunService } from './runtimes/runs.js';
-import { deriveRunErrorCode, runResultFromStatus } from './run-result.js';
-import { classifyRunFailure, isResumableFailure } from './run-failure-classification.js';
-import { decideSafeRunRetry } from './run-retry-policy.js';
 import {
   amrUserIdForRunAnalytics,
+  classifyRunFailure,
+  decideSafeRunRetry,
+  deriveRunErrorCode,
+  isResumableFailure,
+  runResultFromStatus,
   scanRunEventsForUsageAnalytics,
-} from './run-analytics-observability.js';
+} from './run/index.js';
 import {
   countDesignSystemPreviewModules,
   countNewArtifacts,
@@ -314,7 +316,7 @@ import {
 import {
   createRunArtifactBaselines,
   snapshotProjectArtifacts,
-} from './run-artifact-fs.js';
+} from './run/index.js';
 import { reportRunCompletedFromDaemon } from './langfuse-bridge.js';
 import { buildPromptStackTelemetry } from './prompt-telemetry.js';
 import { readAnalyticsContext } from './analytics.js';
@@ -377,9 +379,7 @@ import {
   readMcpConfig,
   writeMcpConfig,
 } from './mcp-config.js';
-import {
-  resolveExternalMcpServersForRun,
-} from './run-tool-bundle.js';
+import { resolveExternalMcpServersForRun } from './run/index.js';
 import {
   beginAuth,
   exchangeCodeForToken,

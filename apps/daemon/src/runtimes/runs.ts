@@ -6,7 +6,7 @@ import { normalizeMediaExecutionPolicyForRun } from '../media/policy.js';
 import {
   normalizeRunToolBundleForRun,
   summarizeRunToolBundle,
-} from '../run-tool-bundle.js';
+} from '../run/index.js';
 import { projectWorkspaceProvenance } from '../workspace-contract.js';
 
 export const TERMINAL_RUN_STATUSES = new Set(['succeeded', 'failed', 'canceled']);

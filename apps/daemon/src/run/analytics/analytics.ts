@@ -1,5 +1,5 @@
 import type { TrackingRuntimeType } from '@open-design/contracts/analytics';
-import type { VelaLoginStatus } from './integrations/vela.js';
+import type { VelaLoginStatus } from '../../integrations/vela.js';
 
 const RUNTIME_TYPES: readonly TrackingRuntimeType[] = [
   'amr_cloud',
