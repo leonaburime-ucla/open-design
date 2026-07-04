@@ -647,7 +647,7 @@ export function registerRunRoutes(app: Express, ctx: RegisterRunRoutesDeps) {
     }
     if (resolvedSnapshot?.ok) {
       try {
-        const { linkSnapshotToRun } = await import('../plugins/snapshots.js');
+        const { linkSnapshotToRun } = await import('../plugins/index.js');
         linkSnapshotToRun(db, resolvedSnapshot.snapshotId, run.id);
       } catch {
         // Linking is best-effort here; in-memory run still carries the id.

@@ -45,7 +45,7 @@ export function registerPluginMarketplaceRoutes(app: Express, deps: RegisterPlug
 
   app.get('/api/marketplaces', async (_req, res) => {
     try {
-      const { listMarketplaces } = await import('../../plugins/marketplaces.js');
+      const { listMarketplaces } = await import('../../plugins/index.js');
       res.json({ marketplaces: listMarketplaces(db) });
     } catch (err) {
       res.status(500).json({ error: String(err) });
@@ -57,7 +57,7 @@ export function registerPluginMarketplaceRoutes(app: Express, deps: RegisterPlug
       const url = typeof body.url === 'string' ? body.url : '';
       if (!url) return res.status(400).json({ error: 'url is required' });
       const trust = body.trust === 'trusted' || body.trust === 'official' ? body.trust : 'restricted';
-      const { addMarketplace } = await import('../../plugins/marketplaces.js');
+      const { addMarketplace } = await import('../../plugins/index.js');
       const result = await addMarketplace(db, {
         url,
         trust,
@@ -71,7 +71,7 @@ export function registerPluginMarketplaceRoutes(app: Express, deps: RegisterPlug
   });
   app.get('/api/marketplaces/:id', async (req, res) => {
     try {
-      const { getMarketplace } = await import('../../plugins/marketplaces.js');
+      const { getMarketplace } = await import('../../plugins/index.js');
       const row = getMarketplace(db, req.params.id) as MarketplaceRow | null;
       if (!row) return res.status(404).json({ error: 'marketplace not found' });
       res.json(row);
@@ -79,7 +79,7 @@ export function registerPluginMarketplaceRoutes(app: Express, deps: RegisterPlug
   });
   app.delete('/api/marketplaces/:id', async (req, res) => {
     try {
-      const { removeMarketplace } = await import('../../plugins/marketplaces.js');
+      const { removeMarketplace } = await import('../../plugins/index.js');
       const ok = removeMarketplace(db, req.params.id);
       if (!ok) return res.status(404).json({ error: 'marketplace not found' });
       res.json({ ok: true });
@@ -87,13 +87,13 @@ export function registerPluginMarketplaceRoutes(app: Express, deps: RegisterPlug
   });
   app.post('/api/marketplaces/:id/refresh', async (req, res) => {
     try {
-      const { getMarketplace, refreshMarketplace } = await import('../../plugins/marketplaces.js');
+      const { getMarketplace, refreshMarketplace } = await import('../../plugins/index.js');
       const row = getMarketplace(db, req.params.id) as MarketplaceRow | null;
       const seedId = row ? marketplaceRegistryIdFromUrl(row.url) ?? req.params.id : req.params.id;
       const result = await refreshMarketplace(db, req.params.id, createMarketplaceFetcher(seedId, bundledMarketplaceEntries)) as MarketplaceMutationResult;
       if (!result.ok) return res.status(result.status).json({ error: { code: 'marketplace-refresh-failed', message: result.message, data: { errors: result.errors ?? [] } } });
       try {
-        const { recordPluginEvent } = await import('../../plugins/events.js');
+        const { recordPluginEvent } = await import('../../plugins/index.js');
         recordPluginEvent({ kind: 'plugin.marketplace-refreshed', pluginId: '', details: { marketplaceId: req.params.id, marketplaceVersion: result.row.version, specVersion: result.row.specVersion } });
       } catch {}
       res.json(result.row);
@@ -104,7 +104,7 @@ export function registerPluginMarketplaceRoutes(app: Express, deps: RegisterPlug
       const body = readBody(req);
       const trust = body.trust === 'trusted' || body.trust === 'restricted' || body.trust === 'official' ? body.trust : null;
       if (!trust) return res.status(400).json({ error: 'trust must be one of: trusted, restricted, official' });
-      const { setMarketplaceTrust } = await import('../../plugins/marketplaces.js');
+      const { setMarketplaceTrust } = await import('../../plugins/index.js');
       const row = setMarketplaceTrust(db, req.params.id, trust) as MarketplaceRow | null;
       if (!row) return res.status(404).json({ error: 'marketplace not found' });
       res.json(row);
@@ -112,7 +112,7 @@ export function registerPluginMarketplaceRoutes(app: Express, deps: RegisterPlug
   });
   app.get('/api/marketplaces/:id/plugins', async (req, res) => {
     try {
-      const { getMarketplace } = await import('../../plugins/marketplaces.js');
+      const { getMarketplace } = await import('../../plugins/index.js');
       const row = getMarketplace(db, req.params.id) as MarketplaceRow | null;
       if (!row) return res.status(404).json({ error: 'marketplace not found' });
       res.json({ plugins: row.manifest.plugins ?? [] });

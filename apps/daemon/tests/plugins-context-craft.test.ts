@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { AppliedPluginSnapshot, InstalledPluginRecord, PluginManifest } from '@open-design/contracts';
-import { getPluginContextCraft, getSnapshotContextCraft } from '../src/plugins/context-craft.js';
+import { getPluginContextCraft, getSnapshotContextCraft } from '../src/plugins/index.js';
 
 function pluginRecord(manifest: PluginManifest): InstalledPluginRecord {
   return {

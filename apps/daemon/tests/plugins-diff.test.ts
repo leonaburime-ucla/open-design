@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { InstalledPluginRecord, PluginManifest } from '@open-design/contracts';
-import { diffPlugins } from '../src/plugins/diff.js';
+import { diffPlugins } from '../src/plugins/index.js';
 
 const make = (
   id: string,

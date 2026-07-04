@@ -10,9 +10,9 @@ import type {
   InstalledPluginRecord,
   PluginManifest,
 } from '@open-design/contracts';
-import { applyPlugin } from '../src/plugins/apply.js';
+import { applyPlugin } from '../src/plugins/index.js';
 import { openDatabase } from '../src/db.js';
-import { upsertInstalledPlugin } from '../src/plugins/registry.js';
+import { upsertInstalledPlugin } from '../src/plugins/index.js';
 import { resolveAppliedPipeline, type ScenarioRegistryEntry } from '@open-design/plugin-runtime';
 
 let tmpRoot: string;

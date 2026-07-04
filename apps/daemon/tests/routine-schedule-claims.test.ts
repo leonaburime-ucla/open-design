@@ -17,8 +17,8 @@ import {
   openDatabase,
 } from '../src/db.js';
 import { startServer } from '../src/server.js';
-import { upsertInstalledPlugin } from '../src/plugins/registry.js';
-import { createSnapshot, linkSnapshotToProject } from '../src/plugins/snapshots.js';
+import { upsertInstalledPlugin } from '../src/plugins/index.js';
+import { createSnapshot, linkSnapshotToProject } from '../src/plugins/index.js';
 
 let tmp: string;
 let dbFile: string;

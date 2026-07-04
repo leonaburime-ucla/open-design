@@ -7,7 +7,7 @@ import path from 'node:path';
 import {
   ScaffoldError,
   scaffoldPlugin,
-} from '../src/plugins/scaffold.js';
+} from '../src/plugins/index.js';
 
 let tmpDir: string;
 

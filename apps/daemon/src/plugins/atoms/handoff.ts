@@ -1,3 +1,6 @@
+/** @module atoms/handoff
+ * Plugin atom concern: catalogs and executes built-in atom workers used by plugin pipelines.
+ */
 // Phase 7-8 entry slice / spec §10 / §11.5.1 / §21.5 — handoff atom.
 //
 // SKILL.md fragment lives at plugins/_official/atoms/handoff/. The

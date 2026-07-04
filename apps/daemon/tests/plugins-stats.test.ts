@@ -7,7 +7,7 @@ import {
   pluginSourceBuckets,
   snapshotInventoryStats,
   type SnapshotStatsRow,
-} from '../src/plugins/stats.js';
+} from '../src/plugins/index.js';
 
 const make = (
   id: string,

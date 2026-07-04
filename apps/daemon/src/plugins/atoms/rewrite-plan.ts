@@ -1,3 +1,6 @@
+/** @module atoms/rewrite-plan
+ * Plugin atom concern: catalogs and executes built-in atom workers used by plugin pipelines.
+ */
 // Phase 7 entry slice / spec §20.3 / §21.3.2 — rewrite-plan atom.
 //
 // SKILL.md fragment ships at plugins/_official/atoms/rewrite-plan/.

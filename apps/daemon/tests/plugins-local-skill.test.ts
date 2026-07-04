@@ -17,8 +17,8 @@ import os from 'node:os';
 import {
   applyPlugin,
   pickFirstLocalSkillPath,
-} from '../src/plugins/apply.js';
-import { loadPluginLocalSkill } from '../src/plugins/local-skill.js';
+} from '../src/plugins/index.js';
+import { loadPluginLocalSkill } from '../src/plugins/index.js';
 import type { InstalledPluginRecord, PluginManifest } from '@open-design/contracts';
 
 function manifestWithSkills(skills: Array<{ ref?: string; path?: string }>): PluginManifest {

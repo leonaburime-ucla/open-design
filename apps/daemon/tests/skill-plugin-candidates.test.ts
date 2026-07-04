@@ -16,7 +16,7 @@ import {
   generateSkillPluginDraft,
   insertSkillPluginCandidate,
   listSkillPluginCandidates,
-} from '../src/plugins/skill-candidates.js';
+} from '../src/plugins/index.js';
 import {
   detectSkillPluginCandidateOnRunSuccess,
   upsertSkillPluginCandidateAssistantMessage,

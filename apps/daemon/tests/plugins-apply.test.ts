@@ -7,9 +7,9 @@
 
 import { describe, expect, it } from 'vitest';
 import path from 'node:path';
-import { applyPlugin, MissingInputError } from '../src/plugins/apply.js';
-import { defaultRegistryRoots } from '../src/plugins/registry.js';
-import { TRUSTED_DEFAULT_CAPABILITIES } from '../src/plugins/trust.js';
+import { applyPlugin, MissingInputError } from '../src/plugins/index.js';
+import { defaultRegistryRoots } from '../src/plugins/index.js';
+import { TRUSTED_DEFAULT_CAPABILITIES } from '../src/plugins/index.js';
 import type { ContextItem, InstalledPluginRecord } from '@open-design/contracts';
 
 function pluginFixture(extra: Partial<InstalledPluginRecord> = {}): InstalledPluginRecord {

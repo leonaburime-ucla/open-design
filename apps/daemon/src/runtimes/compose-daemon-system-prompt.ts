@@ -238,13 +238,13 @@ export function createComposeDaemonSystemPrompt(deps: any) {
       try {
         const snap = getSnapshot(db, appliedPluginSnapshotId);
         if (snap?.pluginId) {
-          const { getSnapshotContextCraft } = await import('../plugins/context-craft.js');
+          const { getSnapshotContextCraft } = await import('../plugins/index.js');
           for (const craft of getSnapshotContextCraft(snap)) {
             if (!skillCraftRequires.includes(craft)) skillCraftRequires.push(craft);
           }
           const plugin = getInstalledPlugin(db, snap.pluginId);
           if (plugin) {
-            const { loadPluginLocalSkill } = await import('../plugins/local-skill.js');
+            const { loadPluginLocalSkill } = await import('../plugins/index.js');
             const local = await loadPluginLocalSkill(plugin);
             if (local) {
               skillBody = local.body + composedSkillBlocks;
@@ -516,7 +516,7 @@ export function createComposeDaemonSystemPrompt(deps: any) {
         const snap = getSnapshot(db, appliedPluginSnapshotId);
         const stages = snap?.pipeline?.stages ?? [];
         if (stages.length > 0) {
-          const { loadAtomBodies } = await import('../plugins/atom-bodies.js');
+          const { loadAtomBodies } = await import('../plugins/index.js');
           const { renderActiveStageBlock } = await import('@open-design/contracts');
           const blocks = [];
           for (const stage of stages) {

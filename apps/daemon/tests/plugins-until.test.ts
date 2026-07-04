@@ -10,7 +10,7 @@ import {
   isParseableUntil,
   parseUntil,
   UntilSyntaxError,
-} from '../src/plugins/until.js';
+} from '../src/plugins/index.js';
 
 describe('parseUntil', () => {
   it('accepts the §10.1 reference expression', () => {

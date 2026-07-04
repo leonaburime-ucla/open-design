@@ -1,3 +1,6 @@
+/** @module atoms/patch-edit
+ * Plugin atom concern: catalogs and executes built-in atom workers used by plugin pipelines.
+ */
 // Phase 7 entry slice / spec §20.3 / §21.3.2 — patch-edit atom.
 //
 // SKILL.md fragment ships at plugins/_official/atoms/patch-edit/.

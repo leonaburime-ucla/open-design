@@ -1,3 +1,6 @@
+/** @module atoms/design-extract
+ * Plugin atom concern: catalogs and executes built-in atom workers used by plugin pipelines.
+ */
 // Phase 6/7 entry slice / spec §10 / §21.3.2 — design-extract atom.
 //
 // SKILL.md fragment ships at plugins/_official/atoms/design-extract/.

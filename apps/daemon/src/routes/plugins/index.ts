@@ -9,7 +9,7 @@ import type {
 import {
   duplicatePluginExampleIntoProject,
   PluginDuplicateProjectError,
-} from '../../plugins/duplicate-project.js';
+} from '../../plugins/index.js';
 import type { PluginShareAction } from '../../services/plugin-share-tasks.js';
 
 export interface RegisterPluginEventRoutesDeps {
@@ -140,23 +140,23 @@ export interface RegisterPluginRoutesDeps {
 export function registerPluginEventRoutes(app: Express, deps: RegisterPluginEventRoutesDeps): void {
   app.get('/api/plugins/events/snapshot', async (req, res) => {
     const since = Number(typeof req.query.since === 'string' ? req.query.since : 0);
-    const { pluginEventSnapshot } = await import('../../plugins/events.js');
+    const { pluginEventSnapshot } = await import('../../plugins/index.js');
     const events = pluginEventSnapshot(Number.isFinite(since) && since > 0 ? since : 0);
     res.json({ events, count: events.length, generatedAt: Date.now() });
   });
   app.get('/api/plugins/events/stats', async (_req, res) => {
-    const { pluginEventSnapshot, summarisePluginEvents } = await import('../../plugins/events.js');
+    const { pluginEventSnapshot, summarisePluginEvents } = await import('../../plugins/index.js');
     res.json({ stats: summarisePluginEvents(pluginEventSnapshot()), generatedAt: Date.now() });
   });
   app.post('/api/plugins/events/purge', deps.http.requireLocalDaemonRequest, async (_req, res) => {
     try {
-      const { purgePluginEventBuffer } = await import('../../plugins/events.js');
+      const { purgePluginEventBuffer } = await import('../../plugins/index.js');
       res.json({ ok: true, ...purgePluginEventBuffer() });
     } catch (err) { res.status(500).json({ error: String(err) }); }
   });
   app.get('/api/plugins/events', async (req, res) => {
     const since = Number(typeof req.query.since === 'string' ? req.query.since : 0);
-    const { pluginEventSnapshot, subscribePluginEvents } = await import('../../plugins/events.js');
+    const { pluginEventSnapshot, subscribePluginEvents } = await import('../../plugins/index.js');
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
@@ -188,7 +188,7 @@ export function registerPluginRoutes(app: Express, deps: RegisterPluginRoutesDep
       if (plugin.sourceKind === 'bundled') return res.status(409).json({ error: { code: 'bundled-plugin', message: `Plugin "${id}" was shipped bundled with the daemon and upgrades only via daemon-image upgrade. The bundled boot walker re-registers bundled plugins on every boot.`, data: { id, sourceKind: plugin.sourceKind } } });
       source = plugin.source;
       if (policy === 'latest' && plugin.sourceMarketplaceEntryName) {
-        const { resolvePluginInMarketplaces } = await import('../../plugins/marketplaces.js');
+        const { resolvePluginInMarketplaces } = await import('../../plugins/index.js');
         marketplaceResolution = resolvePluginInMarketplaces(db as Parameters<typeof resolvePluginInMarketplaces>[0], plugin.sourceMarketplaceEntryName);
         if (marketplaceResolution) source = marketplaceResolution.source;
       }
@@ -200,7 +200,7 @@ export function registerPluginRoutes(app: Express, deps: RegisterPluginRoutesDep
       const looksGithub = source.startsWith('github:');
       const looksHttps = /^https:\/\//i.test(source);
       if (!looksAbsolute && !looksGithub && !looksHttps) {
-        const { resolvePluginInMarketplaces } = await import('../../plugins/marketplaces.js');
+        const { resolvePluginInMarketplaces } = await import('../../plugins/index.js');
         let lookupName = source;
         const lockfile: any = await plugins.readPluginLockfile(paths.PLUGIN_LOCKFILE_PATH);
         const locked = lockfile.plugins[source];
@@ -345,7 +345,7 @@ export function registerPluginRoutes(app: Express, deps: RegisterPluginRoutesDep
   app.get('/api/applied-plugins', (_req, res) => { try { const rows = db.prepare(`SELECT id FROM applied_plugin_snapshots ORDER BY applied_at DESC LIMIT 500`).all() as SqliteRowId[]; res.json({ snapshots: rows.map((r) => plugins.getSnapshot(db, r.id)).filter((x): x is AppliedPluginSnapshotLike => x !== null) }); } catch (err) { res.status(500).json({ error: String(err) }); } });
   app.get('/api/projects/:projectId/applied-plugins', (req, res) => { try { const rows = db.prepare(`SELECT id FROM applied_plugin_snapshots WHERE project_id = ? ORDER BY applied_at DESC`).all(req.params.projectId) as SqliteRowId[]; res.json({ snapshots: rows.map((r) => plugins.getSnapshot(db, r.id)).filter((x): x is AppliedPluginSnapshotLike => x !== null) }); } catch (err) { res.status(500).json({ error: String(err) }); } });
   app.post('/api/applied-plugins/export', helpers.requireLocalDaemonRequest, async (req, res) => helpers.handleAppliedPluginExport(req, res));
-  app.post('/api/applied-plugins/prune', async (req, res) => { try { const body = req.body && typeof req.body === 'object' ? req.body : {}; const before = typeof body.before === 'number' ? body.before : undefined; const result = plugins.pruneExpiredSnapshots(db, before ? { before } : {}); if (result.removed > 0) { try { const { recordPluginEvent } = await import('../../plugins/events.js'); recordPluginEvent({ kind: 'plugin.snapshot-pruned', pluginId: '', details: { removed: result.removed, ...(before ? { before } : {}) } }); } catch {} } res.json({ ok: true, removed: result.removed, ids: result.ids }); } catch (err) { res.status(500).json({ error: String(err) }); } });
+  app.post('/api/applied-plugins/prune', async (req, res) => { try { const body = req.body && typeof req.body === 'object' ? req.body : {}; const before = typeof body.before === 'number' ? body.before : undefined; const result = plugins.pruneExpiredSnapshots(db, before ? { before } : {}); if (result.removed > 0) { try { const { recordPluginEvent } = await import('../../plugins/index.js'); recordPluginEvent({ kind: 'plugin.snapshot-pruned', pluginId: '', details: { removed: result.removed, ...(before ? { before } : {}) } }); } catch {} } res.json({ ok: true, removed: result.removed, ids: result.ids }); } catch (err) { res.status(500).json({ error: String(err) }); } });
 }
 
 export function registerProjectPluginRoutes(app: Express, deps: RegisterPluginRoutesDeps): void {

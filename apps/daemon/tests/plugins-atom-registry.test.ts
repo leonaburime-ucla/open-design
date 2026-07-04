@@ -26,7 +26,7 @@ import os from 'node:os';
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import type { AppliedPluginSnapshot, PipelineStage } from '@open-design/contracts';
-import { migratePlugins } from '../src/plugins/persistence.js';
+import { migratePlugins } from '../src/plugins/index.js';
 import {
   PERMISSIVE_DEFAULT_SIGNALS,
   clearAtomWorkers,

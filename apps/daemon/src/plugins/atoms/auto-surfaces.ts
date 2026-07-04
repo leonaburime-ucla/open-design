@@ -1,3 +1,6 @@
+/** @module atoms/auto-surfaces
+ * Plugin atom concern: catalogs and executes built-in atom workers used by plugin pipelines.
+ */
 // Phase 8 entry slice / spec §10.3.1 / §21.5 — auto-derived GenUI surfaces
 // for first-party atom stages.
 //

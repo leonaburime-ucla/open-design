@@ -1,3 +1,6 @@
+/** @module atoms/build-test
+ * Plugin atom concern: catalogs and executes built-in atom workers used by plugin pipelines.
+ */
 // Phase 7 entry slice / spec §10 / §22.4 — build-test atom runner.
 //
 // Spec-side atom contract lives in `plugins/_official/atoms/build-test/SKILL.md`.
@@ -16,7 +19,7 @@
 import path from 'node:path';
 import { promises as fsp } from 'node:fs';
 import { spawn, type SpawnOptions } from 'node:child_process';
-import type { UntilSignals } from '../until.js';
+import type { UntilSignals } from '../core/index.js';
 
 export type BuildTestStatus = 'passing' | 'failing' | 'skipped';
 

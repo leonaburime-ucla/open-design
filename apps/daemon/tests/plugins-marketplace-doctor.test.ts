@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { doctorMarketplace } from '../src/plugins/marketplace-doctor.js';
+import { doctorMarketplace } from '../src/plugins/index.js';
 
 describe('marketplace doctor', () => {
   it('reports registry-grade issues for catalogs', async () => {

@@ -22,10 +22,10 @@ import type {
   GenUISurfaceSpec,
   PluginPipelineStageEvent,
 } from '@open-design/contracts';
-import { migratePlugins } from '../src/plugins/persistence.js';
-import { createSnapshot } from '../src/plugins/snapshots.js';
-import { runPipelineForRun } from '../src/plugins/pipeline-runner.js';
-import { listIterationsForRun } from '../src/plugins/pipeline.js';
+import { migratePlugins } from '../src/plugins/index.js';
+import { createSnapshot } from '../src/plugins/index.js';
+import { runPipelineForRun } from '../src/plugins/index.js';
+import { listIterationsForRun } from '../src/plugins/index.js';
 import { respondSurface } from '../src/genui/registry.js';
 import { findPendingByRunAndSurfaceId } from '../src/genui/store.js';
 import {

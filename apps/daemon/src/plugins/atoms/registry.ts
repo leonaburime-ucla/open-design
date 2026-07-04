@@ -1,3 +1,6 @@
+/** @module atoms/registry
+ * Plugin atom concern: catalogs and executes built-in atom workers used by plugin pipelines.
+ */
 // Plan §3.D — atom worker registry.
 //
 // Stage D of plugin-driven-flow-plan replaces the canned stub stage
@@ -26,7 +29,7 @@ import type {
   AppliedPluginSnapshot,
   PipelineStage,
 } from '@open-design/contracts';
-import type { UntilSignals } from '../until.js';
+import type { UntilSignals } from '../core/index.js';
 
 type SqliteDb = Database.Database;
 

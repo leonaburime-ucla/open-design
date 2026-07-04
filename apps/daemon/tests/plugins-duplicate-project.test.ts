@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { InstalledPluginRecord, Project } from '@open-design/contracts';
-import { duplicatePluginExampleIntoProject } from '../src/plugins/duplicate-project.js';
+import { duplicatePluginExampleIntoProject } from '../src/plugins/index.js';
 import { registerPluginRoutes } from '../src/routes/plugins/index.js';
 
 const tempRoots: string[] = [];

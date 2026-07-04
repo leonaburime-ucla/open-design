@@ -5,7 +5,7 @@ import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promis
 import os from 'node:os';
 import path from 'node:path';
 import { x as tarExtract, t as tarList } from 'tar';
-import { packPlugin, PackPluginError } from '../src/plugins/pack.js';
+import { packPlugin, PackPluginError } from '../src/plugins/index.js';
 
 let folder: string;
 let parent: string;

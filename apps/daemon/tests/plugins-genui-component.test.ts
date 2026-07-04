@@ -12,9 +12,9 @@
 import { describe, expect, it } from 'vitest';
 import { GenUISurfaceSpecSchema } from '@open-design/contracts';
 import { validateSafe } from '@open-design/plugin-runtime';
-import { doctorPlugin } from '../src/plugins/doctor.js';
-import { validateCapabilityList } from '../src/plugins/trust.js';
-import { FIRST_PARTY_ATOMS, type AtomCatalogEntry } from '../src/plugins/atoms.js';
+import { doctorPlugin } from '../src/plugins/index.js';
+import { validateCapabilityList } from '../src/plugins/index.js';
+import { FIRST_PARTY_ATOMS, type AtomCatalogEntry } from '../src/plugins/index.js';
 import type { InstalledPluginRecord, PluginManifest } from '@open-design/contracts';
 
 const REGISTRY = {

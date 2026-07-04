@@ -19,8 +19,8 @@ import { Readable } from 'node:stream';
 import { mkdtemp, rm, writeFile, mkdir, symlink, readdir, readFile } from 'node:fs/promises';
 import Database from 'better-sqlite3';
 import { c as tarCreate } from 'tar';
-import { migratePlugins } from '../src/plugins/persistence.js';
-import { installPlugin, type ArchiveFetcher } from '../src/plugins/installer.js';
+import { migratePlugins } from '../src/plugins/index.js';
+import { installPlugin, type ArchiveFetcher } from '../src/plugins/index.js';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 

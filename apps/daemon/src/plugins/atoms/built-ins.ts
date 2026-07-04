@@ -1,3 +1,6 @@
+/** @module atoms/built-ins
+ * Plugin atom concern: catalogs and executes built-in atom workers used by plugin pipelines.
+ */
 // Plan §3.D — built-in atom workers.
 //
 // Registered on first use into the worker registry. Every atom in
@@ -17,7 +20,7 @@
 // based on prior critique, so each new score reflects the current
 // quality bar, not the worst earlier attempt.
 
-import { FIRST_PARTY_ATOMS } from '../atoms.js';
+import { FIRST_PARTY_ATOMS } from './catalog.js';
 import {
   registerAtomWorker,
   type AtomOutcome,

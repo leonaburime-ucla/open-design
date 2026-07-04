@@ -8,7 +8,7 @@ import {
   purgePluginEventBuffer,
   recordPluginEvent,
   subscribePluginEvents,
-} from '../src/plugins/events.js';
+} from '../src/plugins/index.js';
 
 beforeEach(() => __resetPluginEventBufferForTests());
 afterEach(() => __resetPluginEventBufferForTests());

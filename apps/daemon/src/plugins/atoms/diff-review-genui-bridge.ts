@@ -1,3 +1,6 @@
+/** @module atoms/diff-review-genui-bridge
+ * Plugin atom concern: catalogs and executes built-in atom workers used by plugin pipelines.
+ */
 // Phase 8 entry slice / spec §10.3 / §21.5 — diff-review GenUI bridge.
 //
 // Glue between the daemon's GenUI respond endpoint and the

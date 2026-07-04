@@ -1,3 +1,6 @@
+/** @module atoms/diff-review
+ * Plugin atom concern: catalogs and executes built-in atom workers used by plugin pipelines.
+ */
 // Phase 7-8 entry slice / spec §20.3 / §21.3.2 — diff-review atom.
 //
 // SKILL.md fragment ships at plugins/_official/atoms/diff-review/.

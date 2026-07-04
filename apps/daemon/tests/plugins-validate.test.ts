@@ -7,7 +7,7 @@ import path from 'node:path';
 import {
   flattenValidationDiagnostics,
   validatePluginFolder,
-} from '../src/plugins/validate.js';
+} from '../src/plugins/index.js';
 
 let folder: string;
 

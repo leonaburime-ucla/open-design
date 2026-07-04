@@ -59,7 +59,7 @@ import { execCommandViaLoginShell } from './shell/commands.js';
 import {
   applyBakedPreviews,
   PLUGIN_PREVIEWS_ROUTE,
-} from './plugin-preview-bakes.js';
+} from './plugins/index.js';
 
 import {
   UPLOAD_DIR,
@@ -170,7 +170,7 @@ import {
   assetCacheRewriteUrl,
   createPluginAssetCache,
   isCacheableExternalUrl,
-} from './plugin-asset-cache.js';
+} from './plugins/index.js';
 import {
   defaultMediaExecutionPolicy,
 } from './media/policy.js';
@@ -228,7 +228,7 @@ import {
 import {
   marketplaceManifestUrlForRegistry,
   marketplaceRegistryIdFromUrl,
-} from './plugins/marketplaces.js';
+} from './plugins/index.js';
 
 import { ingestRoutineConnectorEvolution } from './automation/index.js';
 
@@ -451,7 +451,7 @@ import { createStartChatRun } from './runtimes/start-chat-run.js';
 import { createComposeDaemonSystemPrompt } from './runtimes/compose-daemon-system-prompt.js';
 import { firePipelineForRun } from './runtimes/fire-pipeline-for-run.js';
 import { registerApiBearerAuthMiddleware, registerApiOriginGuardMiddleware } from './http/api-security-middleware.js';
-import { createPluginRegistryView } from './plugin-registry-view.js';
+import { createPluginRegistryView } from './plugins/index.js';
 import { createPluginProjectHandlers } from './routes/plugins/project-handlers.js';
 import { createReportRunCompletionTelemetryFallback } from './run-telemetry-fallback.js';
 import {
@@ -993,7 +993,7 @@ export {
 
 // readProjectPluginManifest was extracted verbatim to ./plugin-share.ts
 // (strangler-fig slice 3); re-export its __forTest wrapper to preserve surface.
-export { __forTestReadProjectPluginManifest } from './plugin-share.js';
+export { __forTestReadProjectPluginManifest } from './plugins/index.js';
 
 // Run-event analytics scanners were extracted verbatim to
 // ./run-event-analytics.ts (strangler-fig slice 3). Import the five functions
@@ -1718,7 +1718,7 @@ export async function startServer({
       if (err?.code === 'ENOENT') return [];
       throw err;
     });
-    const { ensureMarketplaceManifest } = await import('./plugins/marketplaces.js');
+    const { ensureMarketplaceManifest } = await import('./plugins/index.js');
     for (const dirent of seedDirs) {
       if (!dirent.isDirectory()) continue;
       const id = dirent.name;
@@ -2979,7 +2979,7 @@ export async function startServer({
       if (resolvedRoutineSnapshot?.ok) {
         run.appliedPluginSnapshotId = resolvedRoutineSnapshot.snapshotId;
         run.pluginId = resolvedRoutineSnapshot.snapshot.pluginId;
-        const { linkSnapshotToRun } = await import('./plugins/snapshots.js');
+        const { linkSnapshotToRun } = await import('./plugins/index.js');
         linkSnapshotToRun(db, resolvedRoutineSnapshot.snapshotId, run.id);
       }
       upsertMessage(db, conversationId, {

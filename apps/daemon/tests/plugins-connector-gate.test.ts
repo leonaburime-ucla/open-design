@@ -18,7 +18,7 @@ import {
   validateConnectorRefs,
   type ConnectorCatalogEntry,
   type ConnectorProbe,
-} from '../src/plugins/connector-gate.js';
+} from '../src/plugins/index.js';
 import type { PluginManifest } from '@open-design/contracts';
 
 const buildProbe = (entries: ConnectorCatalogEntry[]): ConnectorProbe => ({

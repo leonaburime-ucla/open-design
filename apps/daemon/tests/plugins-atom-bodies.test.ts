@@ -12,9 +12,9 @@ import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import Database from 'better-sqlite3';
-import { migratePlugins } from '../src/plugins/persistence.js';
-import { registerBundledPlugins } from '../src/plugins/bundled.js';
-import { loadAtomBodies } from '../src/plugins/atom-bodies.js';
+import { migratePlugins } from '../src/plugins/index.js';
+import { registerBundledPlugins } from '../src/plugins/index.js';
+import { loadAtomBodies } from '../src/plugins/index.js';
 import { renderActiveStageBlock } from '@open-design/contracts';
 
 const SAMPLE_MANIFEST = (id: string) =>

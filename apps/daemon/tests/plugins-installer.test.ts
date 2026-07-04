@@ -8,10 +8,10 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import Database from 'better-sqlite3';
-import { migratePlugins } from '../src/plugins/persistence.js';
-import { installFromLocalFolder, installPlugin, uninstallPlugin } from '../src/plugins/installer.js';
-import { listInstalledPlugins } from '../src/plugins/registry.js';
-import { addMarketplace, resolvePluginInMarketplaces } from '../src/plugins/marketplaces.js';
+import { migratePlugins } from '../src/plugins/index.js';
+import { installFromLocalFolder, installPlugin, uninstallPlugin } from '../src/plugins/index.js';
+import { listInstalledPlugins } from '../src/plugins/index.js';
+import { addMarketplace, resolvePluginInMarketplaces } from '../src/plugins/index.js';
 import type { InstalledPluginRecord } from '@open-design/contracts';
 
 let tmpRoot: string;

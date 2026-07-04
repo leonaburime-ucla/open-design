@@ -10,9 +10,9 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import Database from 'better-sqlite3';
-import { migratePlugins } from '../src/plugins/persistence.js';
-import { createSnapshot } from '../src/plugins/snapshots.js';
-import { ExportError, exportPlugin } from '../src/plugins/export.js';
+import { migratePlugins } from '../src/plugins/index.js';
+import { createSnapshot } from '../src/plugins/index.js';
+import { ExportError, exportPlugin } from '../src/plugins/index.js';
 
 let db: Database.Database;
 let tmpDir: string;

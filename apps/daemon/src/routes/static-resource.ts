@@ -58,7 +58,7 @@ export function registerAtomRoutes(app: Express, ctx: RegisterAtomRoutesDeps) {
     }
     const body: Record<string, unknown> = { ...atom, taskKinds: atom.taskKinds.slice() };
     try {
-      const { loadAtomBodies } = await import('../plugins/atom-bodies.js');
+      const { loadAtomBodies } = await import('../plugins/index.js');
       const bodies = await loadAtomBodies(db, [id]);
       if (bodies[0] && typeof bodies[0].body === 'string') body.skillBody = bodies[0].body;
     } catch (err) {

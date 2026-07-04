@@ -18,7 +18,7 @@ import {
   liftTokens,
   type FigmaApiNode,
   type FigmaNode,
-} from '../plugins/atoms/figma-extract.js';
+} from '../plugins/index.js';
 import { decodeFigFile } from './fig-decode.js';
 
 export interface FigmaImportOptions {

@@ -1,9 +1,9 @@
 // Plan §3.FF1 — verifyPlugin() pure helper.
 
 import { describe, expect, it } from 'vitest';
-import type { DoctorReport } from '../src/plugins/doctor.js';
-import type { SimulatePipelineResult } from '../src/plugins/simulate.js';
-import { verifyPlugin } from '../src/plugins/verify.js';
+import type { DoctorReport } from '../src/plugins/index.js';
+import type { SimulatePipelineResult } from '../src/plugins/index.js';
+import { verifyPlugin } from '../src/plugins/index.js';
 
 const passingDoctor = (): DoctorReport => ({
   pluginId:    'p',

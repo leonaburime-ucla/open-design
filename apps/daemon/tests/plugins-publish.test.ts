@@ -11,7 +11,7 @@ import {
   PublishError,
   PUBLISH_TARGETS,
   upsertMarketplaceJsonEntry,
-} from '../src/plugins/publish.js';
+} from '../src/plugins/index.js';
 
 const META = {
   pluginId:          'open-design/sample-plugin',

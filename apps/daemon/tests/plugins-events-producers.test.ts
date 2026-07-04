@@ -9,16 +9,16 @@ import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import Database from 'better-sqlite3';
-import { migratePlugins } from '../src/plugins/persistence.js';
+import { migratePlugins } from '../src/plugins/index.js';
 import {
   installPlugin,
   installFromLocalFolder,
   uninstallPlugin,
-} from '../src/plugins/installer.js';
+} from '../src/plugins/index.js';
 import {
   __resetPluginEventBufferForTests,
   pluginEventSnapshot,
-} from '../src/plugins/events.js';
+} from '../src/plugins/index.js';
 
 let tmp: string;
 let pluginsRoot: string;

@@ -12,13 +12,13 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import Database from 'better-sqlite3';
-import { migratePlugins } from '../src/plugins/persistence.js';
+import { migratePlugins } from '../src/plugins/index.js';
 import {
   defaultCapabilities,
   grantCapabilities,
   revokeCapabilities,
   validateCapabilityList,
-} from '../src/plugins/trust.js';
+} from '../src/plugins/index.js';
 
 let db: Database.Database;
 let tmpDir: string;

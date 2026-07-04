@@ -1,3 +1,6 @@
+/** @module atoms/token-map
+ * Plugin atom concern: catalogs and executes built-in atom workers used by plugin pipelines.
+ */
 // Phase 6/7 entry slice / spec §10 / §21.3.1 — token-map atom.
 //
 // SKILL.md fragment ships at plugins/_official/atoms/token-map/.

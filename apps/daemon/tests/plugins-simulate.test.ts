@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { PluginPipeline } from '@open-design/contracts';
-import { parseSignalKv, simulatePipeline } from '../src/plugins/simulate.js';
+import { parseSignalKv, simulatePipeline } from '../src/plugins/index.js';
 
 const pipe = (stages: PluginPipeline['stages']): PluginPipeline => ({ stages });
 

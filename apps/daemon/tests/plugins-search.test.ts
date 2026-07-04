@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { InstalledPluginRecord, PluginManifest } from '@open-design/contracts';
-import { searchInstalledPlugins } from '../src/plugins/search.js';
+import { searchInstalledPlugins } from '../src/plugins/index.js';
 
 const make = (id: string, over: Partial<{ title: string; description: string; tags: string[]; taskKind: string; mode: string; trust: 'trusted' | 'restricted' | 'bundled'; sourceKind: 'bundled' | 'local' | 'github' | 'url'; }>): InstalledPluginRecord => ({
   id,

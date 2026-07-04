@@ -5,7 +5,7 @@ import type {
   InstalledPluginRecord,
   PluginManifest,
 } from '@open-design/contracts';
-import { applyPlugin } from '../src/plugins/apply.js';
+import { applyPlugin } from '../src/plugins/index.js';
 import { deriveAutoAtomSurfaces } from '../src/plugins/atoms/auto-surfaces.js';
 
 const baseRegistry = (scenarios: any[] = []) => ({

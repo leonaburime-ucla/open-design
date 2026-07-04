@@ -212,6 +212,23 @@ export const CAPABILITY_BARREL_DOMAINS: CapabilityBarrelDomain[] = [
     // them in would cycle back through the runtime agent-def registry.)
     allowedEdges: [],
   },
+  {
+    name: 'plugins',
+    root: 'apps/daemon/src/plugins',
+    subdirs: ['core', 'atoms', 'catalog', 'install', 'runtime', 'assets', 'previews', 'sharing'],
+    foundation: 'core',
+    // The plugin domain has one shared kernel for registry/snapshot/event/trust
+    // primitives. Catalog diagnostics may read atom metadata; install flows may
+    // validate against the catalog; runtime execution may invoke atoms and reuse
+    // catalog doctor/validation reports. Asset, preview, and sharing helpers are
+    // independent leaf concerns.
+    allowedEdges: [
+      ['catalog', 'atoms'],
+      ['install', 'catalog'],
+      ['runtime', 'atoms'],
+      ['runtime', 'catalog'],
+    ],
+  },
 ];
 
 export type BarrelImportViolation = {

@@ -19,7 +19,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { applyPlugin } from '../src/plugins/apply.js';
+import { applyPlugin } from '../src/plugins/index.js';
 import type { InstalledPluginRecord, PluginManifest, PluginPipeline } from '@open-design/contracts';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');

@@ -12,7 +12,7 @@ import type { ProjectBrowserWorkspaceTab, ProjectTabsState } from '@open-design/
 import { migrateCritique } from './critique/persistence.js';
 import { migrateMediaTasks } from './media/tasks.js';
 import { migrateLibrary } from './library/index.js';
-import { migratePlugins } from './plugins/persistence.js';
+import { migratePlugins } from './plugins/index.js';
 
 type SqliteDb = Database.Database;
 type DbRow = Record<string, any>;

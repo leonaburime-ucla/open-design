@@ -7,7 +7,7 @@ import {
   lockEntryFromInstalled,
   readPluginLockfile,
   upsertPluginLockfileEntry,
-} from '../src/plugins/lockfile.js';
+} from '../src/plugins/index.js';
 
 const plugin: InstalledPluginRecord = {
   id: 'registry-starter',

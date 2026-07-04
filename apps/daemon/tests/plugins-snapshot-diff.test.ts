@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { AppliedPluginSnapshot } from '@open-design/contracts';
-import { diffSnapshots } from '../src/plugins/snapshot-diff.js';
+import { diffSnapshots } from '../src/plugins/index.js';
 
 const make = (over: Partial<AppliedPluginSnapshot> = {}): AppliedPluginSnapshot => ({
   snapshotId: 'snap-1',

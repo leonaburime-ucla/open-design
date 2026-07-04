@@ -22,7 +22,7 @@
 import * as zlib from 'node:zlib';
 import JSZip from 'jszip';
 import * as kiwi from 'kiwi-schema';
-import type { FigmaApiNode } from '../plugins/atoms/figma-extract.js';
+import type { FigmaApiNode } from '../plugins/index.js';
 
 export interface FigDecodeResult {
   /** Rebuilt document tree (REST `FigmaApiNode` shape), or null if the

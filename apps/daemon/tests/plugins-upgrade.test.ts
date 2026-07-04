@@ -10,10 +10,10 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import Database from 'better-sqlite3';
-import { migratePlugins } from '../src/plugins/persistence.js';
-import { installFromLocalFolder } from '../src/plugins/installer.js';
-import { installPlugin } from '../src/plugins/installer.js';
-import { getInstalledPlugin } from '../src/plugins/registry.js';
+import { migratePlugins } from '../src/plugins/index.js';
+import { installFromLocalFolder } from '../src/plugins/index.js';
+import { installPlugin } from '../src/plugins/index.js';
+import { getInstalledPlugin } from '../src/plugins/index.js';
 
 let tmpRoot: string;
 let pluginsRoot: string;
