@@ -140,6 +140,10 @@ export interface RunArtifactDiff {
   // module is also an artifact, so it is counted in `touched` too (matching the
   // tool-stream counter, where preview writes also bumped artifact_count).
   previewModuleCount: number;
+  // Absolute paths for tracked files that were created or modified. Consumers
+  // that need per-file side effects, such as HTML version snapshots, can filter
+  // this list without re-walking the project tree.
+  touchedPaths: string[];
 }
 
 // Classify created vs modified tracked files between two snapshots into the
@@ -161,6 +165,7 @@ export function diffRunArtifacts(
   let modified = 0;
   let previewModuleCount = 0;
   let designSystemCreated = false;
+  const touchedPaths: string[] = [];
   for (const [filePath, fingerprint] of after) {
     const prior = before.get(filePath);
     const isNew = !prior;
@@ -178,11 +183,19 @@ export function diffRunArtifacts(
     if (isArtifactPath(classifyPath)) {
       if (isNew) created += 1;
       else modified += 1;
+      touchedPaths.push(filePath);
     }
     if (isPreviewModulePath(classifyPath)) previewModuleCount += 1;
     if (isDesignSystemFile(classifyPath)) designSystemCreated = true;
   }
-  return { created, modified, touched: created + modified, designSystemCreated, previewModuleCount };
+  return {
+    created,
+    modified,
+    touched: created + modified,
+    designSystemCreated,
+    previewModuleCount,
+    touchedPaths,
+  };
 }
 
 /** Per-run baseline record pairing the pre-run snapshot with a contention flag set when concurrent runs share the same cwd. */
@@ -200,12 +213,13 @@ export interface RunArtifactBaseline {
 
 // Registry of per-run baselines that flags same-cwd overlap. `remember` marks
 // both the incoming run and every still-open run sharing its cwd as contended;
-// `take` removes and returns a run's baseline at finish.
+// `peek` lets pre-finish hooks inspect without consuming the baseline, and
+// `take` removes and returns it for the final analytics pass.
 /**
  * Creates a bounded registry of per-run artifact baselines that automatically flags same-cwd concurrent runs as contended.
- * `remember` stores a baseline at run start; `take` removes and returns it at run finish.
+ * `remember` stores a baseline at run start; `peek` inspects it without consuming; `take` removes and returns it at run finish.
  * @param cap - Maximum number of baselines to retain before evicting the oldest; defaults to 2000.
- * @returns An object with `remember(runId, cwd, before)` and `take(runId)` methods.
+ * @returns An object with `remember(runId, cwd, before)`, `peek(runId)`, and `take(runId)` methods.
  */
 export function createRunArtifactBaselines(cap = 2000) {
   const baselines = new Map<string, RunArtifactBaseline>();
@@ -223,6 +237,9 @@ export function createRunArtifactBaselines(cap = 2000) {
         }
       }
       baselines.set(runId, { cwd, before, contended });
+    },
+    peek(runId: string): RunArtifactBaseline | undefined {
+      return baselines.get(runId);
     },
     take(runId: string): RunArtifactBaseline | undefined {
       const baseline = baselines.get(runId);

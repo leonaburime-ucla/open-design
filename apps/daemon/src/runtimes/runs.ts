@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { normalizeMediaExecutionPolicyForRun } from '../media/policy.js';
 import {
+  createRunLifecycleTracer,
   normalizeRunToolBundleForRun,
   summarizeRunToolBundle,
 } from '../run/index.js';
@@ -221,10 +222,7 @@ export function createChatRunService({
   };
 
   const start = (run, starter) => {
-    run.analyticsTelemetry = {
-      ...(run.analyticsTelemetry ?? {}),
-      startRequestedAt: Date.now(),
-    };
+    createRunLifecycleTracer(run).mark('start_requested');
     void starter(run).catch((err) => {
       fail(run, 'AGENT_EXECUTION_FAILED', err instanceof Error ? err.message : String(err));
     });

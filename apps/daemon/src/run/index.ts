@@ -21,19 +21,24 @@ export type {
   RunRetryPolicyDecision,
 } from './core/index.js';
 
-// analytics — timing, usage, and runtime-type observability
+// analytics — timing, usage, runtime-type observability, and lifecycle tracing
 export {
   runtimeTypeForRunAnalytics,
   amrUserIdForRunAnalytics,
   hasExplicitRequestedModelForAnalytics,
   scanRunEventsForUsageAnalytics,
   summarizeRunTimingAnalytics,
+  runLifecycleMarkersForStreamEvent,
+  createRunLifecycleTracer,
 } from './analytics/index.js';
 export type {
   RunEventForAnalyticsObservability,
   RunTelemetryTimestamps,
   RunUsageAnalytics,
   RunTimingAnalytics,
+  RunLifecycleMark,
+  RunWithLifecycleTelemetry,
+  RunLifecycleStreamEventMarkers,
 } from './analytics/index.js';
 
 // diagnostics — failure classification and stream tail summaries
@@ -59,17 +64,21 @@ export type {
   RunFailureClassification,
 } from './diagnostics/index.js';
 
-// artifacts — filesystem snapshot and diff utilities
+// artifacts — filesystem snapshot, diff, and HTML version snapshot utilities
 export {
   snapshotProjectArtifacts,
   diffRunArtifacts,
   createRunArtifactBaselines,
+  snapshotAiHtmlVersionsForRun,
+  AiHtmlVersionSnapshotError,
 } from './artifacts/index.js';
 export type {
   ArtifactFingerprint,
   ArtifactSnapshot,
   RunArtifactDiff,
   RunArtifactBaseline,
+  AiHtmlVersionSnapshotInput,
+  AiHtmlVersionSnapshotFailure,
 } from './artifacts/index.js';
 
 // tools — MCP tool bundle parsing and resolution
