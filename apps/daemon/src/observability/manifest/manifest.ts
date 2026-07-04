@@ -1,3 +1,14 @@
+/**
+ * @module observability/manifest/manifest
+ *
+ * Builds the trace-safe object-upload manifests (attachments, artifacts, input
+ * text snapshots) that ride alongside a Langfuse trace: it hashes, size-caps and
+ * classifies each project file into an `ObjectManifestCompleteness`-tagged
+ * entry without shipping raw bytes inline. Depends only on the `core` kernel
+ * (manifest entry types + `INPUT_MAX_BYTES`) and the `project` domain for file
+ * access; the `bridge` orchestrates it before firing a report.
+ */
+
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 
@@ -7,9 +18,9 @@ import type {
   AttachmentManifestEntry,
   InputTextSnapshotManifestEntry,
   ObjectManifestCompleteness,
-} from './langfuse-trace.js';
-import { INPUT_MAX_BYTES } from './langfuse-trace.js';
-import { mimeFor, readProjectFile, resolveProjectFilePath } from './project/index.js';
+} from '../core/index.js';
+import { INPUT_MAX_BYTES } from '../core/index.js';
+import { mimeFor, readProjectFile, resolveProjectFilePath } from '../../project/index.js';
 
 const OBJECT_RELAY_MARKER_HEADER = 'X-Open-Design-Telemetry';
 const OBJECT_RELAY_MARKER_VALUE = 'object-ingestion-v1';

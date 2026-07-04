@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { reportRunCompletedFromDaemon } from '../src/langfuse-bridge.js';
+import { reportRunCompletedFromDaemon } from '../src/observability/index.js';
 import { buildPromptStackTelemetry } from '../src/telemetry/index.js';
 
 interface FakeMessage {

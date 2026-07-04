@@ -1,12 +1,14 @@
-// Daemon ↔ langfuse-trace bridge.
-//
-// langfuse-trace.ts is dependency-free and works on a flat ReportContext.
-// This module is the glue that pulls the pieces from daemon-internal data
-// sources (the runs map, SQLite, app-config.json) into that shape and fires
-// the report. Lives here rather than inside langfuse-trace.ts so that the
-// trace module stays unit-testable without booting a database.
-//
-// See: specs/change/20260507-langfuse-telemetry/spec.md
+/**
+ * @module observability/bridge/bridge
+ *
+ * Daemon-facing glue between live daemon state and the dependency-free trace
+ * pipeline. `reportRunCompletedFromDaemon` pulls the pieces from the runs map,
+ * SQLite and app-config into a flat `ReportContext` (assembling object manifests
+ * on the way) and fires `reportRunCompleted`; `reportRunFeedbackFromDaemon` does
+ * the same for turn ratings. Kept out of the trace/report core so those stay
+ * unit-testable without booting a database. Depends on `core`, `report` and
+ * `manifest` plus sibling daemon domains (`db`, `app-config`, `redact`, `run`).
+ */
 
 import { createHash } from 'node:crypto';
 import os from 'node:os';
@@ -14,14 +16,12 @@ import path from 'node:path';
 
 import { modelIdForTracking } from '@open-design/contracts/analytics';
 
-import { readAppConfig } from './app-config.js';
-import type { AppVersionInfo } from './app-version.js';
-import { listMessages } from './db.js';
+import { readAppConfig } from '../../app-config.js';
+import type { AppVersionInfo } from '../../app-version.js';
+import { listMessages } from '../../db.js';
 import {
   deriveLangfuseDeliveryState,
   readTelemetrySinkConfig,
-  reportRunCompleted,
-  reportRunFeedback,
   type AgentEventSummary,
   type ArtifactManifestEntry,
   type ArtifactSummary,
@@ -38,9 +38,10 @@ import {
   type TraceObjectSummary,
   type ToolCallSummary,
   type TurnInfo,
-} from './langfuse-trace.js';
-import type { PromptStackTelemetry } from './telemetry/index.js';
-import { redactSecrets } from './redact.js';
+} from '../core/index.js';
+import { reportRunCompleted, reportRunFeedback } from '../report/index.js';
+import type { PromptStackTelemetry } from '../../telemetry/index.js';
+import { redactSecrets } from '../../redact.js';
 import {
   classifyRunFailure,
   collectStderrTailSummary,
@@ -53,9 +54,9 @@ import {
   summarizeRunTimingAnalytics,
   type RunTelemetryTimestamps,
   type RunUsageAnalytics,
-} from './run/index.js';
-import { buildTraceObjectManifests } from './trace-object-manifest.js';
-import type { TraceArtifactObjectSource, TraceObjectUploadManifests } from './trace-object-manifest.js';
+} from '../../run/index.js';
+import { buildTraceObjectManifests } from '../manifest/index.js';
+import type { TraceArtifactObjectSource, TraceObjectUploadManifests } from '../manifest/index.js';
 
 interface DaemonRunRecord {
   id: string;

@@ -12,8 +12,15 @@ vi.mock('../src/db.js', () => ({
   listMessages: listMessagesMock,
 }));
 
-vi.mock('../src/langfuse-trace.js', () => ({
+// The trace module was split into the observability capability barrel: the sink
+// config reader now lives in `core`, the delivery senders in `report`. Mock each
+// subdir barrel the bridge imports from (deriveLangfuseDeliveryState is left
+// unmocked/undefined here, exactly as before — this path never calls it).
+vi.mock('../src/observability/core/index.js', () => ({
   readTelemetrySinkConfig: vi.fn(() => ({ kind: 'langfuse' })),
+}));
+
+vi.mock('../src/observability/report/index.js', () => ({
   reportRunCompleted: reportRunCompletedMock,
   reportRunFeedback: vi.fn(),
 }));
@@ -39,7 +46,7 @@ vi.mock('../src/run/index.js', () => ({
   runResultFromStatus: vi.fn(() => 'success'),
 }));
 
-const { reportRunCompletedFromDaemon } = await import('../src/langfuse-bridge.js');
+const { reportRunCompletedFromDaemon } = await import('../src/observability/bridge/index.js');
 
 function makeRun(overrides: Record<string, unknown> = {}) {
   const now = 1_700_000_000_000;

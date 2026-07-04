@@ -17,7 +17,7 @@
  * server.ts imports back the symbols it references and re-exports the public ones.
  */
 
-import { reportRunCompletedFromDaemon } from './langfuse-bridge.js';
+import { reportRunCompletedFromDaemon } from './observability/index.js';
 import { runResultFromStatus } from './run/index.js';
 import { agentIdToTracking, modelIdForTracking } from '@open-design/contracts/analytics';
 

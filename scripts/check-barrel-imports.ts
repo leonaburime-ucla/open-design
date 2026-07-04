@@ -201,6 +201,25 @@ export const CAPABILITY_BARREL_DOMAINS: CapabilityBarrelDomain[] = [
     ],
   },
   {
+    name: 'observability',
+    root: 'apps/daemon/src/observability',
+    subdirs: ['core', 'payload', 'report', 'manifest', 'bridge'],
+    foundation: 'core',
+    // Linear delivery pipeline over the Langfuse trace kernel. `core` holds the
+    // shared size constants, the trace/Langfuse type vocabulary, and the sink
+    // config readers (everything leans on it). `payload` builds the wire
+    // batches; `report` delivers them (report -> payload). `manifest` builds
+    // trace-safe object-upload manifests off the same kernel. `bridge` is the
+    // daemon-facing orchestrator that assembles a ReportContext and fires the
+    // report (bridge -> report, bridge -> manifest). No cycles: payload and
+    // manifest are independent leaves that only reach back into `core`.
+    allowedEdges: [
+      ['report', 'payload'],
+      ['bridge', 'report'],
+      ['bridge', 'manifest'],
+    ],
+  },
+  {
     name: 'agents',
     root: 'apps/daemon/src/agents',
     subdirs: ['core', 'connection', 'byok', 'session', 'presentation'],

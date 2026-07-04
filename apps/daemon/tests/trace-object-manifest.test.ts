@@ -16,7 +16,7 @@ vi.mock('../src/project/index.js', async (importOriginal) => {
   };
 });
 
-import { buildTraceObjectManifests } from '../src/trace-object-manifest.js';
+import { buildTraceObjectManifests } from '../src/observability/index.js';
 
 describe('buildTraceObjectManifests', () => {
   let dataDir: string;
