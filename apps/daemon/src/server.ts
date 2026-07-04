@@ -457,11 +457,9 @@ import { composioConnectorProvider } from './connectors/composio.js';
 import { configureComposioConfigStore } from './connectors/composio-config.js';
 
 import {
-  aggregateCloudflarePagesStatus,
   buildDeployFileSet,
   checkDeploymentUrl,
   CLOUDFLARE_PAGES_PROVIDER_ID,
-  cloudflarePagesProjectNameForProject,
   DeployError,
   deployToCloudflarePages,
   deployToVercel,
@@ -470,7 +468,6 @@ import {
   prepareDeployPreflight,
   publicDeployConfigForProvider,
   readDeployConfig,
-  readCloudflarePagesDomain,
   VERCEL_PROVIDER_ID,
   writeDeployConfig,
 } from './deploy.js';
@@ -809,128 +806,21 @@ export {
   FORM_ANSWERED_SYSTEM_OVERRIDE,
 } from './chat-request-composition.js';
 
-const CLOUDFLARE_PAGES_PROJECT_METADATA_KEY = 'cloudflarePagesProjectName';
-
-function cloudflarePagesDeploymentMetadata(projectName) {
-  const normalized = typeof projectName === 'string' ? projectName.trim() : '';
-  return normalized
-    ? { [CLOUDFLARE_PAGES_PROJECT_METADATA_KEY]: normalized }
-    : undefined;
-}
-
-function cloudflarePagesProjectNameFromDeployment(deployment) {
-  const value = deployment?.providerMetadata?.[CLOUDFLARE_PAGES_PROJECT_METADATA_KEY];
-  if (typeof value === 'string' && value.trim()) return value.trim();
-  return cloudflarePagesProjectNameFromUrl(deployment?.url);
-}
-
-function cloudflarePagesProjectNameFromUrl(rawUrl) {
-  if (typeof rawUrl !== 'string' || !rawUrl.trim()) return '';
-  try {
-    const host = new URL(rawUrl).hostname.toLowerCase();
-    if (!host.endsWith('.pages.dev')) return '';
-    const labels = host.slice(0, -'.pages.dev'.length).split('.').filter(Boolean);
-    return labels.at(-1) || '';
-  } catch {
-    return '';
-  }
-}
-
-function cloudflarePagesProjectNameForDeploy(db, projectId, projectName, prior) {
-  const priorName = cloudflarePagesProjectNameFromDeployment(prior);
-  if (priorName) return priorName;
-
-  for (const deployment of listDeployments(db, projectId)) {
-    if (deployment.providerId !== CLOUDFLARE_PAGES_PROVIDER_ID) continue;
-    const stableName = cloudflarePagesProjectNameFromDeployment(deployment);
-    if (stableName) return stableName;
-  }
-
-  return cloudflarePagesProjectNameForProject(projectId, projectName);
-}
-
-function publicDeployment(deployment) {
-  if (!deployment || typeof deployment !== 'object') return deployment;
-  const { providerMetadata: _providerMetadata, ...publicShape } = deployment;
-  return publicShape;
-}
-
-function publicDeployments(deployments) {
-  return (deployments || []).map(publicDeployment);
-}
-
-async function checkCloudflarePagesDeploymentLinks(existing) {
-  const current = existing.cloudflarePages || {};
-  const projectName = current.projectName || cloudflarePagesProjectNameFromDeployment(existing);
-  const config = await readDeployConfig(CLOUDFLARE_PAGES_PROVIDER_ID);
-  const pagesDevUrl = current.pagesDev?.url || existing.url;
-  const pagesDevResult = await checkDeploymentUrl(pagesDevUrl);
-  const pagesDev = {
-    ...(current.pagesDev || {}),
-    url: pagesDevUrl,
-    status: pagesDevResult.reachable ? 'ready' : pagesDevResult.status || 'link-delayed',
-    statusMessage: pagesDevResult.reachable
-      ? 'Public link is ready.'
-      : pagesDevResult.statusMessage || current.pagesDev?.statusMessage || 'Cloudflare Pages is still preparing the pages.dev link.',
-    reachableAt: pagesDevResult.reachable ? Date.now() : current.pagesDev?.reachableAt,
-  };
-  let customDomain = current.customDomain;
-  if (customDomain?.url && customDomain.status !== 'conflict') {
-    let pagesDomain = null;
-    if (config?.token && config?.accountId && projectName) {
-      try {
-        pagesDomain = await readCloudflarePagesDomain({ ...config, projectName }, customDomain.hostname);
-      } catch {
-        pagesDomain = null;
-      }
-    }
-    const customResult = await checkDeploymentUrl(customDomain.url);
-    const pagesDomainStatus = pagesDomain?.status || customDomain.pagesDomainStatus;
-    const failedByApi = ['error', 'blocked', 'deactivated'].includes(String(pagesDomainStatus || '').toLowerCase());
-    const activeByApi = String(pagesDomainStatus || '').toLowerCase() === 'active';
-    const readyByReachability = customResult.reachable && activeByApi;
-    customDomain = {
-      ...customDomain,
-      domainStatus: pagesDomain
-        ? pagesDomain.status === 'active'
-          ? 'active'
-          : failedByApi
-            ? 'failed'
-            : 'pending'
-        : customDomain.domainStatus,
-      pagesDomainStatus,
-      validationData: pagesDomain?.validation_data ?? customDomain.validationData,
-      verificationData: pagesDomain?.verification_data ?? customDomain.verificationData,
-      status: readyByReachability
-        ? 'ready'
-        : customDomain.status === 'failed' || failedByApi
-          ? 'failed'
-          : 'pending',
-      statusMessage: readyByReachability
-        ? 'Custom domain is ready.'
-        : failedByApi
-          ? 'Cloudflare Pages reported a custom-domain error.'
-        : customResult.statusMessage || customDomain.statusMessage || 'Custom domain is still being prepared.',
-    };
-  }
-  const cloudflarePages = {
-    ...current,
-    projectName,
-    pagesDev,
-    ...(customDomain ? { customDomain } : {}),
-  };
-  const aggregate = aggregateCloudflarePagesStatus(pagesDev, customDomain);
-  return {
-    url: pagesDev.url,
-    status: aggregate.status,
-    statusMessage: aggregate.statusMessage,
-    cloudflarePages,
-    providerMetadata: {
-      ...(existing.providerMetadata || {}),
-      cloudflarePages,
-    },
-  };
-}
+// Cloudflare Pages deployment helpers (project-name resolution, provider
+// metadata shape, public deployment view, live link-status reconciliation)
+// were extracted verbatim to ./deploy/cloudflare-pages.ts (strangler-fig
+// slice 5c) — they are deploy concerns whose only consumer is
+// routes/deploy.ts via the ctx.deploy bundle threaded below. server.ts
+// imports back the six it threads; cloudflarePagesProjectNameFromUrl and the
+// metadata key stay module-internal to the new file.
+import {
+  checkCloudflarePagesDeploymentLinks,
+  cloudflarePagesDeploymentMetadata,
+  cloudflarePagesProjectNameForDeploy,
+  cloudflarePagesProjectNameFromDeployment,
+  publicDeployment,
+  publicDeployments,
+} from './deploy/cloudflare-pages.js';
 
 // Local-daemon request guards, tool authorization, preview-scope tracking, and
 // live-artifact route serving helpers were extracted verbatim to
