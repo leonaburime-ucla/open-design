@@ -23,9 +23,10 @@ import {
   buildPromptStackFlatMetadata,
   promptStackWithoutContent,
   structuredPromptStackInput,
+  readTelemetryEnvironment,
   type PromptTelemetrySection,
   type PromptStackTelemetry,
-} from './prompt-telemetry.js';
+} from './telemetry/index.js';
 import type {
   RunFailureClassification,
   RunTelemetryTimestamps,
