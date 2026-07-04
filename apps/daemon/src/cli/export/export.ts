@@ -3,8 +3,8 @@
  * Implements `od export` CLI command for programmatic artifact export (PDF/PPTX/image).
  * Rasterizes HTML/deck artifacts through the desktop renderer (Chromium) and writes output files.
  */
-import { buildExportCliRequestBody, buildExportCliResultEnvelope, resolveExportCliDeckMode } from '../../export-cli-request.js';
-import { exportRoutePath } from '../../export-cli-routing.js';
+import { buildExportCliRequestBody, buildExportCliResultEnvelope, resolveExportCliDeckMode } from '../../export/index.js';
+import { exportRoutePath } from '../../export/index.js';
 import { cliDaemonBaseUrl, parseFlags, positionalArgs, structuredHttpFailure, surfaceFetchError } from '../core/index.js';
 import { EXPORT_FORMATS, EXPORT_IMAGE_FORMATS } from '@open-design/contracts';
 

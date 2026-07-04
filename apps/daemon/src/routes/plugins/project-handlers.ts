@@ -16,7 +16,7 @@ import { sendApiError } from '../../http/api-errors.js';
 import { isLocalSameOrigin } from '../../origin-validation.js';
 import { PLUGIN_SHARE_ACTION_LABELS, USER_PLUGIN_SOURCE_KINDS, copyPluginFolderForProjectContext, githubRepoNameFromPluginName, normalizePluginShareAction, renderPluginSharePrompt } from '../../plugin-share.js';
 import { buildConnectorProbe, generateSkillPluginDraft, getInstalledPlugin, installPlugin, listInstalledPlugins, resolvePluginSnapshot } from '../../plugins/index.js';
-import { ensureProject, resolveProjectDir } from '../../projects.js';
+import { ensureProject, resolveProjectDir } from '../../project/index.js';
 import { normalizeProjectPluginFolderPath, resolveProjectChildDirectory } from '../../services/plugin-installation.js';
 import { execCommandViaLoginShell } from '../../shell/commands.js';
 import { PLUGIN_SHARE_ACTION_PLUGIN_IDS } from '@open-design/contracts';

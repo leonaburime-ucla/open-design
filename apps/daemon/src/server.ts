@@ -20,7 +20,7 @@ import net from 'node:net';
 
 import { normalizeRunContextSelection, renderRunContextPrompt } from './prompts/run-context.js';
 
-import { resolveProjectRoot } from './project-root.js';
+import { resolveProjectRoot } from './project/index.js';
 import {
   resolveDaemonCliPath,
   resolveDaemonPluginPreviewsDir,
@@ -196,9 +196,9 @@ import {
   updateUserDesignSystem,
   updateUserDesignSystemRevisionStatus,
 } from './design-systems/index.js';
-import { createDesignSystemGenerationJobStore } from './design-systems/generation-jobs.js';
+import { createDesignSystemGenerationJobStore } from './design-systems/index.js';
 import { createDesignSystemServerServices } from './design-systems/server-services.js';
-import { prepareDesignTokenContractRebuild } from './design-systems/token-contract-rebuild.js';
+import { prepareDesignTokenContractRebuild } from './design-systems/index.js';
 import { registerBrandRoutes } from './brand-routes.js';
 import {
   applyPlugin,
@@ -230,7 +230,7 @@ import {
   marketplaceRegistryIdFromUrl,
 } from './plugins/marketplaces.js';
 
-import { ingestRoutineConnectorEvolution } from './automation-routine-evolution.js';
+import { ingestRoutineConnectorEvolution } from './automation/index.js';
 
 import { loadCritiqueConfigFromEnv } from './critique/config.js';
 import { reconcileStaleRuns } from './critique/persistence.js';
@@ -239,15 +239,15 @@ import { createRunRegistry } from './critique/run-registry.js';
 import { handleCritiqueInterrupt } from './critique/interrupt-handler.js';
 import { handleCritiqueArtifact } from './critique/artifact-handler.js';
 
-import { subscribe as subscribeFileEvents } from './project-watchers.js';
+import { subscribe as subscribeFileEvents } from './project/index.js';
 import { importFigmaFromBytes } from './figma/figma-import.js';
-import { renderDesignSystemPreview } from './design-systems/preview.js';
-import { renderDesignSystemShowcase } from './design-systems/showcase.js';
+import { renderDesignSystemPreview } from './design-systems/index.js';
+import { renderDesignSystemShowcase } from './design-systems/index.js';
 import { createChatRunService } from './runtimes/runs.js';
 
 import {
   createRunArtifactBaselines,
-} from './run-artifact-fs.js';
+} from './run/index.js';
 
 import { readAnalyticsContext } from './analytics.js';
 
@@ -258,7 +258,7 @@ import {
   testProviderConnection,
   validateBaseUrl,
   validateBaseUrlResolved,
-} from './connectionTest.js';
+} from './agents/index.js';
 import { listProviderModels } from './integrations/provider-models.js';
 import { importClaudeDesignZip } from './claude-design-import.js';
 import {
@@ -272,7 +272,7 @@ import { buildDocumentPreview } from './document-preview.js';
 import { lintArtifact, renderFindingsForAgent } from './lint-artifact.js';
 
 import { skillCwdAliasSegment, stageActiveSkill } from './cwd-aliases.js';
-import { buildDesktopArtifactExportInput, buildDesktopPdfExportInput } from './pdf-export.js';
+import { buildDesktopArtifactExportInput, buildDesktopPdfExportInput } from './export/index.js';
 import { generateMedia } from './media/index.js';
 import { listElevenLabsVoiceOptions } from './integrations/elevenlabs-voices.js';
 import { searchResearch, ResearchError } from './research/index.js';
@@ -307,10 +307,10 @@ import {
 import {
   PendingAuthCache,
   refreshAccessToken,
-} from './mcp-oauth.js';
+} from './mcp/index.js';
 import {
   setToken,
-} from './mcp-tokens.js';
+} from './mcp/index.js';
 import {
   readAppConfig,
   writeAppConfig,
@@ -319,9 +319,9 @@ import { OrbitService, formatLocalProjectTimestamp, renderOrbitTemplateSystemPro
 import { buildOrbitNoLiveArtifactSummary } from './orbit-agent-summary.js';
 import {
   RoutineService,
-} from './routines.js';
+} from './automation/index.js';
 
-import { createDiagnosticsExportHandler } from './diagnostics-export.js';
+import { createDiagnosticsExportHandler } from './export/index.js';
 import { DIAGNOSTICS_EXPORT_PATH } from '@open-design/diagnostics';
 import {
   buildProjectArchive,
@@ -350,7 +350,7 @@ import {
   resolveProjectDir,
   resolveProjectFilePath,
   writeProjectFile,
-} from './projects.js';
+} from './project/index.js';
 import { validateArtifactManifestInput } from './artifacts/manifest.js';
 
 import {
@@ -418,7 +418,7 @@ import { registerHostToolsRoutes } from './routes/host-tools.js';
 import { registerPluginAssetRoutes } from './routes/plugins/assets.js';
 import { registerPluginMarketplaceRoutes } from './routes/plugins/marketplaces.js';
 import { registerPluginEventRoutes, registerPluginRoutes, registerProjectPluginRoutes } from './routes/plugins/index.js';
-import { registerMcpRoutes } from './mcp-routes.js';
+import { registerMcpRoutes } from './routes/mcp.js';
 import { registerXaiRoutes } from './routes/xai.js';
 import { registerLiveArtifactRoutes } from './routes/live-artifact.js';
 import { registerDesignSystemToolRoutes } from './routes/design-system-tool.js';
@@ -426,10 +426,10 @@ import { registerDeployRoutes, registerDeploymentCheckRoutes } from './routes/de
 import { registerMediaRoutes } from './routes/media.js';
 import { registerProjectRoutes, registerProjectArtifactRoutes, registerProjectFileRoutes, registerProjectUploadRoutes } from './routes/project/index.js';
 import { registerVelaRoutes } from './routes/vela.js';
-import { registerFinalizeRoutes, registerImportRoutes, registerProjectExportRoutes } from './import-export-routes.js';
+import { registerFinalizeRoutes, registerImportRoutes, registerProjectExportRoutes } from './export/index.js';
 import { registerHandoffRoutes } from './routes/handoff.js';
 import { EmptyTranscriptError, synthesizeHandoffPrompt } from './handoff-design.js';
-import { TranscriptExportLockedError } from './transcript-export.js';
+import { TranscriptExportLockedError } from './export/index.js';
 import { registerChatRoutes } from './routes/chat.js';
 import { registerRunRoutes } from './routes/runs.js';
 import { registerTerminalRoutes } from './routes/terminal.js';
@@ -493,8 +493,8 @@ import {
 import { registerLibraryRoutes } from './routes/library.js';
 import {
   seedLibraryExtensionOrigins,
-} from './library-tokens.js';
-import { listLibraryTokenOrigins } from './library-store.js';
+} from './library/index.js';
+import { listLibraryTokenOrigins } from './library/index.js';
 import {
   apiTokenFromEnv,
   isApiAuthDisabled,
@@ -845,92 +845,22 @@ async function refreshAndPersistToken(dataDir, serverId, current) {
   return next;
 }
 
-const activeChatAgentEventSinks = new Map();
-const activeProjectEventSinks = new Map();
-// Per-chat-run handles, keyed by runId. Lets non-stream side effects
-// (live-artifact create, project events) reach back into the chat
-// run's local state — currently used by the artifact quiet-period
-// shortcut (#1451) so a successful artifact registration can shorten
-// the inactivity watchdog without the chat path having to poll a
-// store.
-const activeChatRunHandles = new Map();
-
-function emitChatAgentEvent(runId, payload) {
-  const sink = activeChatAgentEventSinks.get(runId);
-  if (!sink) return false;
-  return sink(payload);
-}
-
-// Exported for tests covering the artifact quiet-period plumbing
-// (#1451). The chat run path is a deep closure inside startServer, so
-// pin the hook contract at the emit/handle boundary instead of
-// driving a full fake-agent e2e for every invariant.
-export const __forTestChatRunHandles = activeChatRunHandles;
-
-export function __forTestEmitLiveArtifactEvent(
-  grant: { runId?: string; projectId?: string },
-  action: 'created' | 'updated' | 'deleted',
-  artifact: { id: string; projectId?: string; title?: string; refreshStatus?: string },
-) {
-  return emitLiveArtifactEvent(grant, action, artifact);
-}
-
-function emitLiveArtifactEvent(grant, action, artifact) {
-  if (!artifact?.id) return false;
-  const payload = {
-    type: 'live_artifact',
-    action,
-    projectId: artifact.projectId ?? grant.projectId,
-    artifactId: artifact.id,
-    title: artifact.title ?? artifact.id,
-    refreshStatus: artifact.refreshStatus,
-  };
-  let emitted = emitProjectEvent(payload.projectId, payload);
-  if (grant?.runId) emitted = emitChatAgentEvent(grant.runId, payload) || emitted;
-  // After the deliverable exists, switch the chat run into a shorter
-  // "quiet period" watchdog: agents sometimes keep their child process
-  // alive after a successful artifact write (post-write reasoning, log
-  // flushes, claude-code stream-json's idle stdin) and the 10-minute
-  // default leaves the UI parked on Working until the watchdog fires
-  // an unrelated "stalled" error. See #1451.
-  if (action === 'created' && grant?.runId) {
-    const handle = activeChatRunHandles.get(grant.runId);
-    if (handle?.noteArtifactRegistered) {
-      try { handle.noteArtifactRegistered(); } catch {}
-    }
-  }
-  return emitted;
-}
-
-function emitLiveArtifactRefreshEvent(grant, payload) {
-  if (!payload?.artifactId) return false;
-  const event = {
-    type: 'live_artifact_refresh',
-    projectId: grant.projectId,
-    ...payload,
-  };
-  let emitted = emitProjectEvent(grant.projectId, event);
-  if (grant?.runId) emitted = emitChatAgentEvent(grant.runId, event) || emitted;
-  return emitted;
-}
-
-// Broadcast an event to every SSE subscriber currently watching the given
-// project's `/api/projects/:id/events` stream. The payload's `type` field
-// becomes the SSE event name (see routes/project/index.ts). Used for live-artifact
-// events and `conversation-created` events emitted by routine runs (#1361).
-function emitProjectEvent(projectId, payload) {
-  const sinks = activeProjectEventSinks.get(projectId);
-  if (!sinks || sinks.size === 0) return false;
-  for (const sink of Array.from(sinks)) {
-    try {
-      sink(payload);
-    } catch {
-      sinks.delete(sink);
-    }
-  }
-  if (sinks.size === 0) activeProjectEventSinks.delete(projectId);
-  return true;
-}
+// Live event fan-out sinks (the three registries + four emit helpers) were
+// extracted verbatim to ./server/events/sinks.ts (strangler-fig slice 5a).
+// server.ts imports the maps/emitters back for its route + deps wiring and
+// re-exports the two __forTest* hooks to preserve its public surface.
+import {
+  activeChatAgentEventSinks,
+  activeProjectEventSinks,
+  activeChatRunHandles,
+  emitLiveArtifactEvent,
+  emitLiveArtifactRefreshEvent,
+  emitProjectEvent,
+} from './server/events/index.js';
+export {
+  __forTestChatRunHandles,
+  __forTestEmitLiveArtifactEvent,
+} from './server/events/index.js';
 
 // Windows ENAMETOOLONG mitigation constants
 const CMD_BAT_RE = /\.(cmd|bat)$/i;

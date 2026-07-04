@@ -3,10 +3,10 @@
  * Implements `od mcp` (stdio MCP server) and `od mcp install` dispatcher.
  * Proxies daemon tool calls into external coding agents; resolves launch specs from daemon config.
  * The stdio server implementation (`runMcpStdio`, defined in `src/mcp.ts`) is loaded via a
- * dynamic import (`import('../../mcp.js')`) inside `runMcp`, so `od` invocations that never
+ * dynamic import (`import('../../mcp/index.js')`) inside `runMcp`, so `od` invocations that never
  * start the server don't pay its startup cost.
  */
-import { AGENT_SLUGS } from '../../mcp-agent-install.js';
+import { AGENT_SLUGS } from '../../mcp/index.js';
 import { cliDaemonBaseUrl, cliDaemonUrl, parseFlags } from '../core/index.js';
 import { runMcpInstall } from './install.js';
 
@@ -47,7 +47,7 @@ export async function runMcp(args) {
 
   const daemonUrl = await cliDaemonUrl(flags);
 
-  const { runMcpStdio } = await import('../../mcp.js');
+  const { runMcpStdio } = await import('../../mcp/index.js');
   await runMcpStdio({ daemonUrl });
 }
 

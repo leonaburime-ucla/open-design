@@ -25,7 +25,7 @@ import { narrowProjectCritiqueOverride } from '../critique/spawn-inputs.js';
 import { getProject, getTemplate, normalizeConversationSessionMode } from '../db.js';
 import { digestDesignSystemContext, resolveDesignSystemAssets } from '../design-systems/index.js';
 import { listElevenLabsVoiceOptions } from '../integrations/elevenlabs-voices.js';
-import { composeMemoryBody, readMemoryConfig } from '../memory.js';
+import { composeMemoryBody, readMemoryConfig } from '../memory/index.js';
 import { getInstalledPlugin, getSnapshot, pluginPromptBlock } from '../plugins/index.js';
 import { composeSystemPrompt, resolveExclusiveSurface } from '../prompts/system.js';
 import { designSystemIdFromPluginSnapshot, resolveEffectiveDesignSystemSelection } from './chat-prompt-inputs.js';

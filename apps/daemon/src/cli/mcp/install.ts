@@ -3,7 +3,7 @@
  * Wires this daemon's stdio MCP server into a coding agent's own config.
  * The pure planner (mcp-agent-install.ts) maps a resolved launch spec onto one of three strategies — drive the agent's own mcp add/remove CLI, deep-merge a JSON config file, or (for unverified formats) print a ready-to-paste snippet. This executor performs the IO the planner avoids.
  */
-import { AGENT_SLUGS, applyJsonInstall, isAgentSlug, planAgentInstall, removeJsonInstall } from '../../mcp-agent-install.js';
+import { AGENT_SLUGS, applyJsonInstall, isAgentSlug, planAgentInstall, removeJsonInstall } from '../../mcp/index.js';
 import { parseFlags, positionalArgs } from '../core/index.js';
 import { resolveMcpLaunchSpec } from './mcp.js';
 

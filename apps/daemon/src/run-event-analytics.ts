@@ -25,8 +25,8 @@
  * back from here to preserve its public surface.
  */
 
-import { runResultFromStatus } from './run-result.js';
-import { scanRunEventsForUsageAnalytics } from './run-analytics-observability.js';
+import { runResultFromStatus } from './run/index.js';
+import { scanRunEventsForUsageAnalytics } from './run/index.js';
 import {
   countDesignSystemPreviewModules,
   countNewArtifacts,

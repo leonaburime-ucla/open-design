@@ -8,7 +8,7 @@
  * exported through `./cli/index.js`.
  */
 import { runDaemonCliStartup } from './daemon-startup.js';
-import { runLiveArtifactsMcpServer } from './mcp-live-artifacts-server.js';
+import { runLiveArtifactsMcpServer } from './mcp/index.js';
 import { runArtifactsCli } from './artifacts-cli.js';
 import { runConnectorsToolCli } from './tools-connectors-cli.js';
 import { runDesignSystemsToolCli } from './tools-design-systems-cli.js';

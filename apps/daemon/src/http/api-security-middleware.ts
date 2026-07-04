@@ -17,7 +17,7 @@
 
 import { isApiTokenMiddlewareEnabled } from '../api-token-auth.js';
 import { isLoopbackPeerAddress, parseProjectPreviewAssetPath } from '../daemon-request-guards.js';
-import { libraryExtensionAllowedOrigins } from '../library-tokens.js';
+import { libraryExtensionAllowedOrigins } from '../library/index.js';
 import { allowedBrowserPorts, isAllowedBrowserOrigin, isZeroConfigClipperLibraryRequest } from '../origin-validation.js';
 
 export function registerApiBearerAuthMiddleware(app: any, deps: any) {

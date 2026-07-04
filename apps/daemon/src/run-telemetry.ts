@@ -18,7 +18,7 @@
  */
 
 import { reportRunCompletedFromDaemon } from './langfuse-bridge.js';
-import { runResultFromStatus } from './run-result.js';
+import { runResultFromStatus } from './run/index.js';
 import { agentIdToTracking, modelIdForTracking } from '@open-design/contracts/analytics';
 
 const TERMINAL_RUN_STATUSES = new Set(['succeeded', 'failed', 'canceled']);

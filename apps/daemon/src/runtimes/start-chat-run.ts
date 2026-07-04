@@ -28,7 +28,7 @@ import {
 } from '../question-form-detect.js';
 import {
   userFacingAgentLabel,
-} from '../user-facing-agent-label.js';
+} from '../agents/index.js';
 import {
   buildBrowserUseRunState,
   isBrowserUseRequested,
@@ -117,7 +117,7 @@ import {
 } from '../plugins/index.js';
 import {
   extractFromMessage,
-} from '../memory.js';
+} from '../memory/index.js';
 import {
   attachAcpSession,
 } from '../acp.js';
@@ -143,13 +143,13 @@ import {
 } from '../tool-loop-guard.js';
 import {
   diagnoseClaudeCliFailure,
-} from '../claude-diagnostics.js';
+} from '../agents/index.js';
 import {
   runOrchestrator,
 } from '../critique/orchestrator.js';
 import {
   createCopilotStreamHandler,
-} from '../copilot-stream.js';
+} from '../agents/index.js';
 import {
   createJsonEventStreamHandler,
 } from './json-event-stream.js';
@@ -165,36 +165,36 @@ import {
 } from './opencode-log.js';
 import {
   createAgentStderrVisibilityFilter,
-} from '../amr-stderr-filter.js';
+} from '../agents/index.js';
 import {
   createQoderStreamHandler,
 } from './qoder-stream.js';
 import {
   createRunLifecycleTracer,
   runLifecycleMarkersForStreamEvent,
-} from '../run-lifecycle-tracer.js';
+} from '../run/index.js';
 import {
   deriveRunErrorCode,
   runResultFromStatus,
-} from '../run-result.js';
+} from '../run/index.js';
 import {
   classifyRunFailure,
   isResumableFailure,
-} from '../run-failure-classification.js';
+} from '../run/index.js';
 import {
   decideSafeRunRetry,
-} from '../run-retry-policy.js';
+} from '../run/index.js';
 import {
   diffRunArtifacts,
   snapshotProjectArtifacts,
-} from '../run-artifact-fs.js';
+} from '../run/index.js';
 import {
   AiHtmlVersionSnapshotError,
   snapshotAiHtmlVersionsForRun,
-} from '../run-html-version-snapshots.js';
+} from '../run/index.js';
 import {
   buildPromptStackTelemetry,
-} from '../prompt-telemetry.js';
+} from '../telemetry/index.js';
 import {
   agentIdToTracking,
   modelIdForTracking,
@@ -209,14 +209,14 @@ import {
   buildOpenCodeMcpConfigContent,
   isManagedProjectCwd,
   readMcpConfig,
-} from '../mcp-config.js';
+} from '../mcp/index.js';
 import {
   resolveExternalMcpServersForRun,
-} from '../run-tool-bundle.js';
+} from '../run/index.js';
 import {
   isTokenExpired,
   readAllTokens,
-} from '../mcp-tokens.js';
+} from '../mcp/index.js';
 import {
   agentCliEnvForAgent,
   readAppConfig,
@@ -230,7 +230,7 @@ import {
   resolveProjectDir,
   SandboxImportedProjectError,
   reconcileHtmlArtifactManifest,
-} from '../projects.js';
+} from '../project/index.js';
 import {
   getConversation,
   getProject,
@@ -244,7 +244,7 @@ import {
   isAgentResumeFailure,
   persistCapturedAgentSession,
   resolveAgentResumeContext,
-} from '../agent-session-resume.js';
+} from '../agents/index.js';
 import {
   resolveAmrModelProbe,
 } from './amr-model-probe.js';
@@ -1742,7 +1742,7 @@ export function createStartChatRun(deps: any) {
     // — a missing or read-only config.toml is fine, and the Codex CLI still
     // surfaces the original error if the write fails. See issue #4276 / #3408.
     if (def.id === 'codex') {
-      const { normalizeCodexConfigFile } = await import('../codex-config-normalize.js');
+      const { normalizeCodexConfigFile } = await import('../codex/index.js');
       // Route through spawnEnvForAgent so resolveCodexConfigPath sees the same
       // fully-expanded CODEX_HOME the Codex child process will see. In
       // particular, spawnEnvForAgent calls expandConfiguredEnv which expands
@@ -2381,7 +2381,7 @@ export function createStartChatRun(deps: any) {
         chatAgentId: typeof agentId === 'string' ? agentId : null,
         chatModel: typeof safeModel === 'string' ? safeModel : null,
       };
-      void import('../memory-llm.js')
+      void import('../memory/index.js')
         .then(({ extractWithLLM, distillAnnotationsToMemory }) => {
           const generalPass = extractWithLLM(
             RUNTIME_DATA_DIR,
