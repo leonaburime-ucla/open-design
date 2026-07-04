@@ -144,6 +144,7 @@ export const CAPABILITY_BARREL_DOMAINS: CapabilityBarrelDomain[] = [
       ['tokens', 'store'],
     ],
   },
+  {
     name: 'mcp',
     root: 'apps/daemon/src/mcp',
     subdirs: ['core', 'client', 'agent-install', 'live-artifacts'],
@@ -151,6 +152,64 @@ export const CAPABILITY_BARREL_DOMAINS: CapabilityBarrelDomain[] = [
     // Pure star: the client, agent-install, and live-artifacts concerns are mutually
     // independent and lean only on the `core` kernel (config / oauth / tokens /
     // install-info), so there are no cross-sibling edges to declare.
+    allowedEdges: [],
+  },
+  {
+    name: 'run',
+    root: 'apps/daemon/src/run',
+    subdirs: ['core', 'analytics', 'diagnostics', 'artifacts', 'tools'],
+    foundation: 'core',
+    // Pure star: analytics, diagnostics, artifacts, and tools are mutually
+    // independent. `diagnostics/failure.ts` depends on `core/result.ts`
+    // (routed through core/), not on any sibling barrel.
+    allowedEdges: [],
+  },
+  {
+    name: 'project',
+    root: 'apps/daemon/src/project',
+    subdirs: ['core', 'locations', 'watchers', 'versions'],
+    foundation: 'core',
+    allowedEdges: [],
+  },
+  {
+    name: 'telemetry',
+    root: 'apps/daemon/src/telemetry',
+    subdirs: ['core', 'redaction', 'builder'],
+    foundation: 'core',
+    allowedEdges: [
+      ['builder', 'redaction'],
+    ],
+  },
+  {
+    name: 'codex',
+    root: 'apps/daemon/src/codex',
+    subdirs: ['core', 'mcp', 'config', 'pets', 'rollout'],
+    foundation: 'core',
+    // Pure star: mcp, config, pets, and rollout are four mutually independent
+    // Codex-facing concerns. Only pets and rollout lean on the `core` Codex
+    // home resolver (imported directly, as the foundation always may), so
+    // there are no cross-sibling edges to declare.
+    allowedEdges: [],
+  },
+  {
+    name: 'export',
+    root: 'apps/daemon/src/export',
+    subdirs: ['core', 'cli', 'renderers', 'routes'],
+    foundation: 'core',
+    allowedEdges: [
+      ['routes', 'renderers'],
+    ],
+  },
+  {
+    name: 'agents',
+    root: 'apps/daemon/src/agents',
+    subdirs: ['core', 'connection', 'byok', 'session', 'presentation'],
+    foundation: 'core',
+    // Pure star: connection, byok, session, and presentation are mutually
+    // independent and lean only on the `core` SSRF asset-URL guard, so there
+    // are no cross-sibling edges to declare. (`acp`/`pi-rpc` protocol adapters
+    // and the `agents.ts` runtimes facade stay flat as shared kernel — pulling
+    // them in would cycle back through the runtime agent-def registry.)
     allowedEdges: [],
   },
 ];
