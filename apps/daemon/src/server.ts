@@ -1,12 +1,4 @@
 // @ts-nocheck
-import type {
-  DesktopExportArtifactInput,
-  DesktopExportArtifactResult,
-  DesktopExportPdfInput,
-  DesktopExportPdfResult,
-  DesktopRenderSlidesInput,
-  DesktopRenderSlidesResult,
-} from '@open-design/sidecar-proto';
 import express from 'express';
 import multer from 'multer';
 import { sendMulterError, uniqueUploadFileName } from './upload/multer-helpers.js';
@@ -1034,37 +1026,18 @@ function handleProjectUpload(req, res, next) {
 // multer singletons stay here (they close over startServer state) pending the
 // bootstrap slice.
 
-export type DesktopPdfExporter = (input: DesktopExportPdfInput) => Promise<DesktopExportPdfResult>;
-export type DesktopSlideRenderer = (input: DesktopRenderSlidesInput) => Promise<DesktopRenderSlidesResult>;
-export type DesktopArtifactExporter = (input: DesktopExportArtifactInput) => Promise<DesktopExportArtifactResult>;
-
-// Loosely typed shape — we only access `namespace`, `base`, `mode`, and
-// `source` from the runtime context when building the diagnostics export.
-// Anything richer would force a dependency from server.ts into the sidecar
-// package, which the boundary checks explicitly forbid.
-export interface DaemonRuntimeContext {
-  namespace: string;
-  base: string;
-  mode?: string;
-  source?: string;
-}
-
-export interface StartServerOptions {
-  desktopArtifactExporter?: DesktopArtifactExporter | null;
-  desktopPdfExporter?: DesktopPdfExporter | null;
-  desktopSlideRenderer?: DesktopSlideRenderer | null;
-  host?: string;
-  port?: number;
-  returnServer?: boolean;
-  runtime?: DaemonRuntimeContext | null;
-}
-
-export interface StartServerResult {
-  url: string;
-  server: import('node:http').Server;
-  shutdown: () => Promise<void> | void;
-  routeInventory: import('./route-registration-guard.js').RouteRegistration[];
-}
+// The desktop exporter/runtime-context types and the startServer
+// options/result contracts were extracted to ./server/core/types.ts
+// (strangler-fig slice). Re-exported here (barrel) so daemon-startup.ts and
+// the bootstrap regression test keep importing them from './server.js'.
+export type {
+  DaemonRuntimeContext,
+  DesktopArtifactExporter,
+  DesktopPdfExporter,
+  DesktopSlideRenderer,
+  StartServerOptions,
+  StartServerResult,
+} from './server/core/types.js';
 
 export async function startServer({
   port = 7456,
