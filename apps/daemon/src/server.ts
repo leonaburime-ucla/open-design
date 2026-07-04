@@ -12,7 +12,6 @@ import multer from 'multer';
 import JSZip from 'jszip';
 import { execFile, spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -24,10 +23,8 @@ import { resolveProjectRoot } from './project/index.js';
 import {
   resolveDaemonCliPath,
   resolveDaemonPluginPreviewsDir,
-  resolveDaemonResourceDir,
   resolveDaemonResourceRoot,
   resolveDataDir,
-  resolveProcessResourcesPath,
 } from './daemon-paths.js';
 export {
   resolveDaemonCliPath,
@@ -132,7 +129,6 @@ import {
   sanitizeCustomModel,
 } from './agents.js';
 
-import { migrateLegacyDataDirSync } from './legacy-data-migrator.js';
 import {
   consumedImportNonces,
   getDesktopAuthSecret,
@@ -176,9 +172,6 @@ import {
 } from './media/policy.js';
 import {
   applySandboxRuntimeEnv,
-  ensureSandboxRuntimeDirs,
-  isSandboxModeEnabled,
-  resolveSandboxRuntimeConfig,
 } from './sandbox-mode.js';
 import {
   buildUserDesignSystemArchive,
@@ -203,7 +196,6 @@ import { registerBrandRoutes } from './brand-routes.js';
 import {
   applyPlugin,
   buildConnectorProbe,
-  defaultBundledRoot,
   dismissSkillPluginCandidate,
   doctorPlugin,
   FIRST_PARTY_ATOMS,
@@ -219,7 +211,6 @@ import {
   pruneExpiredSnapshots,
   readPluginLockfile,
   registerBundledPlugins,
-  registryRootsForDataDir,
   restoreProjectSnapshotLink,
   resolvePluginSnapshot,
   startSnapshotGc,
@@ -507,10 +498,44 @@ import { createOpenDesignPublicMetadataService } from './services/open-design-pu
 /** @typedef {import('@open-design/contracts').ProxySseEvent} ProxySseEvent */
 /** @typedef {import('@open-design/contracts').ProjectConversationCreatedSsePayload} ProjectConversationCreatedSsePayload */
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const PROJECT_ROOT = resolveProjectRoot(__dirname);
-const RESOURCE_ROOT_ENV = 'OD_RESOURCE_ROOT';
+// Every daemon filesystem path + its one-time ordered init (data-dir resolve,
+// sandbox dirs, legacy migration, managed-data mkdirs) was extracted to the
+// fully typechecked ./server/core/runtime-paths.ts (strangler-fig slice 5b).
+// Importing it here runs that init before this module's body executes.
+import {
+  ALL_SKILL_LIKE_ROOTS,
+  ARTIFACTS_DIR,
+  BRANDS_DIR,
+  BUNDLED_PETS_DIR,
+  BUNDLED_PLUGINS_DIR,
+  CRAFT_DIR,
+  CRITIQUE_ARTIFACTS_DIR,
+  DAEMON_RESOURCE_ROOT,
+  DESIGN_SYSTEMS_DIR,
+  DESIGN_TEMPLATES_DIR,
+  DESIGN_TEMPLATE_ROOTS,
+  FRAMES_DIR,
+  LIBRARY_DIR,
+  OD_BIN,
+  OD_NODE_BIN,
+  PLUGIN_LOCKFILE_PATH,
+  PLUGIN_PREVIEWS_DIR,
+  PLUGIN_REGISTRY_DIR,
+  PLUGIN_REGISTRY_ROOTS,
+  PROJECTS_DIR,
+  PROJECT_ROOT,
+  PROMPT_TEMPLATES_DIR,
+  RUNTIME_DATA_DIR,
+  RUNTIME_DATA_DIR_CANONICAL,
+  SANDBOX_MODE_ENABLED,
+  SANDBOX_RUNTIME,
+  SKILLS_DIR,
+  SKILL_ROOTS,
+  STATIC_DIR,
+  USER_DESIGN_SYSTEMS_DIR,
+  USER_DESIGN_TEMPLATES_DIR,
+  USER_SKILLS_DIR,
+} from './server/core/runtime-paths.js';
 
 function renderPluginBriefTemplate(template, inputs = {}) {
   if (typeof template !== 'string' || template.length === 0) return '';
@@ -522,83 +547,6 @@ function renderPluginBriefTemplate(template, inputs = {}) {
   });
 }
 
-const DAEMON_RESOURCE_ROOT = resolveDaemonResourceRoot({
-  safeBases: [
-    PROJECT_ROOT,
-    resolveProcessResourcesPath(),
-    process.env.OD_INSTALLATION_DIR,
-  ],
-});
-// Built web app lives in `out/` — that's where Next.js writes the static
-// export configured in next.config.ts. The folder name used to be `dist/`
-// when this project shipped with Vite; the daemon serves whatever the
-// frontend toolchain emits, no further config needed.
-const STATIC_DIR = path.join(PROJECT_ROOT, 'apps', 'web', 'out');
-// Baked plugin preview clips (scripts/bake-plugin-previews.mjs). Served at
-// PLUGIN_PREVIEWS_ROUTE; their manifest rewrites html plugins' previews to a
-// cheap poster + hover-play video in the home gallery.
-const PLUGIN_PREVIEWS_DIR = resolveDaemonPluginPreviewsDir({
-  resourceRoot: DAEMON_RESOURCE_ROOT,
-  projectRoot: PROJECT_ROOT,
-});
-const OD_BIN = resolveDaemonCliPath();
-const OD_NODE_BIN = process.execPath;
-const SKILLS_DIR = resolveDaemonResourceDir(
-  DAEMON_RESOURCE_ROOT,
-  'skills',
-  path.join(PROJECT_ROOT, 'skills'),
-);
-const DESIGN_SYSTEMS_DIR = resolveDaemonResourceDir(
-  DAEMON_RESOURCE_ROOT,
-  'design-systems',
-  path.join(PROJECT_ROOT, 'design-systems'),
-);
-// Renderable templates pulled out of `skills/` by the skills/design-templates
-// split (PR #955) so the EntryView Templates tab gets the large rendering
-// catalogue and Settings → Skills only carries functional skills the agent
-// invokes mid-task. See specs/current/skills-and-design-templates.md.
-const DESIGN_TEMPLATES_DIR = resolveDaemonResourceDir(
-  DAEMON_RESOURCE_ROOT,
-  'design-templates',
-  path.join(PROJECT_ROOT, 'design-templates'),
-);
-const CRAFT_DIR = resolveDaemonResourceDir(
-  DAEMON_RESOURCE_ROOT,
-  'craft',
-  path.join(PROJECT_ROOT, 'craft'),
-);
-// User-installed skills and design systems live under the runtime data dir
-// so they respect OD_DATA_DIR overrides (test isolation, packaged runs).
-// Defined after RUNTIME_DATA_DIR is resolved below.
-const FRAMES_DIR = resolveDaemonResourceDir(
-  DAEMON_RESOURCE_ROOT,
-  'frames',
-  path.join(PROJECT_ROOT, 'assets', 'frames'),
-);
-// Curated pets baked into the repo via `scripts/bake-community-pets.ts`.
-// `listCodexPets` scans this in addition to `~/.codex/pets/` so the
-// "Recently hatched" grid is non-empty out-of-the-box and users do not
-// need to hit the "Download community pets" button to try a few pets.
-const BUNDLED_PETS_DIR = resolveDaemonResourceDir(
-  DAEMON_RESOURCE_ROOT,
-  'community-pets',
-  path.join(PROJECT_ROOT, 'assets', 'community-pets'),
-);
-const PROMPT_TEMPLATES_DIR = resolveDaemonResourceDir(
-  DAEMON_RESOURCE_ROOT,
-  'prompt-templates',
-  path.join(PROJECT_ROOT, 'prompt-templates'),
-);
-const BUNDLED_PLUGINS_DIR = resolveDaemonResourceDir(
-  DAEMON_RESOURCE_ROOT,
-  path.join('plugins', '_official'),
-  defaultBundledRoot(PROJECT_ROOT),
-);
-const PLUGIN_REGISTRY_DIR = resolveDaemonResourceDir(
-  DAEMON_RESOURCE_ROOT,
-  'plugins/registry',
-  path.join(PROJECT_ROOT, 'plugins', 'registry'),
-);
 // Bundled-plugin marketplace seeding (consts + 6 helpers) was extracted to
 // ./server/marketplace/seed.ts (strangler-fig slice 5a). The helpers now take
 // the daemon-init directory singletons (BUNDLED_PLUGINS_DIR / PROJECT_ROOT /
@@ -612,79 +560,11 @@ import {
   createMarketplaceFetcher,
 } from './server/marketplace/index.js';
 
-const SANDBOX_MODE_ENABLED = isSandboxModeEnabled(process.env);
-const RUNTIME_DATA_DIR = resolveDataDir(process.env.OD_DATA_DIR, PROJECT_ROOT, {
-  requireExplicit: SANDBOX_MODE_ENABLED,
-});
-const SANDBOX_RUNTIME = resolveSandboxRuntimeConfig(SANDBOX_MODE_ENABLED, RUNTIME_DATA_DIR);
-ensureSandboxRuntimeDirs(SANDBOX_RUNTIME);
-const PLUGIN_LOCKFILE_PATH = path.join(RUNTIME_DATA_DIR, 'od-plugin-lock.json');
-// Canonical (realpath-resolved) form of RUNTIME_DATA_DIR for the few callers
-// that compare it against a user-supplied realpath() result. On macOS, /var
-// is a symlink to /private/var, so an import realpath lands in /private/var
-// and would never start-with the raw RUNTIME_DATA_DIR. Keep RUNTIME_DATA_DIR
-// itself as the stable, user-shaped path so OD_DATA_DIR resolution stays
-// predictable; only this canonical alias is used for symlink-aware checks.
-const RUNTIME_DATA_DIR_CANONICAL = (() => {
-  try {
-    return fs.realpathSync(RUNTIME_DATA_DIR);
-  } catch {
-    return RUNTIME_DATA_DIR;
-  }
-})();
-// One-shot legacy data migration. When OD_LEGACY_DATA_DIR is set and the
-// new data root is fresh (no app.sqlite), copy the 0.3.x .od/ payload
-// across before SQLite opens. Synchronous on purpose: openDatabase below
-// would race an async copy. See apps/daemon/src/legacy-data-migrator.ts
-// and https://github.com/nexu-io/open-design/issues/710.
-migrateLegacyDataDirSync({
-  legacyDir: process.env.OD_LEGACY_DATA_DIR,
-  dataDir: RUNTIME_DATA_DIR,
-});
-const ARTIFACTS_DIR = path.join(RUNTIME_DATA_DIR, 'artifacts');
-// Critique Theater artifacts intentionally live outside the static
-// `/artifacts` tree. The per-run artifact endpoint is the sanctioned
-// read path so project-membership, size, and CSP guards cannot be bypassed.
-const CRITIQUE_ARTIFACTS_DIR = path.join(RUNTIME_DATA_DIR, 'critique-artifacts');
-const PROJECTS_DIR = path.join(RUNTIME_DATA_DIR, 'projects');
-const USER_SKILLS_DIR = path.join(RUNTIME_DATA_DIR, 'skills');
-const USER_DESIGN_SYSTEMS_DIR = path.join(RUNTIME_DATA_DIR, 'design-systems');
-// Brand metadata (brand.json + meta.json per brand) lives here; each brand
-// also registers a `user:<id>` design system under USER_DESIGN_SYSTEMS_DIR.
-const BRANDS_DIR = path.join(RUNTIME_DATA_DIR, 'brands');
-const PLUGIN_REGISTRY_ROOTS = registryRootsForDataDir(RUNTIME_DATA_DIR);
 // Disk cache + same-origin proxy for external preview media (cross-border CDN
 // images/videos referenced by plugin example.html). See plugin-asset-cache.ts.
 const pluginAssetCache = createPluginAssetCache({
   cacheDir: path.join(RUNTIME_DATA_DIR, 'plugin-asset-cache'),
 });
-// User-imported design templates mirror USER_SKILLS_DIR but are scanned
-// against DESIGN_TEMPLATES_DIR rather than SKILLS_DIR so the EntryView
-// Templates surface and the Settings → Skills surface stay decoupled.
-const USER_DESIGN_TEMPLATES_DIR = path.join(RUNTIME_DATA_DIR, 'design-templates');
-// Multi-root tuples used everywhere the daemon resolves a skill / template
-// id without knowing which surface it came from. SKILL_ROOTS drives
-// Settings → Skills; DESIGN_TEMPLATE_ROOTS drives the EntryView Templates
-// gallery; ALL_SKILL_LIKE_ROOTS spans both for chat run system-prompt
-// composition and the orbit template resolver, where stored project ids
-// can resolve to either root after the split.
-const SKILL_ROOTS = [USER_SKILLS_DIR, SKILLS_DIR];
-const DESIGN_TEMPLATE_ROOTS = [USER_DESIGN_TEMPLATES_DIR, DESIGN_TEMPLATES_DIR];
-const ALL_SKILL_LIKE_ROOTS = [
-  USER_SKILLS_DIR,
-  USER_DESIGN_TEMPLATES_DIR,
-  SKILLS_DIR,
-  DESIGN_TEMPLATES_DIR,
-];
-// Global OD Library data root — owned, content-addressed assets captured by
-// the clipper / `od library import`. Derived from RUNTIME_DATA_DIR per the
-// daemon data directory contract.
-const LIBRARY_DIR = path.join(RUNTIME_DATA_DIR, 'library');
-fs.mkdirSync(PROJECTS_DIR, { recursive: true });
-for (const dir of [USER_SKILLS_DIR, USER_DESIGN_SYSTEMS_DIR, BRANDS_DIR, USER_DESIGN_TEMPLATES_DIR, PLUGIN_REGISTRY_ROOTS.userPluginsRoot, LIBRARY_DIR]) {
-  fs.mkdirSync(dir, { recursive: true });
-}
-fs.mkdirSync(CRITIQUE_ARTIFACTS_DIR, { recursive: true });
 const orbitService = new OrbitService(RUNTIME_DATA_DIR);
 const designSystemGenerationJobs = createDesignSystemGenerationJobStore({
   root: USER_DESIGN_SYSTEMS_DIR,
