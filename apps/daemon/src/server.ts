@@ -9,6 +9,7 @@ import type {
 } from '@open-design/sidecar-proto';
 import express from 'express';
 import multer from 'multer';
+import { sendMulterError, uniqueUploadFileName } from './upload/multer-helpers.js';
 import JSZip from 'jszip';
 import { execFile, spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
@@ -1016,22 +1017,6 @@ const projectUpload = multer({
   limits: { fileSize: 200 * 1024 * 1024 },  // 200MB — covers the largest design assets we expect (PPTX/PDF/raw images)
 });
 
-function uniqueUploadFileName(uploadDir, safeName, reserved) {
-  const parsed = path.parse(safeName);
-  const base = parsed.name || parsed.base || 'file';
-  const ext = parsed.ext || '';
-  for (let index = 0; index < 10_000; index += 1) {
-    const candidate = index === 0 ? safeName : `${base}-${index}${ext}`;
-    if (reserved.has(candidate)) continue;
-    if (uploadDir && fs.existsSync(path.join(uploadDir, candidate))) continue;
-    reserved.add(candidate);
-    return candidate;
-  }
-  const fallback = `${base}-${Date.now().toString(36)}${ext}`;
-  reserved.add(fallback);
-  return fallback;
-}
-
 function handleProjectUpload(req, res, next) {
   projectUpload.array('files', 12)(req, res, (err) => {
     if (err) {
@@ -1041,46 +1026,13 @@ function handleProjectUpload(req, res, next) {
   });
 }
 
-function sendMulterError(res, err) {
-  if (err instanceof multer.MulterError) {
-    const code = err.code || 'UPLOAD_ERROR';
-    const statusByCode = {
-      LIMIT_FILE_SIZE: 413,
-      LIMIT_FILE_COUNT: 400,
-      LIMIT_UNEXPECTED_FILE: 400,
-      LIMIT_PART_COUNT: 400,
-      LIMIT_FIELD_KEY: 400,
-      LIMIT_FIELD_VALUE: 400,
-      LIMIT_FIELD_COUNT: 400,
-      MISSING_FIELD_NAME: 400,
-    };
-    const errorByCode = {
-      LIMIT_FILE_SIZE: 'file too large',
-      LIMIT_FILE_COUNT: 'too many files',
-      LIMIT_UNEXPECTED_FILE: 'unexpected file field',
-      LIMIT_PART_COUNT: 'too many form parts',
-      LIMIT_FIELD_KEY: 'field name too long',
-      LIMIT_FIELD_VALUE: 'field value too long',
-      LIMIT_FIELD_COUNT: 'too many form fields',
-      MISSING_FIELD_NAME: 'missing field name',
-    };
-    const status = statusByCode[code] ?? 400;
-    const message = errorByCode[code] ?? 'upload failed';
-    return sendApiError(
-      res,
-      status,
-      code === 'LIMIT_FILE_SIZE' ? 'PAYLOAD_TOO_LARGE' : 'BAD_REQUEST',
-      message,
-      { details: { legacyCode: code } },
-    );
-  }
-
-  if (err) {
-    return sendApiError(res, 500, 'INTERNAL_ERROR', 'upload failed');
-  }
-
-  return sendApiError(res, 500, 'INTERNAL_ERROR', 'upload failed');
-}
+// uniqueUploadFileName + sendMulterError (pure multipart-upload helpers) were
+// extracted to ./upload/multer-helpers.ts (strangler-fig slice). server.ts
+// imports them back: uniqueUploadFileName is used by the projectUpload multer
+// storage config above, and sendMulterError by handleProjectUpload, the figma
+// upload route, and the upload deps bundles. The projectUpload/figmaUpload
+// multer singletons stay here (they close over startServer state) pending the
+// bootstrap slice.
 
 export type DesktopPdfExporter = (input: DesktopExportPdfInput) => Promise<DesktopExportPdfResult>;
 export type DesktopSlideRenderer = (input: DesktopRenderSlidesInput) => Promise<DesktopRenderSlidesResult>;
