@@ -225,10 +225,7 @@ import {
   startSnapshotGc,
   uninstallPlugin,
 } from './plugins/index.js';
-import {
-  marketplaceManifestUrlForRegistry,
-  marketplaceRegistryIdFromUrl,
-} from './plugins/marketplaces.js';
+import { marketplaceRegistryIdFromUrl } from './plugins/marketplaces.js';
 
 import { ingestRoutineConnectorEvolution } from './automation/index.js';
 
@@ -602,91 +599,18 @@ const PLUGIN_REGISTRY_DIR = resolveDaemonResourceDir(
   'plugins/registry',
   path.join(PROJECT_ROOT, 'plugins', 'registry'),
 );
-const OFFICIAL_MARKETPLACE_ID = 'official';
-const OFFICIAL_PLUGIN_SOURCE_REPO = 'github:nexu-io/open-design@main';
-
-function defaultMarketplaceSeedConfig(id) {
-  return {
-    trust: id === OFFICIAL_MARKETPLACE_ID ? 'official' : 'restricted',
-    url:   marketplaceManifestUrlForRegistry(id),
-  };
-}
-
-function bundledPluginRegistrySource(sourcePath) {
-  if (isPathWithin(BUNDLED_PLUGINS_DIR, sourcePath)) {
-    const rel = path.relative(BUNDLED_PLUGINS_DIR, sourcePath).split(path.sep).join('/');
-    return `${OFFICIAL_PLUGIN_SOURCE_REPO}/plugins/_official/${rel}`;
-  }
-  const rel = path.relative(PROJECT_ROOT, sourcePath).split(path.sep).join('/');
-  if (!rel || rel.startsWith('..')) return sourcePath;
-  return `${OFFICIAL_PLUGIN_SOURCE_REPO}/${rel}`;
-}
-
-function isPathWithin(base, target) {
-  const relativePath = path.relative(path.resolve(base), path.resolve(target));
-  return (
-    relativePath === '' ||
-    (relativePath.length > 0 &&
-      !relativePath.startsWith('..') &&
-      !path.isAbsolute(relativePath))
-  );
-}
-
-function mergeMarketplaceEntries(manifestText, entries) {
-  try {
-    const parsed = JSON.parse(manifestText);
-    const plugins = Array.isArray(parsed.plugins) ? parsed.plugins : [];
-    const seen = new Set(plugins.map((entry) => String(entry?.name ?? '').toLowerCase()));
-    const generated = entries.filter((entry) => {
-      const key = String(entry.name ?? '').toLowerCase();
-      if (!key || seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-    return JSON.stringify({
-      ...parsed,
-      metadata: {
-        ...(parsed.metadata && typeof parsed.metadata === 'object' ? parsed.metadata : {}),
-        bundledPreinstallCount: entries.length,
-      },
-      plugins: [...plugins, ...generated],
-    });
-  } catch {
-    return manifestText;
-  }
-}
-
-async function marketplaceSeedManifestText(id, bundledMarketplaceEntries) {
-  const manifestPath = path.join(PLUGIN_REGISTRY_DIR, id, 'open-design-marketplace.json');
-  if (!fs.existsSync(manifestPath)) return null;
-  let manifestText = await fs.promises.readFile(manifestPath, 'utf8');
-  if (id === OFFICIAL_MARKETPLACE_ID && bundledMarketplaceEntries.length > 0) {
-    manifestText = mergeMarketplaceEntries(manifestText, bundledMarketplaceEntries);
-  }
-  return manifestText;
-}
-
-function createMarketplaceFetcher(seedId, bundledMarketplaceEntries) {
-  return async (url) => {
-    const registryId = marketplaceRegistryIdFromUrl(url);
-    if (registryId && (!seedId || registryId === seedId)) {
-      const manifestText = await marketplaceSeedManifestText(registryId, bundledMarketplaceEntries);
-      if (manifestText != null) {
-        return {
-          ok:     true,
-          status: 200,
-          text:   async () => manifestText,
-        };
-      }
-    }
-    const response = await fetch(url, { redirect: 'follow' });
-    return {
-      ok:     response.ok,
-      status: response.status,
-      text:   () => response.text(),
-    };
-  };
-}
+// Bundled-plugin marketplace seeding (consts + 6 helpers) was extracted to
+// ./server/marketplace/seed.ts (strangler-fig slice 5a). The helpers now take
+// the daemon-init directory singletons (BUNDLED_PLUGINS_DIR / PROJECT_ROOT /
+// PLUGIN_REGISTRY_DIR) as explicit args; server.ts threads them at each call
+// site below. OFFICIAL_MARKETPLACE_ID is imported back for its startServer use.
+import {
+  OFFICIAL_MARKETPLACE_ID,
+  defaultMarketplaceSeedConfig,
+  bundledPluginRegistrySource,
+  marketplaceSeedManifestText,
+  createMarketplaceFetcher,
+} from './server/marketplace/index.js';
 
 const SANDBOX_MODE_ENABLED = isSandboxModeEnabled(process.env);
 const RUNTIME_DATA_DIR = resolveDataDir(process.env.OD_DATA_DIR, PROJECT_ROOT, {
@@ -1631,7 +1555,7 @@ export async function startServer({
       description: plugin.manifest.description,
       description_i18n: plugin.manifest.description_i18n,
       version:     plugin.version,
-      source:      bundledPluginRegistrySource(plugin.source),
+      source:      bundledPluginRegistrySource(plugin.source, BUNDLED_PLUGINS_DIR, PROJECT_ROOT),
       publisher:   { id: 'open-design', url: 'https://open-design.ai' },
       homepage:    plugin.manifest.homepage,
       license:     plugin.manifest.license,
@@ -1659,7 +1583,7 @@ export async function startServer({
     for (const dirent of seedDirs) {
       if (!dirent.isDirectory()) continue;
       const id = dirent.name;
-      const manifestText = await marketplaceSeedManifestText(id, bundledMarketplaceEntries);
+      const manifestText = await marketplaceSeedManifestText(id, bundledMarketplaceEntries, PLUGIN_REGISTRY_DIR);
       if (!manifestText) continue;
       const configured = defaultMarketplaceSeedConfig(id);
       const result = ensureMarketplaceManifest(db, {
@@ -2430,7 +2354,8 @@ export async function startServer({
   registerPluginMarketplaceRoutes(app, {
     db,
     bundledMarketplaceEntries,
-    createMarketplaceFetcher,
+    createMarketplaceFetcher: (seedId, entries) =>
+      createMarketplaceFetcher(seedId, entries, PLUGIN_REGISTRY_DIR),
     marketplaceRegistryIdFromUrl,
   });
   registerPluginAssetRoutes(app, {
