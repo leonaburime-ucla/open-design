@@ -1,6 +1,10 @@
+/** @module assets/chrome
+ * Chrome discovery and capture helpers for deterministic brand harvesting.
+This assets file supports prefetch without importing higher-level brand concerns.
+ */
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { resolveOnPath } from "../runtimes/executables.js";
+import { resolveOnPath } from "../../runtimes/executables.js";
 
 /**
  * Optional system-Chrome fallback for the prefetch pipeline.

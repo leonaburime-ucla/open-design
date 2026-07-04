@@ -1,3 +1,7 @@
+/** @module core/design-md-input
+ * DESIGN.md input parsing and conversion into provisional brand data.
+This core parser imports only core seed and validation primitives.
+ */
 import type { Brand, BrandColor, BrandColorRole, BrandFontSpec } from '@open-design/contracts';
 
 import { luminance, normalizeHex, saturation } from './seed.js';

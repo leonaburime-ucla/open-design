@@ -1,8 +1,12 @@
 // @ts-nocheck
+/** @module assets/fonts
+ * Font-face parsing, font manifest reads, CSS injection, and Google Fonts self-hosting.
+This assets file depends only on core brand types and filesystem/network primitives.
+ */
 import fs from "node:fs";
 import path from "node:path";
 
-import type { Brand } from "./schema.js";
+import type { Brand } from "../core/index.js";
 
 /**
  * Webfont self-hosting for a brand workspace.

@@ -1,13 +1,7 @@
-// Brands HTTP surface — list / extract / finalize / detail / delete / logo.
-//
-// A "brand" = brand metadata (brand.json + meta.json under
-// `<brandsRoot>/<id>/`) PLUS a registered user design system. These routes are
-// a thin HTTP wrapper over the agent-driven engine in `./brands/index.js`; they
-// hold no brand business logic of their own.
-//
-//   POST /api/brands           — reserve the brand + stand up the extraction
-//                                 project (browser tab + seeded prompt). JSON.
-//   POST /api/brands/:id/finalize — register the agent's brand kit. JSON.
+/** @module routes/index
+ * Brands HTTP surface: list, extract, continue, finalize, detail, delete, and logo serving endpoints.
+ * Routes are the domain boundary over extraction, finalization, preview, catalog, and core storage concerns.
+ */
 
 import fs from 'node:fs';
 import { randomUUID } from 'node:crypto';
@@ -24,22 +18,24 @@ import {
   listLatestRunStatuses,
   listProjectsAwaitingInput,
   type insertProject,
-} from './db.js';
-import { resolveProjectDir } from './project/index.js';
+} from '../../db.js';
+import { resolveProjectDir } from '../../project/index.js';
 import {
   continueBrandExtraction,
   extractBrandFromHtml,
-  finalizeBrand,
   isProgrammaticExtractionAbortError,
+  startBrandExtraction,
+} from '../extraction/index.js';
+import { finalizeBrand } from '../finalize/index.js';
+import {
   listBrandSummaries,
   readBrandDetail,
-  reconcileProgrammaticExtractionTranscript,
   removeBrand,
-  renderBrandPreviewIntoProject,
   resolveBrandLogoPath,
-  startBrandExtraction,
-} from './brands/index.js';
-import { patchMeta } from './brands/store.js';
+} from '../catalog/index.js';
+import { renderBrandPreviewIntoProject } from '../preview/index.js';
+import { reconcileProgrammaticExtractionTranscript } from '../transcript/index.js';
+import { patchMeta } from '../core/index.js';
 import type { BrandDetailResponse, BrandMeta, BrandSummary } from '@open-design/contracts';
 
 export interface BrandRoutesDeps {

@@ -1,3 +1,7 @@
+/** @module kit/render
+ * Brand kit HTML rendering and project write helpers.
+Preview, extraction, and finalization depend on this kit barrel for brand.html output.
+ */
 // Brand-kit HTML renderer.
 //
 // Turns a (possibly partial) brand.json into a self-contained `brand.html`
@@ -13,9 +17,9 @@ import path from 'node:path';
 
 import type { ProjectMetadata } from '@open-design/contracts';
 
-import { resolveProjectDir, writeProjectFile } from '../project/index.js';
-import { fontFaceCss, readFontManifest } from './fonts.js';
-import { brandKitCopy, localizedBrandKitAssetDefs } from './kit-i18n.js';
+import { resolveProjectDir, writeProjectFile } from '../../project/index.js';
+import { fontFaceCss, readFontManifest } from '../assets/index.js';
+import { brandKitCopy, localizedBrandKitAssetDefs } from './i18n.js';
 
 /** Location of the bundled template relative to the daemon's skills root. */
 const BRAND_KIT_TEMPLATE_REL = path.join('brand-extract', 'templates', 'brand-kit.html');

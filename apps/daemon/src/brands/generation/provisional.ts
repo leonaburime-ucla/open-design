@@ -1,3 +1,7 @@
+/** @module generation/provisional
+ * Provisional Brand synthesis from deterministic harvested material.
+Extraction uses this generation layer before handing valid brands to finalization.
+ */
 // provisional — build a usable Brand deterministically from raw prefetch
 // material (no LLM, no network, no Date/random — same input always yields the
 // same Brand).
@@ -10,9 +14,9 @@
 
 import type { Brand, BrandColor } from '@open-design/contracts';
 
-import type { LogoCandidate, PrefetchResult } from './prefetch.js';
-import { seedFromMaterial } from './seed.js';
-import { validateBrand } from './validate.js';
+import type { LogoCandidate, PrefetchResult } from '../assets/index.js';
+import { seedFromMaterial } from '../core/index.js';
+import { validateBrand } from '../core/index.js';
 
 /** Best-effort hostname for a URL — falls back to the trimmed raw string. */
 function hostname(url: string): string {

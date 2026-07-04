@@ -1,4 +1,8 @@
 // @ts-nocheck
+/** @module engine/artifacts/newsletter
+ * Newsletter artifact renderer for generated brand systems.
+This engine artifact consumes core brand data and derived design tokens.
+ */
 /**
  * newsletter — a restrained multi-story digest, built to email.md.
  *
@@ -18,7 +22,7 @@
  */
 
 import { button } from "../kit.js";
-import type { Brand } from "../../schema.js";
+import type { Brand } from "../../core/index.js";
 import { type DesignTokens, varRef } from "../types.js";
 import {
   esc,

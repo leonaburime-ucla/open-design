@@ -12,7 +12,7 @@ import {
   type ProjectFileVersionSource,
   type ProjectFileVersionWarning,
 } from '@open-design/contracts';
-import { readMeta as readBrandMeta } from '../../brands/store.js';
+import { readBrandDetail } from '../../brands/index.js';
 import { createProjectArtifactFile } from '../../artifacts/create.js';
 import { ArtifactPublicationBlockedError } from '../../artifacts/publication-guard.js';
 import { ArtifactRegressionError } from '../../artifacts/stub-guard.js';
@@ -1440,7 +1440,7 @@ export function registerProjectRoutes(app: Express, ctx: RegisterProjectRoutesDe
     if (metadata?.kind !== 'brand') return status;
     const brandId = typeof metadata.brandId === 'string' ? metadata.brandId : null;
     if (!brandId) return status;
-    const brandMeta = readBrandMeta(BRANDS_DIR, brandId);
+    const brandMeta = readBrandDetail(BRANDS_DIR, brandId)?.meta ?? null;
     if (!brandMeta) return status;
     const mapped =
       brandMeta.status === 'ready'

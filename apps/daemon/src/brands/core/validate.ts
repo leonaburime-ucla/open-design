@@ -1,3 +1,7 @@
+/** @module core/validate
+ * Brand JSON validation and JSON-block extraction.
+Finalization and public parsing paths share this core validation boundary.
+ */
 // Brand validation + normalization.
 //
 // Ported from the branding-agent schema, retargeted onto the '@open-design/

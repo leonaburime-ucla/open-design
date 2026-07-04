@@ -1,4 +1,8 @@
 // @ts-nocheck
+/** @module engine/derive
+ * Design-token derivation from minimal seed tokens.
+This engine file stays inside the deterministic token pipeline.
+ */
 /**
  * derive.ts — the heart of the engine.
  *

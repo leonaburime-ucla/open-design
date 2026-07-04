@@ -1,3 +1,7 @@
+/** @module assets/logo-fallback
+ * Logo candidate discovery, fallback harvesting, and adoption of existing logo files.
+This assets file stays below extraction/finalization and performs best-effort enrichment only.
+ */
 // Deterministic, server-side logo fallback for brand extraction.
 //
 // The agent is expected to save real logo markup under the project `logos/`

@@ -1,10 +1,14 @@
 // @ts-nocheck
+/** @module engine/artifacts/generic
+ * Generic fallback artifact renderer for generated brand systems.
+This engine artifact handles asset kinds without a specialized renderer.
+ */
 /**
  * generic — a reasonable card+button page for kinds without a bespoke layout.
  */
 
 import { button, card, tag } from "../kit.js";
-import type { Brand, AssetKind } from "../../schema.js";
+import type { Brand, AssetKind } from "../../core/index.js";
 import { type DesignTokens, varRef } from "../types.js";
 import { esc, document, cap, brandTagline, brandBlurb } from "./_shared.js";
 

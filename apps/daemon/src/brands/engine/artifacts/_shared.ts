@@ -1,4 +1,8 @@
 // @ts-nocheck
+/** @module engine/artifacts/_shared
+ * Shared HTML helpers for deterministic brand artifact renderers.
+Artifact pages import these helpers within the engine concern only.
+ */
 /**
  * artifacts/_shared — the bits every artifact (or 2+ of them) needs: the HTML
  * document shell, the brand-font resolver, the derived-copy helpers (tagline /
@@ -11,7 +15,7 @@ import {
   pricingCard,
   KIT_CSS,
 } from "../kit.js";
-import type { Brand } from "../../schema.js";
+import type { Brand } from "../../core/index.js";
 import { type DesignTokens, varRef, flattenTokens } from "../types.js";
 
 // ─────────────────────────── small html helpers ─────────────────────────────

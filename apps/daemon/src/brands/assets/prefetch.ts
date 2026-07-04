@@ -1,8 +1,14 @@
 // @ts-nocheck
+/** @module assets/prefetch
+ * Deterministic source-site material prefetch for programmatic brand extraction.
+This assets file harvests colors, fonts, logos, copy, and screenshots without depending on workflow concerns.
+ */
 import fs from "node:fs";
 import path from "node:path";
 import { chromeDumpDom, chromeScreenshot, findChrome } from "./chrome.js";
 import { harvestFonts, type FontFile } from "./fonts.js";
+import type { ColorCandidate, FontCandidate, LogoCandidate, PrefetchResult } from "../core/index.js";
+export type { ColorCandidate, FontCandidate, LogoCandidate, PrefetchResult } from "../core/index.js";
 
 /**
  * Deterministic brand-material prefetch. Given a site URL, fetch the HTML +
@@ -26,61 +32,6 @@ const MAX_CSS_FILES = 6;
 const MAX_LOGOS = 6;
 const MAX_EXTRA_PAGES = 2;
 const FETCH_TIMEOUT_MS = 8_000;
-
-export type ColorCandidate = {
-  /** Normalized lowercase hex (#rrggbb) when derivable, else raw value. */
-  hex: string;
-  /** Raw declarations folded into this candidate. */
-  count: number;
-  /** True for near-white / near-black — listed but de-prioritized. */
-  extreme?: boolean;
-  /** Compact evidence strings such as css-var:--accent, prop:background, logo-svg:mark.svg. */
-  sources?: string[];
-};
-
-export type FontCandidate = { family: string; count: number };
-
-export type LogoCandidate = {
-  /** Filename inside the brand dir's logos/ folder. */
-  file: string;
-  sourceUrl: string;
-  kind: "favicon" | "apple-touch-icon" | "og-image" | "header-img" | "inline-svg";
-  bytes: number;
-  contentType?: string;
-};
-
-export type PrefetchResult = {
-  url: string;
-  finalUrl: string;
-  siteName: string;
-  title: string;
-  description: string;
-  colors: ColorCandidate[];
-  fonts: FontCandidate[];
-  fontFaceFamilies: string[];
-  googleFontsUrls: string[];
-  /** Webfont files downloaded into the brand dir's fonts/ folder. */
-  fontFiles: FontFile[];
-  logos: LogoCandidate[];
-  headings: string[];
-  paragraphs: string[];
-  navLabels: string[];
-  extraPages: Array<{ url: string; title: string; text: string }>;
-  /** Path (relative to the brand dir) of a headless-Chrome page screenshot,
-   *  captured when no logo could be downloaded — vision material for the
-   *  synthesis agent. */
-  screenshot: string | null;
-  /** True when the harvest looks too thin to synthesize from (likely a
-   *  bot-blocked or fully JS-rendered site). The synthesis prompt switches
-   *  to "you may WebFetch once" mode. */
-  thin: boolean;
-  /** True when every fetch path returned an anti-bot challenge page
-   *  (Cloudflare "Just a moment…" etc.). The challenge page's own content is
-   *  DISCARDED — colors/fonts/copy stay empty rather than polluting the brand
-   *  with the interstitial's text and palette. */
-  blocked: boolean;
-  materialMd: string;
-};
 
 export type PrefetchProgress = (step: string, detail?: string) => void;
 

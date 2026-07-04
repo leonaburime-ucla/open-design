@@ -5,7 +5,7 @@ import path from 'node:path';
 
 import type { Brand } from '@open-design/contracts';
 
-import { brandToMemoryEntries, reflowBrandToMemory } from '../src/brands/memory.js';
+import { brandToMemoryEntries, reflowBrandToMemory } from '../src/brands/memory/index.js';
 import { listMemoryEntries, readMemoryEntry, writeMemoryConfig } from '../src/memory/index.js';
 
 // A realistic two-stack editorial brand (modeled on the Economist brand pack):

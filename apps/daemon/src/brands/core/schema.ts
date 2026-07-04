@@ -1,5 +1,9 @@
+/** @module core/schema
+ * Core brand schema aliases, asset kinds, and seed override sanitization.
+This file owns the daemon-local Brand shape used by engine and system layers.
+ */
 import type { Brand as ContractBrand, BrandColor as ContractBrandColor } from '@open-design/contracts';
-import type { SeedToken } from './engine/types.js';
+import type { SeedToken } from './types.js';
 
 export const ASSET_KINDS = ['landing', 'deck', 'poster', 'email', 'newsletter', 'form'] as const;
 export type AssetKind = (typeof ASSET_KINDS)[number];

@@ -5,9 +5,9 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import os from 'node:os';
 import path from 'node:path';
 
-import { registerBrandRoutes, type BrandRoutesDeps } from '../src/brand-routes.js';
+import { registerBrandRoutes, type BrandRoutesDeps } from '../src/brands/index.js';
 import { closeDatabase, insertConversation, insertProject, listMessages, openDatabase, upsertMessage } from '../src/db.js';
-import type { PrefetchResult } from '../src/brands/prefetch.js';
+import type { PrefetchResult } from '../src/brands/assets/prefetch.js';
 
 const NO_LOGO_FALLBACK = async () => ({ changed: false });
 const NO_IMAGERY_FALLBACK = async () => ({ changed: false });

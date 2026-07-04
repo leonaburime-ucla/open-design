@@ -3,14 +3,14 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../src/brands/chrome.js', () => ({
+vi.mock('../src/brands/assets/chrome.js', () => ({
   chromeDumpDom: vi.fn(async () => '<html><body>unexpected chrome fallback</body></html>'),
   chromeScreenshot: vi.fn(async () => true),
   findChrome: vi.fn(() => '/fake/chrome'),
 }));
 
-import { chromeDumpDom, chromeScreenshot } from '../src/brands/chrome.js';
-import { prefetchBrand } from '../src/brands/prefetch.js';
+import { chromeDumpDom, chromeScreenshot } from '../src/brands/assets/chrome.js';
+import { prefetchBrand } from '../src/brands/assets/prefetch.js';
 
 describe('brand prefetch abort handling', () => {
   afterEach(() => {

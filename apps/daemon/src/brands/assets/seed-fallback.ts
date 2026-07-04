@@ -1,3 +1,7 @@
+/** @module assets/seed-fallback
+ * Palette and typography seed fallback derivation from harvested site material.
+This assets file fills early kit previews when programmatic finalization is not available.
+ */
 // Deterministic, server-side palette + typography seed for brand extraction.
 //
 // The agent does the authoritative measurement, but it takes a while to drive

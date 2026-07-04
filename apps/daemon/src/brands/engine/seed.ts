@@ -1,4 +1,8 @@
 // @ts-nocheck
+/** @module engine/seed
+ * Seed-token synthesis from finalized brands and prefetched material.
+This engine file reads core brand types and asset material through barrels.
+ */
 /**
  * SEED synthesis — the narrow front door of the brand engine.
  *
@@ -23,8 +27,8 @@
  */
 
 import type { SeedToken } from "./types.js";
-import type { Brand, BrandColor } from "../schema.js";
-import type { PrefetchResult } from "../prefetch.js";
+import type { Brand, BrandColor } from "../core/index.js";
+import type { PrefetchResult } from "../assets/index.js";
 
 // ─────────────────────────── font stacks (Ant baseline) ─────────────────────
 

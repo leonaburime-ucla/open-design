@@ -199,7 +199,7 @@ import {
 import { createDesignSystemGenerationJobStore } from './design-systems/index.js';
 import { createDesignSystemServerServices } from './design-systems/server-services.js';
 import { prepareDesignTokenContractRebuild } from './design-systems/index.js';
-import { registerBrandRoutes } from './brand-routes.js';
+import { registerBrandRoutes } from './brands/index.js';
 import {
   applyPlugin,
   buildConnectorProbe,

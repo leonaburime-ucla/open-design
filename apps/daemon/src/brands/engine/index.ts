@@ -1,4 +1,8 @@
 // @ts-nocheck
+/** @module engine/index
+ * Deterministic brand engine public barrel.
+The surrounding brands domain treats engine as an existing concern behind this barrel.
+ */
 /**
  * Public entry point for the brand engine. Import everything from here:
  *

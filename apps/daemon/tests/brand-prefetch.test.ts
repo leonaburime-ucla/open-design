@@ -8,7 +8,7 @@ import {
   isChallengePage,
   prefetchFromHtml,
   previewablePrefetchHtml,
-} from '../src/brands/prefetch.js';
+} from '../src/brands/assets/prefetch.js';
 
 function tmpBrandDir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'od-brand-html-'));

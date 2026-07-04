@@ -1,4 +1,8 @@
 // @ts-nocheck
+/** @module engine/artifacts/email
+ * Email artifact renderer for generated brand systems.
+This engine artifact consumes core brand data and derived design tokens.
+ */
 /**
  * email — a single-column, 600px, bulletproof-table promotional/announcement
  * email built to its content-structure playbook (docs/content-structures/
@@ -28,7 +32,7 @@
  * random. Themed entirely through the --brand-* custom properties.
  */
 
-import type { Brand } from "../../schema.js";
+import type { Brand } from "../../core/index.js";
 import { type DesignTokens, varRef } from "../types.js";
 import {
   esc,

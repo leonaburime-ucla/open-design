@@ -1,4 +1,8 @@
 // @ts-nocheck
+/** @module engine/build
+ * Deterministic brand-system builder and writer.
+The system concern uses this engine barrel to derive tokens, kit pages, and artifacts.
+ */
 /**
  * build.ts — the integration seam that turns one input (a Brand kit or a raw
  * URL) into a complete, writable BrandSystem.
@@ -25,9 +29,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import type { Brand, AssetKind } from "../schema.js";
-import { injectFontFaces, type FontFile } from "../fonts.js";
-import { prefetchBrand, type PrefetchResult } from "../prefetch.js";
+import type { Brand, AssetKind } from "../core/index.js";
+import { injectFontFaces, type FontFile } from "../assets/index.js";
+import { prefetchBrand, type PrefetchResult } from "../assets/index.js";
 import type { BrandSystem, DesignTokens, SeedToken, ThemeAlgorithm } from "./types.js";
 import { deriveTokens } from "./derive.js";
 import { seedFromBrand, seedFromMaterial } from "./seed.js";

@@ -1,4 +1,8 @@
 // @ts-nocheck
+/** @module engine/artifacts/form
+ * Form artifact renderer for generated brand systems.
+This engine artifact consumes core brand data and derived design tokens.
+ */
 /**
  * form — a conversion-tuned signup / contact form.
  *
@@ -15,7 +19,7 @@
  */
 
 import { button } from "../kit.js";
-import type { Brand } from "../../schema.js";
+import type { Brand } from "../../core/index.js";
 import { type DesignTokens, varRef } from "../types.js";
 import {
   esc,

@@ -1,4 +1,8 @@
 // @ts-nocheck
+/** @module engine/types
+ * Engine token, theme, and output bundle contracts.
+Engine modules share these deterministic-system types internally.
+ */
 /**
  * FROZEN CONTRACT for the brand engine. Every engine module imports its types
  * and the css-var helpers from here, so the independently-built modules

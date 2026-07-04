@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { analyseDeckLayout, assertDeckLayoutSafe } from '../src/qa/deck-layout.js';
-import { validateBrand } from '../src/brands/validate.js';
+import { validateBrand } from '../src/brands/core/validate.js';
 import { buildBrandSystem } from '../src/brands/engine/index.js';
 
 // The deck lays content on fixed-size 16:9 slides, so the layout guard pins

@@ -1,4 +1,8 @@
 // @ts-nocheck
+/** @module engine/artifacts/index
+ * Artifact renderer barrel for generated brand-system outputs.
+The engine build layer imports this barrel to render galleries and specific artifacts.
+ */
 /**
  * artifacts — the last hop of the pipeline. Where `kit` produces individual
  * themed components, `artifacts` composes them into *products* that follow the
@@ -26,7 +30,7 @@
  * (`renderArtifact` / `renderArtifactGallery`) so `./artifacts` resolves here.
  */
 
-import type { Brand, AssetKind } from "../../schema.js";
+import type { Brand, AssetKind } from "../../core/index.js";
 import { type DesignTokens, varRef } from "../types.js";
 import { esc, document, brandTagline } from "./_shared.js";
 import { renderLanding } from "./landing.js";

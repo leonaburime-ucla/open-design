@@ -1,4 +1,8 @@
 // @ts-nocheck
+/** @module engine/export
+ * Token export serializers for JSON, CSS variables, and theme JSON.
+This engine file is consumed by the system builder.
+ */
 /**
  * Serializers for the derived style system. Given the DesignTokens (or the
  * upstream SeedToken) this module emits the three portable artifacts a

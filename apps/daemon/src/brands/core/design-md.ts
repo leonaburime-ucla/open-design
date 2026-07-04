@@ -1,3 +1,7 @@
+/** @module core/design-md
+ * Markdown rendering for brand DESIGN.md and BRAND.md guide output.
+This core formatter is shared by finalization, generation, and public exports.
+ */
 // brandToDesignMd — render a Brand as a DESIGN.md the design-systems registry
 // can parse. The frontmatter carries a `colors:` map (so the picker shows
 // swatches) plus name/category/surface; the body opens with an `# <name>` H1

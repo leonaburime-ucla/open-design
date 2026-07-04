@@ -1,4 +1,8 @@
 // @ts-nocheck
+/** @module engine/palette
+ * Palette generation and preset color ramps for token derivation.
+This engine file has no dependency on higher-level brand workflows.
+ */
 /**
  * Palette engine — a faithful, dependency-free port of @ant-design/colors'
  * `generate()` HSV algorithm (the L1 "color algorithm" of the brand framework,

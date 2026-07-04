@@ -1,10 +1,14 @@
+/** @module system/build
+ * Generated system artifact rebuild and summary helpers.
+Finalization depends on this layer to produce token files and preview artifacts.
+ */
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { assertDeckLayoutSafe } from '../qa/deck-layout.js';
-import { injectFontFaces, readFontManifest, type FontFile } from './fonts.js';
-import { readBrand, resolveBrandFile, writeBrand } from './store.js';
-import { sanitizeSeedOverrides } from './schema.js';
+import { assertDeckLayoutSafe } from '../../qa/deck-layout.js';
+import { injectFontFaces, readFontManifest, type FontFile } from '../assets/index.js';
+import { readBrand, resolveBrandFile, writeBrand } from '../core/index.js';
+import { sanitizeSeedOverrides } from '../core/index.js';
 import {
   brandFontAssets,
   buildBrandSystem,
@@ -20,8 +24,8 @@ import {
   type DesignTokens,
   type SeedToken,
   type ThemeAlgorithm,
-} from './engine/index.js';
-import type { AssetKind, Brand } from './schema.js';
+} from '../engine/index.js';
+import type { AssetKind, Brand } from '../core/index.js';
 
 export const BRAND_ARTIFACT_KINDS: AssetKind[] = [
   'landing',

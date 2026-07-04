@@ -1,4 +1,8 @@
 // @ts-nocheck
+/** @module engine/artifacts/landing
+ * Landing-page artifact renderer for generated brand systems.
+This engine artifact consumes core brand data and derived design tokens.
+ */
 /**
  * landing — a long, single-goal marketing page that follows the project's
  * content-structure playbook (docs/content-structures/landing-page.md) to the
@@ -32,7 +36,7 @@
  */
 
 import { button, tag, accordion, testimonial, pricingCard } from "../kit.js";
-import type { Brand } from "../../schema.js";
+import type { Brand } from "../../core/index.js";
 import { type DesignTokens, varRef } from "../types.js";
 import {
   esc,

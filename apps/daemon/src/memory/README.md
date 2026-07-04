@@ -39,7 +39,7 @@ The moves were purely structural — no logic changes. Specific steps:
    re-exports.
 7. Updated the external daemon files that imported from the flat namespace
    (`routes/memory.ts`, `server.ts` — static and the background dynamic `import()`,
-   `brands/memory.ts`, `automation/proposals/proposals.ts`) to import from the barrel.
+   `brands/memory/index.ts`, `automation/proposals/proposals.ts`) to import from the barrel.
    `brands/index.ts` and `cli/memory/index.ts` were left untouched: their `./memory.js`
    resolves to their own local sibling file, not this domain.
 8. Deleted the original flat source files.

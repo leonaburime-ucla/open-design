@@ -25,10 +25,10 @@ import {
   renderBrandPreviewIntoProject,
   startBrandExtraction,
 } from '../src/brands/index.js';
-import { findChrome } from '../src/brands/chrome.js';
-import { patchMeta } from '../src/brands/store.js';
-import { ensureLogoFallback } from '../src/brands/logo-fallback.js';
-import { brandFromMaterial } from '../src/brands/provisional.js';
+import { findChrome } from '../src/brands/assets/chrome.js';
+import { patchMeta } from '../src/brands/core/store.js';
+import { ensureLogoFallback } from '../src/brands/assets/logo-fallback.js';
+import { brandFromMaterial } from '../src/brands/generation/provisional.js';
 import { listDesignSystems } from '../src/design-systems/index.js';
 import { buildBrandSystem, deriveTokens, seedFromMaterial } from '../src/brands/engine/index.js';
 import {
@@ -36,8 +36,8 @@ import {
   findImageRefs,
   imageSize,
   type ImagerySlot,
-} from '../src/brands/imagery-fallback.js';
-import { isChallengePage, type PrefetchResult } from '../src/brands/prefetch.js';
+} from '../src/brands/assets/imagery-fallback.js';
+import { isChallengePage, type PrefetchResult } from '../src/brands/assets/prefetch.js';
 
 // Real repo skills root so the bundled brand-kit template resolves.
 const SKILLS_ROOT = path.resolve(

@@ -1,3 +1,7 @@
+/** @module core/seed
+ * Core color and typography seed scoring primitives.
+Generation and DESIGN.md parsing reuse these deterministic helpers without depending on assets.
+ */
 // Deterministic color/font seed from raw prefetch material (no LLM).
 //
 // Ported (slimmed) from the branding-agent engine seed. This produces only the
@@ -10,7 +14,7 @@
 //
 // No SeedToken / Ant-Design coupling — just plain hex strings + a family name.
 
-import type { PrefetchResult } from './prefetch.js';
+import type { PrefetchResult } from './types.js';
 
 const DEFAULT_PRIMARY = '#1677ff';
 

@@ -1,4 +1,8 @@
 // @ts-nocheck
+/** @module engine/artifacts/deck
+ * Deck artifact renderer for generated brand systems.
+This engine artifact consumes core brand data and derived design tokens.
+ */
 /**
  * deck — a pitch deck that follows docs/content-structures/slides-deck.md.
  *
@@ -32,7 +36,7 @@
  * `auditDeckLayout` (apps/daemon/src/brands/engine/deck-layout-guard.ts).
  */
 
-import type { Brand } from "../../schema.js";
+import type { Brand } from "../../core/index.js";
 import { type DesignTokens, varRef } from "../types.js";
 import {
   esc,

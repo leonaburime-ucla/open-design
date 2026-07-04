@@ -1,3 +1,7 @@
+/** @module core/store
+ * On-disk brand metadata, JSON, guide, and id storage primitives.
+All higher brand concerns use this core storage layer instead of reaching into each other.
+ */
 // Brand filesystem store. Each brand lives under
 // `<brandsRoot>/<id>/` with:
 //   - brand.json   : the canonical Brand (when extracted)

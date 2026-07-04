@@ -1,4 +1,8 @@
 // @ts-nocheck
+/** @module engine/artifacts/poster
+ * Poster artifact renderer for generated brand systems.
+This engine artifact consumes core brand data and derived design tokens.
+ */
 /**
  * poster — a 3:4 print-style sheet (~900×1200) built to the content-structure
  * playbook in docs/content-structures/poster.md: 3 秒拦住人,传达一件事.
@@ -20,7 +24,7 @@
  * deterministic: (brand, tokens) -> string, no network / Date / random.
  */
 
-import type { Brand } from "../../schema.js";
+import type { Brand } from "../../core/index.js";
 import { type DesignTokens, varRef } from "../types.js";
 import {
   esc,

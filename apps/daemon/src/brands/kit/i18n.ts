@@ -1,3 +1,7 @@
+/** @module kit/i18n
+ * Localized copy and asset labels for brand kit previews.
+The kit rendering layer uses this file to keep static brand.html copy consistent.
+ */
 export type BrandKitLocale = 'en' | 'zh-CN' | 'zh-TW';
 
 export interface BrandKitCopy {

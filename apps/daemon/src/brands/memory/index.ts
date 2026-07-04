@@ -1,3 +1,7 @@
+/** @module memory/index
+ * Brand-to-memory conversion and memory reflow integration.
+Finalization calls this concern after successful registration as a best-effort side effect.
+ */
 // Brand → memory reflow.
 //
 // A finalized brand is the cleanest, highest-signal source of "how this user's
@@ -21,7 +25,7 @@
 
 import type { Brand } from '@open-design/contracts';
 
-import { readMemoryConfig, upsertMemoryEntry } from '../memory/index.js';
+import { readMemoryConfig, upsertMemoryEntry } from '../../memory/index.js';
 
 /** A memory entry derived from a brand, ready to hand to `upsertMemoryEntry`. */
 export interface BrandMemoryEntryInput {

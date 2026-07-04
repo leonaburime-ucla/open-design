@@ -1,3 +1,7 @@
+/** @module assets/imagery-fallback
+ * Representative imagery discovery and fallback harvesting for brand kits.
+This assets file may use Chrome capture helpers but exposes only the assets barrel surface to other concerns.
+ */
 // Deterministic, server-side imagery fallback for brand extraction.
 //
 // The agent is expected to save the site's real cover / hero / representative
