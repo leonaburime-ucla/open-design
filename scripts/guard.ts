@@ -3,6 +3,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import ts from "typescript";
 
+import { checkCapabilityBarrelImports } from "./check-barrel-imports.ts";
 import { checkCrossAppImports } from "./check-cross-app-imports.ts";
 import { checkCapabilityBarrelImports } from "./check-barrel-imports.ts";
 import { checkDesignSystemManifests } from "./check-design-system-manifests.ts";

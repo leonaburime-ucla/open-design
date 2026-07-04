@@ -4,10 +4,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { normalizeMediaExecutionPolicyForRun } from '../media/policy.js';
 import {
+  createRunLifecycleTracer,
   normalizeRunToolBundleForRun,
   summarizeRunToolBundle,
-} from '../run-tool-bundle.js';
-import { createRunLifecycleTracer } from '../run-lifecycle-tracer.js';
+} from '../run/index.js';
 import { projectWorkspaceProvenance } from '../workspace-contract.js';
 
 export const TERMINAL_RUN_STATUSES = new Set(['succeeded', 'failed', 'canceled']);

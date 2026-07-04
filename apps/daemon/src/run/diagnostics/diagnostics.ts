@@ -1,10 +1,14 @@
-import { redactSecrets } from './redact.js';
+import { redactSecrets } from '../../redact.js';
 
+/** @module run/diagnostics/diagnostics — Stderr/stdout tail collection and diagnostic analytics summarization for completed runs. */
+
+/** A recorded run event entry passed to diagnostics collection functions for scanning. */
 export interface RunEventForDiagnostics {
   event: string;
   data: unknown;
 }
 
+/** Identifies which signal was the primary source of diagnostic information for a failed run. */
 export type RunDiagnosticSource =
   | 'error_event'
   | 'stderr'
@@ -12,6 +16,7 @@ export type RunDiagnosticSource =
   | 'signal'
   | 'unknown';
 
+/** Bucketed stderr (and stdout) line count for low-cardinality analytics grouping. */
 export type StderrLineCountBucket =
   | 'none'
   | '1_5'
@@ -19,6 +24,7 @@ export type StderrLineCountBucket =
   | '21_100'
   | 'gt_100';
 
+/** The mechanism that ended the run's child process or RPC session, derived from events and exit signals. */
 export type RunCloseReason =
   | 'exit_0'
   | 'exit_nonzero'
@@ -29,6 +35,7 @@ export type RunCloseReason =
   | 'empty_output'
   | 'unknown';
 
+/** Diagnostic fields included in the `run_finished` analytics payload, summarizing what was observed at run end. */
 export interface RunDiagnosticsAnalytics {
   diagnostic_source: RunDiagnosticSource;
   stderr_present: boolean;
@@ -48,13 +55,16 @@ export interface RunDiagnosticsAnalytics {
   resume_auto_reseeded: boolean;
 }
 
+/** Redacted, byte-capped tail of a stream (stderr or stdout) collected after a run completes. */
 export interface StreamTailSummary {
   tail: string;
   lineCount: number;
   truncated: boolean;
 }
 
+/** Tail summary specifically for the stderr stream; alias of `StreamTailSummary` for call-site clarity. */
 export type StderrTailSummary = StreamTailSummary;
+/** Tail summary specifically for the stdout stream; alias of `StreamTailSummary` for call-site clarity. */
 export type StdoutTailSummary = StreamTailSummary;
 
 const STDERR_TAIL_MAX_LINES = 20;
@@ -83,6 +93,11 @@ function countLines(text: string): number {
   return text.split(/\r?\n/).filter((line) => line.length > 0).length;
 }
 
+/**
+ * Maps a raw stderr (or stdout) line count to a low-cardinality analytics bucket.
+ * @param count - Total number of non-empty lines in the stream.
+ * @returns A `StderrLineCountBucket` string for use in analytics payloads.
+ */
 export function stderrLineCountBucket(count: number): StderrLineCountBucket {
   if (count <= 0) return 'none';
   if (count <= 5) return '1_5';
@@ -131,18 +146,36 @@ function collectStreamTailSummary(
   };
 }
 
+/**
+ * Collects and redacts the tail of the stderr stream from a run's event list.
+ * Returns `undefined` when no stderr output was recorded.
+ * @param events - Recorded run events; only 'stderr' events are processed.
+ * @returns A `StderrTailSummary` with the last 20 lines (capped at 4 KB) and a truncation flag, or `undefined`.
+ */
 export function collectStderrTailSummary(
   events: RunEventForDiagnostics[] = [],
 ): StderrTailSummary | undefined {
   return collectStreamTailSummary(events, 'stderr', readStderrChunk);
 }
 
+/**
+ * Collects and redacts the tail of the stdout stream from a run's event list.
+ * Returns `undefined` when no stdout output was recorded.
+ * @param events - Recorded run events; only 'stdout' events are processed.
+ * @returns A `StdoutTailSummary` with the last 20 lines (capped at 4 KB) and a truncation flag, or `undefined`.
+ */
 export function collectStdoutTailSummary(
   events: RunEventForDiagnostics[] = [],
 ): StdoutTailSummary | undefined {
   return collectStreamTailSummary(events, 'stdout', readStdoutChunk);
 }
 
+/**
+ * Produces the full `RunDiagnosticsAnalytics` payload for a completed run by scanning its event stream
+ * and combining observed flags (tool calls, artifact writes, first token) with process-level signals.
+ * @param args - Run events, exit code, signal, and boolean flags set by the daemon during finalization.
+ * @returns A `RunDiagnosticsAnalytics` object ready to spread into the `run_finished` analytics event.
+ */
 export function summarizeRunDiagnosticsForAnalytics(args: {
   events?: RunEventForDiagnostics[];
   exitCode?: number | null;

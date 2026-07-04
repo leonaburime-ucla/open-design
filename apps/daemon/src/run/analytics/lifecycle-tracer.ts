@@ -1,4 +1,4 @@
-import type { RunTelemetryTimestamps } from './run-analytics-observability.js';
+import type { RunTelemetryTimestamps } from './analytics.js';
 import type { TrackingFirstModelEventType } from '@open-design/contracts/analytics';
 
 export type RunLifecycleMark =

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createRunLifecycleTracer,
   runLifecycleMarkersForStreamEvent,
-} from '../src/run-lifecycle-tracer.js';
+} from '../src/run/index.js';
 
 describe('runLifecycleMarkersForStreamEvent', () => {
   it('captures live artifacts emitted through the agent stream path', () => {

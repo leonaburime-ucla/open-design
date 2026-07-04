@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import {
   snapshotAiHtmlVersionsForRun,
-} from '../src/run-html-version-snapshots.js';
+} from '../src/run/index.js';
 
 describe('AI HTML version snapshots', () => {
   const roots: string[] = [];
