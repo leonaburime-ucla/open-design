@@ -6,3 +6,4 @@
  */
 
 export { runBootReconcileAndSeed } from './boot-reconcile.js';
+export { startDaemonListener } from './start-listener.js';

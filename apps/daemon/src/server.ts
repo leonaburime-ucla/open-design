@@ -81,7 +81,6 @@ import {
   resolveActiveInactivityTimeoutMs,
   resolveChatRunArtifactQuietPeriodMs,
   resolveChatRunInactivityTimeoutMs,
-  resolveChatRunShutdownGraceMs,
 } from './runtimes/chat-run-lifecycle.js';
 export {
   composeLiveInstructionPrompt,
@@ -429,7 +428,7 @@ import {
   createPluginInstallationHelpers,
 } from './services/plugin-installation.js';
 import { createPluginShareTaskStore } from './services/plugin-share-tasks.js';
-import { getRouteRegistrationInventory, installRouteRegistrationGuard } from './route-registration-guard.js';
+import { installRouteRegistrationGuard } from './route-registration-guard.js';
 import { assertServerContextSatisfiesRoutes } from './route-context-contract.js';
 import {
   configureConnectorCredentialStore,
@@ -693,7 +692,7 @@ export { createAgentRuntimeToolPrompt };
 // recovery) was extracted to ./server/bootstrap/boot-reconcile.ts. startServer
 // threads the db + the two daemon-init singletons (orbitService, critiqueCfg) it
 // closes over.
-import { runBootReconcileAndSeed } from './server/bootstrap/index.js';
+import { runBootReconcileAndSeed, startDaemonListener } from './server/bootstrap/index.js';
 
 export function createAgentRuntimeEnv(
   baseEnv: NodeJS.ProcessEnv | Record<string, string | undefined>,
@@ -1002,8 +1001,15 @@ export async function startServer({
   runtime = null,
 }: StartServerOptions = {}) {
   host = normalizeDaemonBindHost(host);
-  let resolvedPort = port;
-  let daemonShuttingDown = false;
+  // Mutable runtime values shared with the deferred listener (bootstrap/
+  // start-listener.ts): the routes registered below read these through getter
+  // refs, and the listener writes the bound port + final URL back here once the
+  // socket binds. Boxed in one object so both sides see the same live values.
+  const daemonRuntimeState = {
+    resolvedPort: port,
+    daemonUrl: `http://127.0.0.1:${port}`,
+    daemonShuttingDown: false,
+  };
   const extraAllowedOrigins = configuredAllowedOrigins();
 
   // Plan §3.K1 / spec §15.7 — bound-API-token guard.
@@ -1092,7 +1098,7 @@ export async function startServer({
   registerApiOriginGuardMiddleware(app, {
     host,
     extraAllowedOrigins,
-    getResolvedPort: () => resolvedPort,
+    getResolvedPort: () => daemonRuntimeState.resolvedPort,
   });
   const db = openDatabase(PROJECT_ROOT, { dataDir: RUNTIME_DATA_DIR });
   // Restore paired browser-extension origins into the in-memory allowlist the
@@ -1151,7 +1157,6 @@ export async function startServer({
     },
     getLatestRun: (routineId) => getLatestRoutineRun(db, routineId),
   });
-  let daemonUrl = `http://127.0.0.1:${port}`;
 
   // Boot-time DB reconcile + registry seed. See ./server/bootstrap/boot-reconcile.ts.
   // Returns the bundled-plugin marketplace entries that the plugin-marketplace
@@ -1236,12 +1241,12 @@ export async function startServer({
 
   const resolvedPortRef = {
     get current() {
-      return resolvedPort;
+      return daemonRuntimeState.resolvedPort;
     },
   };
   const daemonUrlRef = {
     get current() {
-      return daemonUrl;
+      return daemonRuntimeState.daemonUrl;
     },
   };
   const httpDeps = {
@@ -1281,7 +1286,7 @@ export async function startServer({
 
   app.get('/api/ready', async (_req, res) => {
     const versionInfo = await readCurrentAppVersionInfo();
-    const ready = !daemonShuttingDown;
+    const ready = !daemonRuntimeState.daemonShuttingDown;
     res.status(ready ? 200 : 503).json({
       ok: ready,
       ready,
@@ -1299,8 +1304,8 @@ export async function startServer({
     paths: { RUNTIME_DATA_DIR },
     http: { requireLocalDaemonRequest, sendApiError },
     host,
-    getResolvedPort: () => resolvedPort,
-    getDaemonShuttingDown: () => daemonShuttingDown,
+    getResolvedPort: () => daemonRuntimeState.resolvedPort,
+    getDaemonShuttingDown: () => daemonRuntimeState.daemonShuttingDown,
     sandboxRuntime: SANDBOX_RUNTIME,
     env: process.env,
   });
@@ -1985,7 +1990,7 @@ export async function startServer({
     // live binding: server.ts reassigns daemonUrl after listen; the chat
     // run must see the final URL, not the value at factory-creation time.
     get daemonUrl() {
-      return daemonUrl;
+      return daemonRuntimeState.daemonUrl;
     },
   });
 
@@ -2152,7 +2157,7 @@ export async function startServer({
     paths: { PROJECTS_DIR, RUNTIME_DATA_DIR },
     agents: { detectAgents, getAgentDef },
     chat: { startChatRun },
-    lifecycle: { isDaemonShuttingDown: () => daemonShuttingDown },
+    lifecycle: { isDaemonShuttingDown: () => daemonRuntimeState.daemonShuttingDown },
     plugins: {
       connectorService,
       detectSkillPluginCandidateOnRunSuccess,
@@ -2571,7 +2576,7 @@ export async function startServer({
     agents: agentDeps,
     critique: critiqueDeps,
     openDesignPublicMetadata,
-    lifecycle: { isDaemonShuttingDown: () => daemonShuttingDown },
+    lifecycle: { isDaemonShuttingDown: () => daemonRuntimeState.daemonShuttingDown },
   });
 
   registerRoutineRoutes(app, {
@@ -2596,7 +2601,7 @@ export async function startServer({
     agents: agentDeps,
     critique: critiqueDeps,
     validation: validationDeps,
-    lifecycle: { isDaemonShuttingDown: () => daemonShuttingDown },
+    lifecycle: { isDaemonShuttingDown: () => daemonRuntimeState.daemonShuttingDown },
     telemetry: { reportFinalizedMessage, reportFeedback },
   });
 
@@ -2609,97 +2614,16 @@ export async function startServer({
   //   - `apps/daemon/src/cli.ts`            → expects `{ url, server, shutdown }`
   //   - `apps/daemon/sidecar/server.ts`     → expects `{ url, server }`
   //   - `apps/daemon/tests/version-route.test.ts` → expects `{ url, server }`
-  return await new Promise((resolve, reject) => {
-    let daemonShutdownStarted = false;
-    const cleanupDaemonBackgroundWork = () => {
-      composioConnectorProvider.stopCatalogRefreshLoop();
-      orbitService.stop();
-      routineService?.stop();
-    };
-    const shutdownDaemonRuns = async () => {
-      if (daemonShutdownStarted) return;
-      daemonShutdownStarted = true;
-      daemonShuttingDown = true;
-      await design.runs.shutdownActive({ graceMs: resolveChatRunShutdownGraceMs() });
-      await terminalService.shutdownActive();
-      await design.analytics.shutdown();
-    };
-    let server;
-    try {
-      server = app.listen(port, host);
-      server.once('listening', () => {
-        // Widen the between-request idle window so kept-alive sockets
-        // belonging to chat/SSE clients survive the gaps between bursts.
-        //
-        // Node's `keepAliveTimeout` (default 5s) only arms *after* a
-        // response finishes writing, bounding the idle gap before the next
-        // request on the same socket — it does not fire while an SSE
-        // response is still streaming. A streaming `/api/runs/:id/events`
-        // response stays open until the agent finishes, so middlebox idle
-        // timers (nginx, socat/docker bridges, EC2 SG NAT) are typically
-        // the proximate cause when an SSE stream drops; this listener-
-        // side change cannot extend a connection past those middleboxes.
-        //
-        // What it *does* fix: chat clients that pipeline multiple requests
-        // on the same TCP socket (status polls, run-status fetches, the
-        // initial GET before the SSE upgrade). With the default 5s window
-        // a sluggish client can lose the connection between two normal
-        // calls and reconnect-storm. 120s aligns with the in-band
-        // SSE_KEEPALIVE_INTERVAL_MS (25s) so kept-alive sockets used
-        // around an SSE stream stay warm across reasonable client pauses.
-        //
-        // `headersTimeout` must exceed `keepAliveTimeout` per the Node
-        // docs; otherwise a slow-loris client can stall request parsing.
-        server.keepAliveTimeout = 120_000;
-        server.headersTimeout = 125_000;
-        const address = server.address();
-        // `address()` can in theory return `string | AddressInfo | null`. For
-        // a TCP listener it's always `AddressInfo` with a `.port` — the guard
-        // is belt-and-braces so an unexpected null never silently produces a
-        // `http://127.0.0.1:0` URL that callers would then try to fetch.
-        const boundPort =
-          address && typeof address === 'object' ? address.port : null;
-        if (!boundPort) {
-          reject(
-            new Error(
-              `[od] daemon failed to resolve listening port (address=${JSON.stringify(address)})`,
-            ),
-          );
-          return;
-        }
-        resolvedPort = boundPort;
-        // When binding to all interfaces report localhost for local callers;
-        // when binding to a specific address (e.g. a Tailscale IP) report that
-        // address so remote callers and the sidecar use the correct URL.
-        const reportHost = host === '0.0.0.0' || host === '::' ? '127.0.0.1' : host;
-        const url = `http://${reportHost}:${resolvedPort}`;
-        if (!returnServer) {
-          console.log(`[od] daemon listening on ${url}`);
-        }
-        daemonUrl = url;
-        resolve(returnServer ? {
-          url,
-          server,
-          shutdown: shutdownDaemonRuns,
-          routeInventory: getRouteRegistrationInventory(app),
-        } : url);
-      });
-    } catch (error) {
-      cleanupDaemonBackgroundWork();
-      reject(error);
-      return;
-    }
-    server.once('close', () => {
-      void shutdownDaemonRuns().finally(cleanupDaemonBackgroundWork);
-    });
-    // `app.listen` throws synchronously when the port is already in use on
-    // some Node versions, but emits an `error` event on others (and for
-    // EACCES / EADDRNOTAVAIL even on the same Node). Wire the event so the
-    // returned Promise always settles instead of hanging forever.
-    server.on('error', (error) => {
-      cleanupDaemonBackgroundWork();
-      reject(error);
-    });
+  return await startDaemonListener({
+    app,
+    host,
+    port,
+    returnServer,
+    state: daemonRuntimeState,
+    design,
+    terminalService,
+    orbitService,
+    routineService,
   });
 }
 
