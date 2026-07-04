@@ -12,6 +12,7 @@ import multer from 'multer';
 import JSZip from 'jszip';
 import { execFile, spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import { randomId, sanitizeSlug } from './identifiers.js';
 import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -2948,15 +2949,6 @@ export async function startServer({
   });
 }
 
-function randomId() {
-  return randomUUID();
-}
-
-function sanitizeSlug(text) {
-  return String(text)
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/[\s_]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 64);
-}
+// randomId + sanitizeSlug were extracted to ./identifiers.ts (strangler-fig
+// slice). server.ts imports them back to keep threading them into the ctx
+// deps bundles (ctx.ids etc.) that route modules consume.
