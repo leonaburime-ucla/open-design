@@ -2,10 +2,14 @@ import type { McpAuthMode, McpServerConfig, McpTransport } from '../../mcp-confi
 import type { RuntimeAgentDef } from '../../runtimes/types.js';
 import { sanitizeMcpConfig, sanitizeMcpServer } from '../../mcp-config.js';
 
+/** @module run/tools/tool-bundle — MCP tool bundle parsing, validation, and external-MCP resolution for agent run startup. */
+
+/** The resolved set of MCP server configurations attached to a run at startup. */
 export interface RunToolBundle {
   mcpServers: McpServerConfig[];
 }
 
+/** Lightweight summary of a run's MCP tool bundle for inclusion in analytics and logging. */
 export interface RunToolBundleSummary {
   mcpServers: Array<{
     id: string;
@@ -17,24 +21,29 @@ export interface RunToolBundleSummary {
   }>;
 }
 
+/** Resolved MCP server selection merging persisted and run-scoped servers, with a set of ids that require persisted tokens. */
 export interface ExternalMcpSelection {
   enabledServers: McpServerConfig[];
   persistedTokenServerIds: Set<string>;
 }
 
+/** Result of parsing a raw tool bundle from a run request; carries the validated bundle on success or an error message on failure. */
 export type RunToolBundleParseResult =
   | { ok: true; bundle: RunToolBundle }
   | { ok: false; message: string };
 
+/** Result of validating a tool bundle against a specific agent's injection capabilities. */
 export type RunToolBundleValidationResult =
   | { ok: true }
   | { ok: false; message: string };
 
+/** Where the daemon will deliver the tool bundle's MCP servers for this run. */
 export type RunToolBundleDeliveryTarget =
   | 'managed-project'
   | 'external-project'
   | 'none';
 
+/** Options that control agent-specific validation rules applied to a tool bundle. */
 export interface RunToolBundleValidationOptions {
   deliveryTarget?: RunToolBundleDeliveryTarget;
 }
@@ -52,6 +61,12 @@ function agentLabel(agent: RunToolBundleAgent): string {
   return agent.name ? `${agent.name} (${agent.id})` : agent.id;
 }
 
+/**
+ * Coerces an unknown value into a valid `RunToolBundle`, sanitizing each MCP server entry.
+ * Returns an empty bundle when the input is not a plain object.
+ * @param raw - Unvalidated value from the run's stored tool bundle field.
+ * @returns A sanitized `RunToolBundle` safe to pass to downstream run startup.
+ */
 export function normalizeRunToolBundleForRun(raw: unknown): RunToolBundle {
   if (!isPlainObject(raw)) return { mcpServers: [] };
   return {
@@ -59,6 +74,12 @@ export function normalizeRunToolBundleForRun(raw: unknown): RunToolBundle {
   };
 }
 
+/**
+ * Parses and validates a raw `toolBundle` field from an incoming run request body.
+ * Rejects duplicate server ids and invalid server shapes with a descriptive error message.
+ * @param raw - The `toolBundle` field from the HTTP request body.
+ * @returns `{ ok: true, bundle }` on success, or `{ ok: false, message }` describing the first validation error.
+ */
 export function parseRunToolBundleForRequest(raw: unknown): RunToolBundleParseResult {
   if (raw == null) return { ok: true, bundle: { mcpServers: [] } };
   if (!isPlainObject(raw)) {
@@ -91,6 +112,12 @@ export function parseRunToolBundleForRequest(raw: unknown): RunToolBundleParseRe
   return { ok: true, bundle: { mcpServers: servers } };
 }
 
+/**
+ * Produces a lightweight analytics-safe summary of a run's MCP tool bundle.
+ * Omits server secrets and connection details; retains only identity and capability fields.
+ * @param bundle - The resolved tool bundle for the run, or null/undefined if absent.
+ * @returns A `RunToolBundleSummary` suitable for inclusion in analytics payloads.
+ */
 export function summarizeRunToolBundle(bundle: RunToolBundle | null | undefined): RunToolBundleSummary {
   const servers = Array.isArray(bundle?.mcpServers) ? bundle.mcpServers : [];
   return {
@@ -105,6 +132,14 @@ export function summarizeRunToolBundle(bundle: RunToolBundle | null | undefined)
   };
 }
 
+/**
+ * Validates that a run's tool bundle is compatible with the target agent's MCP injection mechanism.
+ * Checks transport constraints and project-type requirements specific to each `externalMcpInjection` mode.
+ * @param bundle - The tool bundle to validate, or null/undefined if the run carries none.
+ * @param agent - The agent definition for the run; null/undefined triggers an error when enabled servers are present.
+ * @param options - Optional delivery-target context that tightens project-type constraints for some agents.
+ * @returns `{ ok: true }` when compatible, or `{ ok: false, message }` with a user-facing rejection reason.
+ */
 export function validateRunToolBundleForAgent(
   bundle: RunToolBundle | null | undefined,
   agent: RunToolBundleAgent | null | undefined,
@@ -155,6 +190,14 @@ export function validateRunToolBundleForAgent(
   };
 }
 
+/**
+ * Merges persisted and run-scoped MCP servers into the final enabled server list for a run.
+ * Run-scoped entries override persisted entries with the same id; persisted servers are excluded entirely in sandbox mode.
+ * @param persistedServers - Project-level MCP servers from daemon storage.
+ * @param runScopedServers - Per-run MCP servers from the request's tool bundle.
+ * @param sandboxMode - When `true`, persisted servers are suppressed to isolate the run.
+ * @returns An `ExternalMcpSelection` with the merged enabled server list and the set of ids needing persisted tokens.
+ */
 export function resolveExternalMcpServersForRun({
   persistedServers,
   runScopedServers,

@@ -22,6 +22,8 @@ import {
   isPreviewModulePath,
 } from '../../runtimes/run-artifacts.js';
 
+/** @module run/artifacts/artifact-fs — Filesystem snapshot and diff utilities for tracking which artifacts a run created or modified. */
+
 // A file worth fingerprinting for run-finish bookkeeping: a user-facing
 // artifact (HTML / image / video / audio) OR a design-system marker
 // (`DESIGN.md`). Preview modules (`preview/*.html`) are already covered by the
@@ -30,6 +32,7 @@ function isTrackedRunFile(name: string): boolean {
   return isArtifactPath(name) || isDesignSystemFile(name);
 }
 
+/** Per-file identity record combining size, mtime, and optional content hash for change detection. */
 export interface ArtifactFingerprint {
   size: number;
   mtimeMs: number;
@@ -58,7 +61,7 @@ function fingerprintFile(full: string, size: number, mtimeMs: number): ArtifactF
   return { size, mtimeMs, hash };
 }
 
-// path -> fingerprint for every artifact-extension file under the project root.
+/** Map from absolute file path to fingerprint for every tracked artifact file under the project root. */
 export type ArtifactSnapshot = Map<string, ArtifactFingerprint>;
 
 // Directories that never hold user-facing artifacts; skipped so the walk stays
@@ -82,6 +85,12 @@ const MAX_FILES = 5000;
 // Walk `rootDir` and fingerprint every artifact file (HTML + image/video/audio,
 // per `run-artifacts.ts`). Best-effort: unreadable dirs/files are skipped, never
 // thrown. Returns an empty snapshot when the root does not exist.
+/**
+ * Walks a project directory and fingerprints every tracked artifact file (HTML, images, video, audio, DESIGN.md).
+ * Best-effort: unreadable directories and files are silently skipped. Capped at `MAX_FILES` entries.
+ * @param rootDir - Absolute path to the project root to walk.
+ * @returns An `ArtifactSnapshot` mapping each found file path to its fingerprint.
+ */
 export function snapshotProjectArtifacts(rootDir: string): ArtifactSnapshot {
   const snapshot: ArtifactSnapshot = new Map();
   const walk = (dir: string): void => {
@@ -112,6 +121,7 @@ export function snapshotProjectArtifacts(rootDir: string): ArtifactSnapshot {
   return snapshot;
 }
 
+/** Counts of created, modified, and design-system signals derived by diffing before/after artifact snapshots. */
 export interface RunArtifactDiff {
   // Artifact files (HTML / image / video / audio) present after the run but not
   // before. `DESIGN.md` is NOT an artifact extension and is excluded here.
@@ -136,6 +146,13 @@ export interface RunArtifactDiff {
 // artifact / design-system / preview-module signals the run_finished event
 // needs. Deletions are intentionally ignored: removing a file is not artifact
 // production.
+/**
+ * Diffs two artifact snapshots and classifies file changes into created, modified, design-system, and preview signals.
+ * Deletions are ignored; only additions and mutations count as artifact production.
+ * @param before - Snapshot taken immediately before the run started.
+ * @param after - Snapshot taken immediately after the run finished.
+ * @returns A `RunArtifactDiff` with counts and boolean flags for `run_finished` analytics.
+ */
 export function diffRunArtifacts(
   before: ArtifactSnapshot,
   after: ArtifactSnapshot,
@@ -168,6 +185,7 @@ export function diffRunArtifacts(
   return { created, modified, touched: created + modified, designSystemCreated, previewModuleCount };
 }
 
+/** Per-run baseline record pairing the pre-run snapshot with a contention flag set when concurrent runs share the same cwd. */
 export interface RunArtifactBaseline {
   cwd: string;
   before: ArtifactSnapshot;
@@ -183,6 +201,12 @@ export interface RunArtifactBaseline {
 // Registry of per-run baselines that flags same-cwd overlap. `remember` marks
 // both the incoming run and every still-open run sharing its cwd as contended;
 // `take` removes and returns a run's baseline at finish.
+/**
+ * Creates a bounded registry of per-run artifact baselines that automatically flags same-cwd concurrent runs as contended.
+ * `remember` stores a baseline at run start; `take` removes and returns it at run finish.
+ * @param cap - Maximum number of baselines to retain before evicting the oldest; defaults to 2000.
+ * @returns An object with `remember(runId, cwd, before)` and `take(runId)` methods.
+ */
 export function createRunArtifactBaselines(cap = 2000) {
   const baselines = new Map<string, RunArtifactBaseline>();
   return {

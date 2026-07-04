@@ -13,8 +13,12 @@
 // for those cases so the wire emission always carries an `error_code`
 // when result=failed; dashboards keyed on it never see a blank cell.
 
+/** @module run/core/result — Run result and status-code primitives shared by all run-domain concerns. */
+
+/** Terminal outcome of a run as reported in analytics and SSE events. */
 export type RunResult = 'success' | 'failed' | 'cancelled';
 
+/** Minimal run-status shape required to derive analytics result and error codes. */
 export interface RunStatusForAnalytics {
   status: string;
   errorCode?: string | null;
@@ -22,12 +26,24 @@ export interface RunStatusForAnalytics {
   signal?: string | null;
 }
 
+/**
+ * Maps a raw run status string to the canonical `RunResult` used by analytics.
+ * @param status - Raw status string from the run record (e.g. 'succeeded', 'canceled').
+ * @returns 'success', 'cancelled', or 'failed'.
+ */
 export function runResultFromStatus(status: string | undefined): RunResult {
   if (status === 'succeeded') return 'success';
   if (status === 'canceled') return 'cancelled';
   return 'failed';
 }
 
+/**
+ * Derives a non-empty `error_code` for analytics whenever `result === 'failed'`.
+ * Prefers the structured code stamped on the run; falls back to signal, exit
+ * code, or a sentinel so dashboards never see a blank cell.
+ * @param status - Run status fields including any stamped error code, exit code, and signal.
+ * @returns An error code string, or `undefined` when the run succeeded.
+ */
 export function deriveRunErrorCode(
   status: RunStatusForAnalytics,
 ): string | undefined {

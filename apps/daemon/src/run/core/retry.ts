@@ -7,11 +7,15 @@ import type {
   TrackingRunResult,
 } from '@open-design/contracts/analytics';
 
+/** @module run/core/retry — Retry backoff constants and policy decision logic for safe run retries. */
+
 // Counts automatic same-run retry attempts, not the initial run. Issue #3543
 // scopes the first implementation to at most one automatic same-run retry, so
 // the default caps retries at a single attempt (attemptCount >= 1 suppresses
 // with attempt_limit_reached).
+/** Maximum number of automatic same-run retry attempts allowed per run (not counting the initial attempt). */
 export const DEFAULT_SAFE_RUN_RETRY_MAX_ATTEMPTS = 1;
+/** Retry strategy label emitted in analytics for all automatic same-run transient retries. */
 export const SAFE_RUN_RETRY_STRATEGY: TrackingRunRetryStrategy = 'same_run_transient';
 
 // Backoff before a same-run retry restart. An immediate retry of a transient
@@ -21,9 +25,13 @@ export const SAFE_RUN_RETRY_STRATEGY: TrackingRunRetryStrategy = 'same_run_trans
 // The delay grows exponentially by attempt index and is capped, then equal
 // jitter (half fixed + half random) is applied to avoid synchronized retries
 // across concurrent runs.
+/** Base backoff delay in milliseconds for rate-limit retries; larger than the transient base because the upstream is explicitly asking us to slow down. */
 export const RATE_LIMIT_RETRY_BASE_DELAY_MS = 1_000;
+/** Base backoff delay in milliseconds for non-rate-limit transient retries. */
 export const TRANSIENT_RETRY_BASE_DELAY_MS = 500;
+/** Exponential multiplier applied per retry attempt index to grow the backoff delay. */
 export const RETRY_BACKOFF_MULTIPLIER = 2;
+/** Maximum backoff delay in milliseconds after exponential growth and before jitter is applied. */
 export const MAX_RETRY_BACKOFF_DELAY_MS = 8_000;
 
 function backoffBaseDelayMs(category: TrackingRunFailureCategory | undefined): number {
@@ -36,6 +44,13 @@ function backoffBaseDelayMs(category: TrackingRunFailureCategory | undefined): n
 // index of the attempt about to be scheduled), so the first retry uses the base
 // delay and each subsequent attempt doubles it up to the cap. Equal jitter
 // returns a value in [delay/2, delay].
+/**
+ * Computes an exponentially backed-off delay with equal jitter for a retry attempt.
+ * @param attemptIndex - 1-based index of the attempt about to be scheduled.
+ * @param category - Failure category used to select the base delay; rate-limit failures use a larger base.
+ * @param random - Optional jitter source; defaults to `Math.random` for production use.
+ * @returns Backoff duration in milliseconds, capped at `MAX_RETRY_BACKOFF_DELAY_MS`.
+ */
 export function computeRetryBackoffMs(
   attemptIndex: number,
   category: TrackingRunFailureCategory | undefined,
@@ -50,6 +65,7 @@ export function computeRetryBackoffMs(
   return Math.round(half + jitter * half);
 }
 
+/** Failure signal fields extracted from a run's error state, used by the retry policy. */
 export interface RunRetryFailureSignal {
   failure_category?: TrackingRunFailureCategory;
   failure_detail?: TrackingRunFailureDetail;
@@ -57,6 +73,7 @@ export interface RunRetryFailureSignal {
   retryable?: boolean;
 }
 
+/** Observable side-effects from the current run attempt that can suppress a retry to avoid double-work. */
 export interface RunRetrySideEffectState {
   cancelRequested?: boolean;
   userVisibleOutputSeen?: boolean;
@@ -65,6 +82,7 @@ export interface RunRetrySideEffectState {
   liveArtifactSeen?: boolean;
 }
 
+/** Full input to `decideSafeRunRetry`, combining run outcome, failure signal, attempt count, and side-effect guards. */
 export interface RunRetryPolicyInput {
   result: TrackingRunResult;
   failure?: RunRetryFailureSignal;
@@ -75,6 +93,7 @@ export interface RunRetryPolicyInput {
   random?: () => number;
 }
 
+/** Discriminated union output of `decideSafeRunRetry`; either a retry schedule or a suppression reason. */
 export type RunRetryPolicyDecision =
   | {
       shouldRetry: true;
@@ -115,6 +134,12 @@ function isTransientRetryCategory(
   return false;
 }
 
+/**
+ * Decides whether a failed run should be automatically retried and, if so, schedules the delay.
+ * Suppresses retries when the run was cancelled, emitted user-visible output, or hit a non-transient failure.
+ * @param input - Run outcome, failure classification, attempt count, and observable side effects.
+ * @returns A `RunRetryPolicyDecision` with `shouldRetry: true` and a delay, or `shouldRetry: false` with a suppression reason.
+ */
 export function decideSafeRunRetry(
   input: RunRetryPolicyInput,
 ): RunRetryPolicyDecision {

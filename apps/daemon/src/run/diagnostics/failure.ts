@@ -9,11 +9,15 @@ import { classifyAmrAccountFailure } from '../../integrations/vela-errors.js';
 import { classifyAgentServiceFailure } from '../../runtimes/auth.js';
 import type { RunResult, RunStatusForAnalytics } from '../core/index.js';
 
+/** @module run/diagnostics/failure — Run failure classification — maps exit codes, stderr signals, and runtime errors to structured failure categories. */
+
+/** A recorded run event entry used as input to the failure classification pipeline. */
 export interface RunEventForFailureClassification {
   event: string;
   data: unknown;
 }
 
+/** Full input to `classifyRunFailure`, combining run outcome, status, error code, agent id, and event stream. */
 export interface RunFailureClassificationInput {
   result: RunResult;
   status: RunStatusForAnalytics & {
@@ -24,6 +28,7 @@ export interface RunFailureClassificationInput {
   events?: RunEventForFailureClassification[];
 }
 
+/** Structured failure classification output emitted as part of the `run_finished` analytics payload. */
 export interface RunFailureClassification {
   failure_category: TrackingRunFailureCategory;
   failure_detail: TrackingRunFailureDetail;
@@ -469,6 +474,13 @@ function classification(
   };
 }
 
+/**
+ * Classifies a completed run's failure into a structured category, detail, stage, and user action.
+ * Inspects error codes, text patterns across status, events, and stderr to produce a deterministic
+ * classification; returns `undefined` when the run succeeded.
+ * @param input - Run outcome, status fields, error code, and recorded event stream.
+ * @returns A `RunFailureClassification` for failed or cancelled runs, or `undefined` for success.
+ */
 export function classifyRunFailure(
   input: RunFailureClassificationInput,
 ): RunFailureClassification | undefined {

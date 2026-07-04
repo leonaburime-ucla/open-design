@@ -1,6 +1,8 @@
 import type { TrackingRuntimeType } from '@open-design/contracts/analytics';
 import type { VelaLoginStatus } from '../../integrations/vela.js';
 
+/** @module run/analytics/analytics — Run analytics observability — runtime-type classification, timing summaries, and usage extraction. */
+
 const RUNTIME_TYPES: readonly TrackingRuntimeType[] = [
   'amr_cloud',
   'byok',
@@ -15,6 +17,12 @@ const RUNTIME_TYPES: readonly TrackingRuntimeType[] = [
 // The web client passes the true runtime for the run it launched as a request
 // hint; a valid hint wins. Anything outside the closed runtime set (missing,
 // malformed) falls back to the daemon's own derivation.
+/**
+ * Resolves the `runtime_type` to stamp on daemon-emitted run analytics events.
+ * Prefers a valid client-supplied hint (which can observe BYOK) over the daemon's best-effort derivation.
+ * @param args - Daemon-derived runtime type and optional client hint from the request.
+ * @returns The runtime type to use for this run's analytics events.
+ */
 export function runtimeTypeForRunAnalytics(args: {
   derived: TrackingRuntimeType;
   hint?: unknown;
@@ -35,6 +43,12 @@ export function runtimeTypeForRunAnalytics(args: {
 // `app_user_id`. Env-configured auth (VELA_RUNTIME_KEY/VELA_LINK_URL) is
 // authorized but carries no profile, so it yields no stamp — only
 // file-backed sign-in knows the account id.
+/**
+ * Returns the AMR account `user_id` property to stamp on daemon-emitted run analytics events.
+ * Yields an empty object when no file-backed sign-in is active, so the caller can spread the result safely.
+ * @param status - Current Vela login status; `null` when the AMR integration is absent.
+ * @returns A `{ user_id }` record when a logged-in account id is available, otherwise `{}`.
+ */
 export function amrUserIdForRunAnalytics(
   status: VelaLoginStatus | null,
 ): Record<string, string> {
@@ -43,6 +57,7 @@ export function amrUserIdForRunAnalytics(
   return id ? { user_id: id } : {};
 }
 
+/** A recorded run event entry passed to analytics summarization functions for scanning. */
 export interface RunEventForAnalyticsObservability {
   id?: number;
   event: string;
@@ -50,6 +65,7 @@ export interface RunEventForAnalyticsObservability {
   timestamp?: number;
 }
 
+/** Millisecond timestamps collected at key lifecycle boundaries of a run, used to compute timing analytics segments. */
 export interface RunTelemetryTimestamps {
   startRequestedAt?: number;
   startChatRunStartedAt?: number;
@@ -73,6 +89,7 @@ export interface RunTelemetryTimestamps {
   finalizeStartAt?: number;
 }
 
+/** Token usage fields extracted from run events for the `run_finished` analytics payload. */
 export interface RunUsageAnalytics {
   input_tokens?: number;
   input_tokens_provider?: number;
@@ -100,6 +117,7 @@ export interface RunUsageAnalytics {
   agent_reported_model: string | null;
 }
 
+/** Timing breakdown for a run across lifecycle phases, emitted in the `run_finished` analytics payload. */
 export interface RunTimingAnalytics {
   queue_duration_ms?: number;
   pre_spawn_duration_ms?: number;
@@ -121,6 +139,11 @@ export interface RunTimingAnalytics {
   total_duration_ms: number;
 }
 
+/**
+ * Returns `true` when the request body carries a non-empty, non-default model string.
+ * Used to decide whether the daemon must scan the event stream for the agent-reported model.
+ * @param value - The raw `model` field from the run request body.
+ */
 export function hasExplicitRequestedModelForAnalytics(value: unknown): value is string {
   if (typeof value !== 'string') return false;
   const model = value.trim();
@@ -234,6 +257,15 @@ function extractUsageCacheFields(usage: Record<string, unknown>): UsageCacheFiel
   };
 }
 
+/**
+ * Scans a run's event stream to extract token usage and the agent-reported model for analytics.
+ * Performs a reverse scan for the last-call (aggregate) usage and a forward scan for the
+ * first-call (session-resume signal) usage, normalizing provider-specific field aliases.
+ * @param events - Ordered list of recorded run events.
+ * @param reqBodyModel - The `model` field from the run request body, used to decide whether to scan for model name.
+ * @param userQueryTokens - Estimated prompt token count, used to derive `estimated_context_tokens`.
+ * @returns A `RunUsageAnalytics` object with all available token and model fields populated.
+ */
 export function scanRunEventsForUsageAnalytics(
   events: RunEventForAnalyticsObservability[],
   reqBodyModel: unknown,
@@ -424,6 +456,13 @@ function eventTimestamp(
   return readNumber(rec.timestamp);
 }
 
+/**
+ * Computes the full timing breakdown for a run from telemetry timestamps and the event stream.
+ * Derives phase durations (queue, spawn, first-token, generation, tool, finalize) and
+ * splits spawn-to-first-token into auditable subsegments where markers were observed.
+ * @param args - Run timestamps, telemetry, and the ordered event list.
+ * @returns A `RunTimingAnalytics` object with all available duration fields populated.
+ */
 export function summarizeRunTimingAnalytics(args: {
   runCreatedAt: number;
   runUpdatedAt: number;
