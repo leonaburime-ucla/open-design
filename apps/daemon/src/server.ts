@@ -50,7 +50,7 @@ import { execCommandViaLoginShell } from './shell/commands.js';
 import {
   applyBakedPreviews,
   PLUGIN_PREVIEWS_ROUTE,
-} from './plugin-preview-bakes.js';
+} from './plugins/plugin-preview-bakes.js';
 
 import {
   UPLOAD_DIR,
@@ -155,7 +155,7 @@ import {
   assetCacheRewriteUrl,
   createPluginAssetCache,
   isCacheableExternalUrl,
-} from './plugin-asset-cache.js';
+} from './plugins/plugin-asset-cache.js';
 import {
   defaultMediaExecutionPolicy,
 } from './media/policy.js';
@@ -421,7 +421,7 @@ import { createStartChatRun } from './runtimes/start-chat-run.js';
 import { createComposeDaemonSystemPrompt } from './runtimes/compose-daemon-system-prompt.js';
 import { firePipelineForRun } from './runtimes/fire-pipeline-for-run.js';
 import { registerApiBearerAuthMiddleware, registerApiOriginGuardMiddleware } from './http/api-security-middleware.js';
-import { createPluginRegistryView } from './plugin-registry-view.js';
+import { createPluginRegistryView } from './plugins/plugin-registry-view.js';
 import { createPluginProjectHandlers } from './routes/plugins/project-handlers.js';
 import { createReportRunCompletionTelemetryFallback } from './run-telemetry-fallback.js';
 import {
@@ -717,7 +717,7 @@ export {
 
 // readProjectPluginManifest was extracted verbatim to ./plugin-share.ts
 // (strangler-fig slice 3); re-export its __forTest wrapper to preserve surface.
-export { __forTestReadProjectPluginManifest } from './plugin-share.js';
+export { __forTestReadProjectPluginManifest } from './plugins/plugin-share.js';
 
 // Run-event analytics scanners were extracted verbatim to
 // ./run-event-analytics.ts (strangler-fig slice 3). Import the five functions

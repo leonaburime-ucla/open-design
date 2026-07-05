@@ -10,7 +10,7 @@
  * collectBundledScenarios is private to loadPluginRegistryView.
  */
 
-import { FIRST_PARTY_ATOMS, listInstalledPlugins } from './plugins/index.js';
+import { FIRST_PARTY_ATOMS, listInstalledPlugins } from './index.js';
 
 export function createPluginRegistryView(deps: any) {
   const { db, listAllSkills, listAllDesignSystems } = deps;
