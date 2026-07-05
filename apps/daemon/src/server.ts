@@ -286,8 +286,8 @@ import {
   readAppConfig,
   writeAppConfig,
 } from './app-config.js';
-import { OrbitService, formatLocalProjectTimestamp, renderOrbitTemplateSystemPrompt } from './orbit.js';
-import { buildOrbitNoLiveArtifactSummary } from './orbit-agent-summary.js';
+import { OrbitService, formatLocalProjectTimestamp, renderOrbitTemplateSystemPrompt } from './orbit/index.js';
+import { buildOrbitNoLiveArtifactSummary } from './orbit/index.js';
 import {
   RoutineService,
 } from './automation/index.js';

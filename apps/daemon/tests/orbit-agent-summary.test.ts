@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildOrbitNoLiveArtifactSummary,
   extractOrbitAgentFinalExplanation,
-} from '../src/orbit-agent-summary.js';
+} from '../src/orbit/index.js';
 
 describe('Orbit agent summary helpers', () => {
   it('preserves the agent final explanation for no-live-artifact Orbit runs', () => {

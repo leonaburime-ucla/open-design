@@ -11,7 +11,7 @@ import {
   renderOrbitTemplateSystemPrompt,
   type OrbitRunHandler,
   type OrbitTemplateSelection,
-} from '../src/orbit.js';
+} from '../src/orbit/index.js';
 import { skillCwdAliasSegment } from '../src/cwd-aliases.js';
 
 function formatExpectedLocalOrbitPromptTimestamp(date: Date): string {

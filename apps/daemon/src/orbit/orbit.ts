@@ -4,8 +4,8 @@ import path from 'node:path';
 
 import type { OrbitRunSummary, OrbitStatusResponse } from '@open-design/contracts/api/orbit';
 
-import type { OrbitConfigPrefs } from './app-config.js';
-import { skillCwdAliasSegment } from './cwd-aliases.js';
+import type { OrbitConfigPrefs } from '../app-config.js';
+import { skillCwdAliasSegment } from '../cwd-aliases.js';
 
 export interface OrbitConnectorRunResult {
   connectorId: string;
