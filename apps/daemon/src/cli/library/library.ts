@@ -5,7 +5,7 @@
  * Atoms are first-party agent task primitives; skills/craft/design-systems are browsable registries.
  * Collaborators: parseDesignSystemRenameArgs from design-systems module; parseFlags, positionalArgs from core.
  */
-import { DESIGN_SYSTEMS_USAGE, isDesignSystemsHelpArg } from '../../design-systems-cli-help.js';
+import { DESIGN_SYSTEMS_USAGE, isDesignSystemsHelpArg } from '../../cli-help/index.js';
 import { parseDesignSystemRenameArgs } from '../../design-systems/index.js';
 import { LIBRARY_BOOLEAN_FLAGS, LIBRARY_STRING_FLAGS, cliDaemonBaseUrl, libraryDaemonUrl, parseFlags, positionalArgs, structuredHttpFailure, surfaceFetchError } from '../core/index.js';
 import { basename } from 'node:path';

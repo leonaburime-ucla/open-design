@@ -4,7 +4,7 @@
  * Mirrors the web Brands library and New Brand modal; enables headless brand extraction
  * and design system registration without the UI.
  */
-import { BRAND_USAGE, isBrandHelpArg } from '../../brands-cli-help.js';
+import { BRAND_USAGE, isBrandHelpArg } from '../../cli-help/index.js';
 import { cliDaemonBaseUrl, parseFlags, positionalArgs, readPromptFromFlags, structuredHttpFailure, surfaceFetchError } from '../core/index.js';
 
 // `od brand …` mirrors the Brands library + New Brand modal. Same surface,
