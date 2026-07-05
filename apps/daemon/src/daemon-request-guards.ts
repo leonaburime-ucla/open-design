@@ -30,7 +30,7 @@
 
 import net from 'node:net';
 import { randomUUID } from 'node:crypto';
-import { toolTokenRegistry } from './tool-tokens.js';
+import { toolTokenRegistry } from './auth/index.js';
 import { sendApiError } from './http/api-errors.js';
 import { ConnectorServiceError } from './connectors/service.js';
 import {

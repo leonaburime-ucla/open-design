@@ -9,7 +9,7 @@ import {
   isAllowedBrowserOrigin,
   isLocalSameOrigin,
   isZeroConfigClipperLibraryRequest,
-} from '../src/origin-validation.js';
+} from '../src/auth/index.js';
 
 type TestRequestOptions = {
   origin?: string;

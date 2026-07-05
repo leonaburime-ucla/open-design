@@ -132,7 +132,7 @@ import {
   setDesktopAuthSecret,
   signDesktopImportToken,
   verifyDesktopImportToken,
-} from './desktop-auth.js';
+} from './auth/index.js';
 import { normalizeDaemonBindHost } from './daemon-startup.js';
 export {
   isDesktopAuthGateActive,
@@ -141,7 +141,7 @@ export {
   setDesktopAuthSecret,
   signDesktopImportToken,
   verifyDesktopImportToken,
-} from './desktop-auth.js';
+} from './auth/index.js';
 import { readCurrentAppVersionInfo } from './app-version.js';
 import {
   findSkillById,
@@ -456,7 +456,7 @@ import {
 import {
   configuredAllowedOrigins,
   isLocalSameOrigin,
-} from './origin-validation.js';
+} from './auth/index.js';
 import { registerLibraryRoutes } from './routes/library.js';
 import {
   seedLibraryExtensionOrigins,
@@ -465,7 +465,7 @@ import { listLibraryTokenOrigins } from './library/index.js';
 import {
   apiTokenFromEnv,
   isApiAuthDisabled,
-} from './api-token-auth.js';
+} from './auth/index.js';
 import { createOpenDesignPublicMetadataService } from './services/open-design-public-metadata.js';
 
 /** @typedef {import('@open-design/contracts').ApiErrorCode} ApiErrorCode */

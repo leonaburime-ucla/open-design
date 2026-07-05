@@ -252,7 +252,7 @@ import {
   CHAT_TOOL_ENDPOINTS,
   CHAT_TOOL_OPERATIONS,
   toolTokenRegistry,
-} from '../tool-tokens.js';
+} from '../auth/index.js';
 
 export function createStartChatRun(deps: any) {
   const {

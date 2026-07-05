@@ -13,7 +13,7 @@ import type { PluginShareAction } from '../../services/plugin-share-tasks.js';
 import { connectorService } from '../../connectors/service.js';
 import { getProject, insertConversation, insertProject } from '../../db.js';
 import { sendApiError } from '../../http/api-errors.js';
-import { isLocalSameOrigin } from '../../origin-validation.js';
+import { isLocalSameOrigin } from '../../auth/index.js';
 import { PLUGIN_SHARE_ACTION_LABELS, USER_PLUGIN_SOURCE_KINDS, copyPluginFolderForProjectContext, githubRepoNameFromPluginName, normalizePluginShareAction, renderPluginSharePrompt } from '../../plugin-share.js';
 import { buildConnectorProbe, generateSkillPluginDraft, getInstalledPlugin, installPlugin, listInstalledPlugins, resolvePluginSnapshot } from '../../plugins/index.js';
 import { ensureProject, resolveProjectDir } from '../../project/index.js';

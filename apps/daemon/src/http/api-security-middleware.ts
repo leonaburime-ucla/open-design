@@ -15,10 +15,10 @@
  * daemonUrl getter pattern in start-chat-run).
  */
 
-import { isApiTokenMiddlewareEnabled } from '../api-token-auth.js';
+import { isApiTokenMiddlewareEnabled } from '../auth/index.js';
 import { isLoopbackPeerAddress, parseProjectPreviewAssetPath } from '../daemon-request-guards.js';
 import { libraryExtensionAllowedOrigins } from '../library/index.js';
-import { allowedBrowserPorts, isAllowedBrowserOrigin, isZeroConfigClipperLibraryRequest } from '../origin-validation.js';
+import { allowedBrowserPorts, isAllowedBrowserOrigin, isZeroConfigClipperLibraryRequest } from '../auth/index.js';
 
 export function registerApiBearerAuthMiddleware(app: any, deps: any) {
   const { apiToken, projectPreviewScopes } = deps;
