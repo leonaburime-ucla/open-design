@@ -32,7 +32,7 @@ import {
   resolveDataDir,
   resolveProcessResourcesPath,
 } from '../../daemon-paths.js';
-import { migrateLegacyDataDirSync } from '../../legacy-data-migrator.js';
+import { migrateLegacyDataDirSync } from '../../migration/index.js';
 import {
   ensureSandboxRuntimeDirs,
   isSandboxModeEnabled,
