@@ -250,7 +250,7 @@ import { buildDesktopArtifactExportInput, buildDesktopPdfExportInput } from './e
 import { generateMedia } from './media/index.js';
 import { listElevenLabsVoiceOptions } from './integrations/elevenlabs-voices.js';
 import { searchResearch, ResearchError } from './research/index.js';
-import { openBrowser } from './browser-open.js';
+import { openBrowser } from './browser/index.js';
 import {
   AUDIO_DURATIONS_SEC,
   AUDIO_MODELS_BY_KIND,

@@ -33,7 +33,7 @@ import {
   buildBrowserUseRunState,
   isBrowserUseRequested,
   renderBrowserUseUnavailablePrompt,
-} from '../browser-use-diagnostics.js';
+} from '../browser/index.js';
 import {
   UPLOAD_DIR,
   composeLiveInstructionPrompt,

@@ -32,7 +32,7 @@ import {
 import { readCurrentAppVersionInfo } from '../../app-version.js';
 import { agentCliEnvForAgent, readAppConfig } from '../../config/index.js';
 import { spawnEnvForAgent } from '../../agents.js';
-import { collectBrowserUseDiscoveryFacts } from '../../browser-use-diagnostics.js';
+import { collectBrowserUseDiscoveryFacts } from '../../browser/index.js';
 
 interface ResolvedAgentHomes {
   amrOpenCodeHome: string | null;
