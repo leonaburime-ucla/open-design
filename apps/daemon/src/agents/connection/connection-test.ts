@@ -48,7 +48,7 @@ import { createClaudeStreamHandler } from '../../runtimes/claude-stream.js';
 import { diagnoseClaudeCliFailure } from './claude-diagnostics.js';
 import { createCopilotStreamHandler } from './copilot-stream.js';
 import { createJsonEventStreamHandler } from '../../runtimes/json-event-stream.js';
-import { agentCliEnvForAgent, validateAgentCliEnv } from '../../app-config.js';
+import { agentCliEnvForAgent, validateAgentCliEnv } from '../../config/index.js';
 import {
   classifyAgentAuthFailure,
   cursorAuthGuidance,
@@ -62,7 +62,7 @@ import {
   isUnsupportedMaxTokensError,
 } from '../../integrations/openai-chat-token-params.js';
 import { aihubmixHeaders } from '../../integrations/aihubmix.js';
-import type { AgentCliEnvPrefs } from '../../app-config.js';
+import type { AgentCliEnvPrefs } from '../../config/index.js';
 import type { RuntimeAgentDef } from '../../runtimes/types.js';
 import { resolveModelForAgent } from '../../runtimes/models.js';
 import { preparePromptFileForAgent, type PreparedPromptFile } from '../../runtimes/prompt-file.js';

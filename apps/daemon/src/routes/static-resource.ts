@@ -25,7 +25,7 @@ import {
   renderDesignSystemShowcase,
 } from '../design-systems/index.js';
 import { listPromptTemplates, readPromptTemplate } from '../prompt-templates.js';
-import { readAppConfig } from '../app-config.js';
+import { readAppConfig } from '../config/index.js';
 import { installFromTarget, uninstallById } from '../library/index.js';
 import type { RouteDeps } from '../server-context.js';
 

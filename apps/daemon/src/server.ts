@@ -285,7 +285,7 @@ import {
 import {
   readAppConfig,
   writeAppConfig,
-} from './app-config.js';
+} from './config/index.js';
 import { OrbitService, formatLocalProjectTimestamp, renderOrbitTemplateSystemPrompt } from './orbit/index.js';
 import { buildOrbitNoLiveArtifactSummary } from './orbit/index.js';
 import {

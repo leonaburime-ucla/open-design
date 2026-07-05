@@ -38,7 +38,7 @@ import { reconcileStaleRuns } from '../../critique/persistence.js';
 import { reconcileMediaTasksOnBoot, listRecentMediaTasks } from '../../media/tasks.js';
 import { TASK_TTL_AFTER_DONE_MS, mediaTasks, hydrateMediaTask } from '../../media/task-registry.js';
 import { registerBundledPlugins, startSnapshotGc, pruneExpiredSnapshots } from '../../plugins/index.js';
-import { readAppConfig } from '../../app-config.js';
+import { readAppConfig } from '../../config/index.js';
 import { detectAgents } from '../../agents.js';
 import { recoverStaleLiveArtifactRefreshes } from '../../live-artifacts/store.js';
 import {

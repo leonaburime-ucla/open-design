@@ -13,7 +13,7 @@
  * captures, so this is a plain exported function (unlike createStartChatRun).
  */
 
-import { readPluginEnvKnobs } from '../app-config.js';
+import { readPluginEnvKnobs } from '../config/index.js';
 import {
   registerBuiltInAtomWorkers,
   runPipelineForRun,

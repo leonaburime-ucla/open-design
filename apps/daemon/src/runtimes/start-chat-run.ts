@@ -220,7 +220,7 @@ import {
 import {
   agentCliEnvForAgent,
   readAppConfig,
-} from '../app-config.js';
+} from '../config/index.js';
 import {
   assertSandboxProjectRootAvailable,
   ensureProject,

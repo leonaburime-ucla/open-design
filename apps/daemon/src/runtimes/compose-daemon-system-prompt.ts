@@ -18,7 +18,7 @@
  */
 
 import { executionProfileFromStreamFormat } from '@open-design/contracts';
-import { readAppConfig } from '../app-config.js';
+import { readAppConfig } from '../config/index.js';
 import { loadCraftSections } from '../craft.js';
 import { type SkillCritiquePolicy, isCritiqueEnabled, parseEnvEnabled, parseRolloutPhase } from '../critique/rollout.js';
 import { narrowProjectCritiqueOverride } from '../critique/spawn-inputs.js';
