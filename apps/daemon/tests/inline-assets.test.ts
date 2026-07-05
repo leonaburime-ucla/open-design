@@ -9,7 +9,7 @@ import {
   inlineRelativeAssets,
   type AssetHandle,
   type InlineAssetReader,
-} from '../src/inline-assets.js';
+} from '../src/export/inline-assets.js';
 
 // FS-backed reader that mirrors the production GET /api/projects/:id/export
 // shape — stat for size, readFile for body — so this suite exercises the

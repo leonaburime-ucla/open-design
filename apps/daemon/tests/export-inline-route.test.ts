@@ -3,7 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { inlineRelativeAssets, type InlineAssetReader } from '../src/inline-assets.js';
+import { inlineRelativeAssets, type InlineAssetReader } from '../src/export/inline-assets.js';
 import { startServer } from '../src/server.js';
 
 // ---------------------------------------------------------------------------

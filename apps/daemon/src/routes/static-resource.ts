@@ -14,7 +14,7 @@ import {
   updateUserSkill,
 } from '../skills.js';
 import { listCodexPets, readCodexPetSpritesheet } from '../codex/index.js';
-import { syncCommunityPets } from '../community-pets-sync.js';
+import { syncCommunityPets } from '../codex/community-pets-sync.js';
 import {
   readDesignSystem,
   LocalDesignSystemImportError,
@@ -24,7 +24,7 @@ import {
   renderDesignSystemPreview,
   renderDesignSystemShowcase,
 } from '../design-systems/index.js';
-import { listPromptTemplates, readPromptTemplate } from '../prompt-templates.js';
+import { listPromptTemplates, readPromptTemplate } from '../media/prompt-templates.js';
 import { readAppConfig } from '../config/index.js';
 import { installFromTarget, uninstallById } from '../library/index.js';
 import type { RouteDeps } from '../server-context.js';

@@ -13,7 +13,7 @@ import {
   MAX_INLINE_OWNER_BYTES,
   inlineRelativeAssets,
   type InlineAssetReader,
-} from '../../inline-assets.js';
+} from '../inline-assets.js';
 import {
   buildDeckRenderInput,
   buildScreenshotPdf,
@@ -1006,7 +1006,7 @@ export function registerProjectExportRoutes(app: Express, ctx: RegisterProjectEx
   // `<script src>` are rewritten. `<img src>`, CSS `url(...)` refs,
   // `@import`, ES module imports, font sources, and similar remain
   // external in the response — see the docstring on
-  // `apps/daemon/src/inline-assets.ts` for the full not-rewritten list
+  // `apps/daemon/src/export/inline-assets.ts` for the full not-rewritten list
   // and rationale. A fully offline "self-contained" export with image
   // and font bundling would be a follow-up issue.
   //
