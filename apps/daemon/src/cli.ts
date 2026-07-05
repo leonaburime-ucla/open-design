@@ -9,7 +9,7 @@
  */
 import { runDaemonCliStartup } from './daemon-startup.js';
 import { runLiveArtifactsMcpServer } from './mcp/index.js';
-import { runArtifactsCli } from './artifacts-cli.js';
+import { runArtifactsCli } from './artifacts/artifacts-cli.js';
 import { runConnectorsToolCli } from './tools-connectors-cli.js';
 import { runDesignSystemsToolCli } from './tools-design-systems-cli.js';
 import { runLiveArtifactsToolCli } from './tools-live-artifacts-cli.js';

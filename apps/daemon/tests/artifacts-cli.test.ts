@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { runArtifactsCli } from '../src/artifacts-cli.js';
+import { runArtifactsCli } from '../src/artifacts/artifacts-cli.js';
 
 const ORIGINAL_ENV = { ...process.env };
 

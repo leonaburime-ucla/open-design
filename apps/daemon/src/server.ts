@@ -242,7 +242,7 @@ import {
   FinalizeUpstreamError,
   isFinalizeProviderProtocol,
 } from './finalize-design.js';
-import { buildDocumentPreview } from './document-preview.js';
+import { buildDocumentPreview } from './artifacts/document-preview.js';
 import { lintArtifact, renderFindingsForAgent } from './artifacts/lint-artifact.js';
 
 import { skillCwdAliasSegment, stageActiveSkill } from './cwd-aliases.js';
