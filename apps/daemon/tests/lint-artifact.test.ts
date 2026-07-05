@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { lintArtifact, type LintFinding } from '../src/lint-artifact.js';
+import { lintArtifact, type LintFinding } from '../src/artifacts/lint-artifact.js';
 
 function requiredFinding(findings: LintFinding[], id: string): LintFinding {
   const hit = findings.find((finding) => finding.id === id);

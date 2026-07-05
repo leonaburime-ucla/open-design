@@ -243,7 +243,7 @@ import {
   isFinalizeProviderProtocol,
 } from './finalize-design.js';
 import { buildDocumentPreview } from './document-preview.js';
-import { lintArtifact, renderFindingsForAgent } from './lint-artifact.js';
+import { lintArtifact, renderFindingsForAgent } from './artifacts/lint-artifact.js';
 
 import { skillCwdAliasSegment, stageActiveSkill } from './cwd-aliases.js';
 import { buildDesktopArtifactExportInput, buildDesktopPdfExportInput } from './export/index.js';
