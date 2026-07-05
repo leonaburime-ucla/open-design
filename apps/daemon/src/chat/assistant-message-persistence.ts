@@ -33,9 +33,9 @@ import {
   getSnapshot,
   insertSkillPluginCandidate,
   listSkillPluginCandidates,
-} from './plugins/index.js';
+} from '../plugins/index.js';
 import { emittedRenderableQuestionForm } from './question-form-detect.js';
-import { appendMessageAgentEvent, upsertMessage } from './db.js';
+import { appendMessageAgentEvent, upsertMessage } from '../db.js';
 
 export function reconcileAssistantMessageOnRunEnd(db, runs, run) {
   if (!run.assistantMessageId) return;

@@ -34,7 +34,7 @@ import { isSafeId as isSafeProjectId } from '../project/index.js';
 import { projectKindToTracking } from '@open-design/contracts/analytics';
 import { proxyDispatcherRequestInit, validateBaseUrlResolved } from '../agents/index.js';
 import { googleStreamGenerateContentUrl } from '../integrations/google-models.js';
-import { createRoleMarkerGuard } from '../role-marker-guard.js';
+import { createRoleMarkerGuard } from '../chat/index.js';
 import { authorizeReasoningEgress, sendReasoningEgressDenial } from '../reasoning-egress.js';
 
 // Allowlist for the `/feedback` route. Mirrors the

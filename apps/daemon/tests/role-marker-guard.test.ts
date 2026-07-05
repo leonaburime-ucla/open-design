@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createRoleMarkerGuard,
   FABRICATED_ROLE_MARKER_RE,
-} from '../src/role-marker-guard.js';
+} from '../src/chat/index.js';
 
 describe('FABRICATED_ROLE_MARKER_RE', () => {
   // ── Markdown-style markers (in scope) ─────────────────────────────

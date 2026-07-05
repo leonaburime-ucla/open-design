@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'vitest';
 
-import { createAgentTitleMarkerStripper } from '../src/title-marker.js';
+import { createAgentTitleMarkerStripper } from '../src/chat/index.js';
 
 function createStripper() {
   const titles: string[] = [];

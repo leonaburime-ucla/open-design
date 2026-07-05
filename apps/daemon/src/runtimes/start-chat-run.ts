@@ -25,7 +25,7 @@ import {
 } from '@open-design/contracts';
 import {
   emittedRenderableQuestionForm,
-} from '../question-form-detect.js';
+} from '../chat/index.js';
 import {
   userFacingAgentLabel,
 } from '../agents/index.js';
@@ -132,10 +132,10 @@ import {
 } from './claude-stream.js';
 import {
   createAgentTitleMarkerStripper,
-} from '../title-marker.js';
+} from '../chat/index.js';
 import {
   createRoleMarkerGuard,
-} from '../role-marker-guard.js';
+} from '../chat/index.js';
 import {
   createToolLoopGuard,
   resolveToolLoopMode,

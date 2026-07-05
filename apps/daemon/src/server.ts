@@ -758,12 +758,12 @@ import {
   persistRunEventToAssistantMessage,
   pinAssistantMessageOnRunCreate,
   reconcileAssistantMessageOnRunEnd,
-} from './assistant-message-persistence.js';
+} from './chat/index.js';
 export {
   daemonAgentPayloadToPersistedAgentEvent,
   detectSkillPluginCandidateOnRunSuccess,
   upsertSkillPluginCandidateAssistantMessage,
-} from './assistant-message-persistence.js';
+} from './chat/index.js';
 
 // Finalized-run Langfuse telemetry was extracted verbatim to ./run-telemetry.ts
 // and the turn-2 form-answer / chat-request composition helpers to
@@ -785,12 +785,12 @@ import {
   FORM_ANSWERED_GENERIC_OVERRIDE,
   FORM_ANSWERED_SYSTEM_OVERRIDE,
   FORM_ANSWERS_HEADER_RE,
-} from './chat-request-composition.js';
+} from './chat/index.js';
 export {
   composeChatUserRequestForAgent,
   FORM_ANSWERED_GENERIC_OVERRIDE,
   FORM_ANSWERED_SYSTEM_OVERRIDE,
-} from './chat-request-composition.js';
+} from './chat/index.js';
 
 // Cloudflare Pages deployment helpers (project-name resolution, provider
 // metadata shape, public deployment view, live link-status reconciliation)

@@ -33,7 +33,7 @@
 // other direction.
 
 import type { TrackingRunResult } from '@open-design/contracts/analytics';
-import { emittedRenderableQuestionForm } from '../question-form-detect.js';
+import { emittedRenderableQuestionForm } from '../chat/index.js';
 
 // Tool names cover Claude-style, Codex-style, and the ACP/MCP shapes
 // the daemon proxies. Keep aligned with the web-side `WRITE_NAMES` /
