@@ -8,7 +8,7 @@ import {
   trackPageView,
   trackSettingsConnectorAuthResult,
 } from '../analytics/events';
-import { ConnectorSection } from './SettingsDialog';
+import { ConnectorSection } from '../features/settings';
 import { Icon } from './Icon';
 import { McpClientSection } from './McpClientSection';
 import { SkillsSection } from './SkillsSection';

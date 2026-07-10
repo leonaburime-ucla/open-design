@@ -71,7 +71,7 @@ import {
   mergeProviderModelOptions,
   providerModelsCacheKey,
   type ProviderModelsCache,
-} from './providerModelsCache';
+} from '../features/settings';
 
 interface Props {
   config: AppConfig;

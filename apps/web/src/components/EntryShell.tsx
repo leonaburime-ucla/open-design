@@ -173,7 +173,7 @@ import { LIBRARY_UI_VISIBLE } from '../features/libraryUi';
 import {
   providerModelsCacheKey,
   type ProviderModelsCache,
-} from './providerModelsCache';
+} from '../features/settings';
 
 // Persist the entry nav-rail open/collapsed state so it survives both a
 // home -> project -> home navigation (EntryShell unmounts on the project

@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { InlineModelSwitcher } from '../../src/components/InlineModelSwitcher';
 import { AMR_LOGIN_TIMEOUT_MS } from '../../src/components/amrLoginPolling';
 import { fetchProviderModels } from '../../src/providers/provider-models';
-import { providerModelsCacheKey } from '../../src/components/providerModelsCache';
+import { providerModelsCacheKey } from '../../src/features/settings';
 import type { AgentInfo, AppConfig, ProviderModelOption } from '../../src/types';
 
 function optionNames(container: HTMLElement): string[] {
