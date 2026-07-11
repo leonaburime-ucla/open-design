@@ -3,7 +3,13 @@
 // these are the view-model shapes the slice's rules, hooks, and components pass
 // around. Per ADR 0002 they are never redeclared wire DTOs — they compose the
 // app's existing types into slice-local view models.
-import type { ApiProtocol, AppConfig, ConnectionTestResponse, ProviderModelOption } from '../../types';
+import type {
+  ApiProtocol,
+  AppConfig,
+  ConnectionTestResponse,
+  ProviderModelOption,
+  ProviderModelsResponse,
+} from '../../types';
 import type { ByokDraftField } from '../../components/byok/validation';
 import type { Dict } from '../../i18n/types';
 
@@ -308,6 +314,15 @@ export type TestState =
   | { status: 'idle' }
   | { status: 'running' }
   | { status: 'done'; result: ConnectionTestResponse };
+
+/** The BYOK model-discovery cluster's fetch state machine. `cacheKey` pins a
+ *  `running`/`done` state to the provider-models cache key it was fetched
+ *  for, so a stale result from a since-abandoned protocol/key/base-URL combo
+ *  never renders as current. */
+export type ProviderModelsState =
+  | { status: 'idle' }
+  | { status: 'running'; cacheKey: string }
+  | { status: 'done'; cacheKey: string; result: ProviderModelsResponse };
 
 /** A single editable row in the Project Locations section's draft list. `id`
  *  is set once the location has been saved to the daemon; a freshly-added

@@ -234,6 +234,22 @@ export type {
   ByokConnectionTestInput,
 } from './hooks/useByokConnectionTest.hooks';
 
+// BYOK model-discovery cluster of the execution-mode section: the account
+// model-list fetch state machine, its abort/revision/deferred-after-key-
+// clean bookkeeping, and the debounced auto-fetch. Transport reaches only
+// the injected `ByokModelDiscoveryPort` (`providers/provider-models`'s
+// `fetchProviderModels`); the field-focus/notice callbacks, the connection-
+// test cluster's silent auto-test trigger, and the derived draft-validation/
+// first-party-base-url/cache-key values come from the field-focus and
+// connection-test clusters and the still-inline derived-config cluster as
+// hook params.
+export type { ProviderModelsState } from './types';
+export { useWiredByokModelDiscovery } from './hooks/useByokModelDiscovery.hooks';
+export type {
+  ByokModelDiscoveryController,
+  ByokModelDiscoveryInput,
+} from './hooks/useByokModelDiscovery.hooks';
+
 // Project Locations section: the built-in default location card, the
 // editable list of external project folders, and the add-folder/remove/
 // default-selection controls. Transport (fetch/update/scan/open-folder-

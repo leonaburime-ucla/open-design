@@ -10,7 +10,6 @@ import {
 import { useAnalytics } from '../analytics/provider';
 import { recordAmrEntry } from '../analytics/amr-attribution';
 import {
-  trackSettingsByokModelsFetchResult,
   trackSettingsByokFieldClick,
   trackSettingsByokProviderOptionClick,
   trackSettingsConnectorAuthResult,
@@ -69,8 +68,6 @@ import {
   applyApiProtocolConfig,
   buildByokProviderOptions,
   byokDraftBaseUrlHost,
-  byokErrorKindFromIssues,
-  byokFieldMissingFromIssues,
   byokFirstPartyBaseUrlHint,
   byokProviderDraftKey,
   byokProviderKeyForConfig,
@@ -100,7 +97,6 @@ import {
   MediaProvidersSection,
   mergeProviderModelOptions,
   missingByokConnectionFields,
-  missingByokModelFetchFields,
   NotificationsSection,
   OrbitSection,
   persistByokProviderConfigDraft,
@@ -125,6 +121,7 @@ import {
   useWiredAmrAccount,
   useWiredByokConnectionTest,
   useWiredByokFieldFocus,
+  useWiredByokModelDiscovery,
   useWiredDaemonAgents,
   formatAmrWalletBalance,
   type AgentRefreshOptions,
@@ -133,6 +130,7 @@ import {
   type ByokProviderPreset,
   type ByokRequiredField,
   type ProviderModelsCache,
+  type ProviderModelsState,
   type RescanNotice,
   type SettingsSection,
 } from '../features/settings';
@@ -191,9 +189,7 @@ import type {
   ConnectionTestResponse,
   DesignSystemGenerationJob,
   ExecMode,
-  ProviderModelsResponse,
 } from '../types';
-import { fetchProviderModels } from '../providers/provider-models';
 import { openExternalUrl } from '../providers/registry';
 import { useByokImageModelOptions, useByokVideoModelOptions, useByokSpeechModelOptions } from '../media/aihubmix-image-models';
 import { isVisualStabilityMode } from '../utils/visualStability';
@@ -213,7 +209,6 @@ import { ByokProviderBaseUrl } from './byok/ByokProviderBaseUrl';
 import { ByokProviderPicker } from './byok/ByokProviderPicker';
 import {
   blockingByokDraftIssues,
-  cleanByokApiKey,
   resolveByokModelPreference,
   validateByokDraft,
   type ByokDraftField,
@@ -287,11 +282,6 @@ interface Props {
 }
 
 
-
-type ProviderModelsState =
-  | { status: 'idle' }
-  | { status: 'running'; cacheKey: string }
-  | { status: 'done'; cacheKey: string; result: ProviderModelsResponse };
 
 interface ByokProviderFormDraft {
   apiConfig: ApiProtocolConfig;
@@ -453,8 +443,6 @@ export function SettingsDialog({
     focusByokRequiredField,
     showByokDraftValidationNotice,
   } = useWiredByokFieldFocus({ apiProtocol, t });
-  const [providerModelsState, setProviderModelsState] =
-    useState<ProviderModelsState>({ status: 'idle' });
   const [localProviderModelsCache, setLocalProviderModelsCache] =
     useState<ProviderModelsCache>({});
   const hasSharedProviderModelsCache =
@@ -467,30 +455,6 @@ export function SettingsDialog({
     hasSharedProviderModelsCache
       ? onProviderModelsCacheChange!
       : setLocalProviderModelsCache;
-  const [providerModelsCommittedKey, setProviderModelsCommittedKey] =
-    useState<string | null>(() => {
-      const protocol = initial.apiProtocol ?? 'anthropic';
-      if (
-        initial.mode !== 'api' ||
-        protocol === 'azure' ||
-        protocol === 'ollama' ||
-        missingByokModelFetchFields(initial, protocol).length > 0 ||
-        !isValidApiBaseUrl(initial.baseUrl)
-      ) {
-        return null;
-      }
-      return providerModelsCacheKey(
-        protocol,
-        initial.baseUrl,
-        initial.apiKey,
-        initial.apiVersion ?? '',
-      );
-    });
-  const providerModelsAbortRef = useRef<AbortController | null>(null);
-  const providerModelsRevisionRef = useRef(0);
-  const providerModelsFirstResetRef = useRef(true);
-  const providerModelsSkipNextResetRef = useRef(false);
-  const deferAfterKeyCleanRef = useRef(false);
   const focusByokRequiredFieldAfterProtocolSwitchRef = useRef(false);
   const visualStabilityMode = isVisualStabilityMode();
   // Tracks whether the current BYOK model value came from an explicit user
@@ -543,36 +507,6 @@ export function SettingsDialog({
       ?? selectedMemoryChatAgent?.models?.[0]?.id
       ?? null
     : null;
-  useEffect(() => {
-    if (providerModelsFirstResetRef.current) {
-      providerModelsFirstResetRef.current = false;
-      return;
-    }
-    if (providerModelsSkipNextResetRef.current) {
-      providerModelsSkipNextResetRef.current = false;
-      return;
-    }
-    providerModelsRevisionRef.current += 1;
-    providerModelsAbortRef.current?.abort();
-    providerModelsAbortRef.current = null;
-    setProviderModelsCommittedKey(null);
-    setByokPreconditionNotice(null);
-    setProviderModelsState({ status: 'idle' });
-  }, [
-    cfg.apiProtocol,
-    cfg.apiKey,
-    cfg.baseUrl,
-    cfg.apiVersion,
-  ]);
-  // Releasing the abort controller on unmount avoids the "setState after
-  // unmount" warning if the dialog closes while a model-fetch is still
-  // running. The connection-test cluster's own abort controller is released
-  // by an equivalent unmount effect inside `useByokConnectionTest`.
-  useEffect(() => {
-    return () => {
-      providerModelsAbortRef.current?.abort();
-    };
-  }, []);
 
   const setMode = (mode: ExecMode) => {
     setCfg((c) => {
@@ -614,7 +548,7 @@ export function SettingsDialog({
       : (cfg.apiProtocol ?? 'anthropic') !== provider.protocol ||
         (cfg.apiProviderBaseUrl ?? null) !== nextProviderBaseUrlForCurrent;
     focusByokRequiredFieldAfterProtocolSwitchRef.current = !provider.custom;
-    providerModelsSkipNextResetRef.current = providerChangedBeforeSwitch;
+    skipNextProviderModelsReset(providerChangedBeforeSwitch);
     setCfg((current) => {
       const currentProtocol = current.apiProtocol ?? 'anthropic';
       const nextProviderBaseUrl = provider.custom ? null : provider.baseUrl;
@@ -758,199 +692,6 @@ export function SettingsDialog({
     onRefreshAgents,
     amrLoggedIn: amrCardStatus?.loggedIn === true,
   });
-
-  const handleFetchProviderModels = async (
-    options: { silent?: boolean; trigger?: 'auto' | 'manual' } = {},
-  ) => {
-    const trigger = options.trigger ?? (options.silent ? 'auto' : 'manual');
-    const byokProviderId = byokProtocolToTracking(apiProtocol);
-    const trackModelsFetchResult = (
-      props: Omit<
-        Parameters<typeof trackSettingsByokModelsFetchResult>[1],
-        'page_name' | 'area' | 'provider_id' | 'trigger' | 'source'
-      >,
-      source: 'network' | 'cache' = 'network',
-    ) => {
-      if (!byokProviderId) return;
-      trackSettingsByokModelsFetchResult(analytics.track, {
-        page_name: 'settings',
-        area: 'configure_execution_mode_byok',
-        provider_id: byokProviderId,
-        trigger,
-        source,
-        ...props,
-      });
-    };
-    if (providerModelsState.status === 'running') {
-      return;
-    }
-    if (apiProtocol === 'azure') {
-      trackModelsFetchResult({
-        result: 'failed',
-        error_code: 'unsupported_azure',
-        error_kind: 'unsupported_azure',
-        duration_ms: 0,
-      });
-      if (!options.silent) {
-        setByokPreconditionNotice({
-          action: 'test',
-          message: t('settings.fetchModelsUnsupportedAzure'),
-        });
-      }
-      return;
-    }
-    if (apiProtocol === 'ollama') {
-      trackModelsFetchResult({
-        result: 'failed',
-        error_code: 'unsupported_ollama',
-        error_kind: 'unsupported_ollama',
-        duration_ms: 0,
-      });
-      if (!options.silent) {
-        setByokPreconditionNotice({
-          action: 'test',
-          message: t('settings.fetchModelsUnsupportedOllama'),
-        });
-      }
-      return;
-    }
-    if (isProviderModelDiscoveryUnsupported(apiProtocol, cfg.baseUrl)) {
-      trackModelsFetchResult({
-        result: 'failed',
-        error_code: 'unsupported_provider_models',
-        error_kind: 'unsupported_provider_models',
-        duration_ms: 0,
-      });
-      if (!options.silent) {
-        setByokPreconditionNotice({
-          action: 'test',
-          message: t('settings.fetchModelsUnsupported'),
-        });
-      }
-      return;
-    }
-    const modelFetchBlockingIssues = blockingByokDraftIssues(
-      byokModelFetchDraftValidation,
-    );
-    if (byokFirstPartyBaseUrl?.hostTypo) {
-      if (!options.silent) {
-        setByokPreconditionNotice({
-          action: 'test',
-          field: 'base_url',
-          message: t('settings.testInvalidBaseUrl'),
-        });
-        focusByokRequiredField('base_url');
-      }
-      return;
-    }
-    if (modelFetchBlockingIssues.length > 0) {
-      trackModelsFetchResult({
-        result: 'failed',
-        error_code: byokErrorKindFromIssues(modelFetchBlockingIssues),
-        error_kind: byokErrorKindFromIssues(modelFetchBlockingIssues),
-        field_missing: byokFieldMissingFromIssues(modelFetchBlockingIssues),
-        duration_ms: 0,
-      });
-      if (!options.silent) {
-        showByokDraftValidationNotice('test', byokModelFetchDraftValidation);
-      }
-      return;
-    }
-    const cacheKey = providerModelsCacheKey(
-      apiProtocol,
-      cfg.baseUrl,
-      cfg.apiKey,
-      cfg.apiVersion ?? '',
-    );
-    const cachedModels = activeProviderModelsCache[cacheKey];
-    if (cachedModels) {
-      trackModelsFetchResult(
-        {
-          result: 'success',
-          model_count: cachedModels.length,
-          duration_ms: 0,
-        },
-        'cache',
-      );
-      setProviderModelsState({
-        status: 'done',
-        cacheKey,
-        result: {
-          ok: true,
-          kind: 'success',
-          latencyMs: 0,
-          models: cachedModels,
-        },
-      });
-      return;
-    }
-    const controller = new AbortController();
-    const revision = providerModelsRevisionRef.current;
-    providerModelsAbortRef.current = controller;
-    setProviderModelsState({ status: 'running', cacheKey });
-    const startedAt = performance.now();
-    const clearIfStale = () => {
-      if (providerModelsAbortRef.current === controller) {
-        setProviderModelsState({ status: 'idle' });
-      }
-    };
-    try {
-      const result = await fetchProviderModels(
-        {
-          protocol: apiProtocol,
-          baseUrl: cfg.baseUrl,
-          apiKey: cleanByokApiKey(cfg.apiKey),
-        },
-        controller.signal,
-      );
-      if (controller.signal.aborted) return;
-      if (providerModelsRevisionRef.current !== revision) {
-        clearIfStale();
-        return;
-      }
-      if (result.ok && result.models?.length) {
-        activeSetProviderModelsCache((prev) => ({
-          ...prev,
-          [cacheKey]: result.models ?? [],
-        }));
-      }
-      trackModelsFetchResult({
-        result: result.ok ? 'success' : 'failed',
-        ...(result.ok ? {} : { error_code: result.kind || 'UNKNOWN' }),
-        ...(result.ok ? {} : { error_kind: result.kind || 'UNKNOWN' }),
-        model_count: result.ok ? result.models?.length ?? 0 : 0,
-        duration_ms: Math.round(performance.now() - startedAt),
-      });
-      setProviderModelsState({ status: 'done', cacheKey, result });
-    } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return;
-      if (providerModelsRevisionRef.current !== revision) {
-        clearIfStale();
-        return;
-      }
-      setProviderModelsState({
-        status: 'done',
-        cacheKey,
-        result: {
-          ok: false,
-          kind: 'unknown',
-          latencyMs: 0,
-          detail: err instanceof Error ? err.message : 'Model list request failed',
-        },
-      });
-      trackModelsFetchResult({
-        result: 'failed',
-        error_code: err instanceof Error ? err.name : 'UNKNOWN',
-        error_kind: err instanceof Error ? err.name : 'UNKNOWN',
-        model_count: 0,
-        duration_ms: Math.round(performance.now() - startedAt),
-      });
-    } finally {
-      if (providerModelsAbortRef.current === controller) {
-        providerModelsAbortRef.current = null;
-      }
-    }
-  };
 
   const apiKeyConsoleLink = API_KEY_CONSOLE_LINKS[apiProtocol];
   const customByokProvider = customByokProviderPreset(t, apiProtocol, cfg.baseUrl, cfg.model);
@@ -1250,87 +991,43 @@ export function SettingsDialog({
   );
   const fetchedApiModelOptions =
     activeProviderModelsCache[providerModelsKey] ?? [];
-  const commitProviderModelsInputs = () => {
-    if (
-      byokFirstPartyBaseUrl?.hostTypo ||
-      blockingByokDraftIssues(byokModelFetchDraftValidation).length > 0
-    ) {
-      setProviderModelsCommittedKey(null);
-      return;
-    }
-    setProviderModelsCommittedKey(providerModelsKey);
-  };
-  const onByokKeyCommit = () => {
-    // Normalize the stored key on blur so the value that flows into the
-    // connection-test / model-fetch requests below (and back to the daemon
-    // via autosave) is already free of pasted whitespace / zero-width
-    // characters — otherwise a key like "sk-ant-...\n" would only raise a
-    // non-blocking warning yet still go out malformed over the wire.
-    const cleanedApiKey = cleanByokApiKey(cfg.apiKey);
-    if (cleanedApiKey !== cfg.apiKey) {
-      // Writing the cleaned key changes cfg.apiKey, which re-runs the reset
-      // effects above: one nulls providerModelsCommittedKey, the other bumps
-      // providerTestRevisionRef / clears providerAutoTestKeyRef. So committing
-      // the model key or starting the auto-test here would be clobbered — the
-      // model commit before the auto-fetch effect reads it, and the auto-test
-      // result dropped by the stale-revision guard. Defer both until the
-      // cleaned value has landed (effect below), otherwise account models
-      // never auto-load and the auto-test success/error never reaches the UI
-      // for the exact dirty-paste case this handles.
-      deferAfterKeyCleanRef.current = true;
-      updateApiConfig({ apiKey: cleanedApiKey });
-      return;
-    }
-    commitProviderModelsInputs();
-    handleAutoTestProvider();
-  };
-  useEffect(() => {
-    if (!deferAfterKeyCleanRef.current) return;
-    deferAfterKeyCleanRef.current = false;
-    if (
-      byokFirstPartyBaseUrl?.hostTypo ||
-      blockingByokDraftIssues(byokModelFetchDraftValidation).length > 0
-    ) {
-      setProviderModelsCommittedKey(null);
-    } else {
-      setProviderModelsCommittedKey(providerModelsKey);
-    }
-    // Runs after the provider-test reset effect (declaration order) bumped the
-    // revision for the cleaned key, so this auto-test is not flagged stale.
-    handleAutoTestProvider();
-  }, [
-    byokFirstPartyBaseUrl?.hostTypo,
-    byokModelFetchDraftValidation,
-    cfg.apiKey,
-    providerModelsKey,
-  ]);
-  useEffect(() => {
-    if (cfg.mode !== 'api') return;
-    if (visualStabilityMode) return;
-    if (isProviderModelDiscoveryUnsupported(apiProtocol, cfg.baseUrl)) return;
-    if (byokFirstPartyBaseUrl?.hostTypo) return;
-    if (blockingByokDraftIssues(byokModelFetchDraftValidation).length > 0) return;
-    // AIHubMix needs no key and prefills its base URL, so there's nothing to
-    // debounce-commit — fetch as soon as the tab is selected. Every other
-    // protocol waits until the key/baseUrl inputs are committed (on blur) so we
-    // don't fire on each keystroke.
-    if (apiProtocol !== 'aihubmix' && providerModelsCommittedKey !== providerModelsKey) return;
-    const timer = window.setTimeout(() => {
-      void handleFetchProviderModels({ silent: true });
-    }, 300);
-    return () => window.clearTimeout(timer);
-  }, [
-    apiProtocol,
-    byokFirstPartyBaseUrl?.hostTypo,
-    cfg.apiKey,
-    cfg.baseUrl,
-    cfg.mode,
-    cfg.apiVersion,
-    byokModelFetchDraftValidation,
+  // BYOK model-discovery cluster: the account-model-list fetch state
+  // machine + its debounced auto-fetch. Called here (mirroring the
+  // connection-test cluster just above) because it needs
+  // `byokModelFetchDraftValidation`/`providerModelsKey`, still-inline
+  // derived-config values computed just above, plus the connection-test
+  // cluster's own `handleAutoTestProvider` — safe because nothing before
+  // this point in the render reads the controller it returns (the earlier
+  // `setByokProvider`'s reads/writes of `providerModelsState`/
+  // `providerModelsCommittedKey`/`skipNextProviderModelsReset` are all
+  // inside a callback invoked after the full render commits).
+  const {
+    providerModelsState,
+    setProviderModelsState,
     providerModelsCommittedKey,
+    setProviderModelsCommittedKey,
+    skipNextProviderModelsReset,
+    handleFetchProviderModels,
+    commitProviderModelsInputs,
+    onByokKeyCommit,
+  } = useWiredByokModelDiscovery({
+    apiProtocol,
+    cfg,
+    initial,
+    t,
+    track: analytics.track,
+    byokModelFetchDraftValidation,
+    byokFirstPartyBaseUrl,
     providerModelsKey,
+    providerModelsCache: activeProviderModelsCache,
+    setProviderModelsCache: activeSetProviderModelsCache,
     visualStabilityMode,
-  ]);
+    focusByokRequiredField,
+    setByokPreconditionNotice,
+    showByokDraftValidationNotice,
+    handleAutoTestProvider,
+    updateApiConfig,
+  });
   const currentProviderModelsResult =
     providerModelsState.status === 'done' &&
     providerModelsState.cacheKey === providerModelsKey

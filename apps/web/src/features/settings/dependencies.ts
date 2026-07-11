@@ -30,6 +30,7 @@ import {
 import { subscribeAmrLoginStatusEvent, subscribeAmrWindowResync } from '../../providers/amr';
 import { scheduleAgentRescanNoticeTimeout, subscribeAgentInstallReturn } from '../../providers/agents';
 import { scheduleByokAutoTestTimeout, testAgent, testApiProvider } from '../../providers/connection-test';
+import { fetchProviderModels, scheduleProviderModelsAutoFetchTimeout } from '../../providers/provider-models';
 import {
   fetchProjectLocations,
   openProjectLocationFolderDialog,
@@ -41,6 +42,7 @@ import type {
   AmrAccountPort,
   ByokConnectionTestPort,
   ByokFieldFocusPort,
+  ByokModelDiscoveryPort,
   DaemonAgentPort,
   IntegrationsPort,
   MediaProvidersPort,
@@ -100,6 +102,13 @@ export const amrAccountPort: AmrAccountPort = {
 export const byokConnectionTestPort: ByokConnectionTestPort = {
   testProvider: testApiProvider,
   scheduleAutoTestTimeout: scheduleByokAutoTestTimeout,
+};
+
+/** Default binding: the BYOK model-discovery cluster's account-model-list
+ *  transport + its debounced auto-fetch timer bridge. */
+export const byokModelDiscoveryPort: ByokModelDiscoveryPort = {
+  fetchModels: fetchProviderModels,
+  scheduleAutoFetchTimeout: scheduleProviderModelsAutoFetchTimeout,
 };
 
 /** Default binding: the local-CLI agent list cluster's connection-test

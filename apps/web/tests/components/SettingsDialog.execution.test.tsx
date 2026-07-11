@@ -89,6 +89,10 @@ vi.mock('../../src/providers/registry', async () => {
 
 vi.mock('../../src/providers/provider-models', () => ({
   fetchProviderModels: fetchProviderModelsMock,
+  scheduleProviderModelsAutoFetchTimeout: (onTimeout: () => void, delayMs: number) => {
+    const handle = window.setTimeout(onTimeout, delayMs);
+    return () => window.clearTimeout(handle);
+  },
 }));
 
 vi.mock('../../src/analytics/provider', () => ({

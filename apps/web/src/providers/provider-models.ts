@@ -53,3 +53,19 @@ export function fetchProviderModels(
 ): Promise<ProviderModelsResponse> {
   return postProviderModels(input, signal);
 }
+
+/**
+ * Run `onTimeout` once after `delayMs`. Backs the BYOK model-discovery
+ * cluster's debounced auto-fetch (waits for the committed key/base-URL to
+ * settle before silently re-fetching the account model list). Mirrors
+ * `providers/connection-test.ts`'s `scheduleByokAutoTestTimeout`. Returns a
+ * cancel function.
+ */
+export function scheduleProviderModelsAutoFetchTimeout(
+  onTimeout: () => void,
+  delayMs: number,
+): () => void {
+  if (typeof window === 'undefined') return () => {};
+  const handle = window.setTimeout(onTimeout, delayMs);
+  return () => window.clearTimeout(handle);
+}

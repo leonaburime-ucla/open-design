@@ -22,6 +22,10 @@ function optionNames(container: HTMLElement): string[] {
 
 vi.mock('../../src/providers/provider-models', () => ({
   fetchProviderModels: vi.fn(),
+  scheduleProviderModelsAutoFetchTimeout: (onTimeout: () => void, delayMs: number) => {
+    const handle = window.setTimeout(onTimeout, delayMs);
+    return () => window.clearTimeout(handle);
+  },
 }));
 
 const baseConfig: AppConfig = {

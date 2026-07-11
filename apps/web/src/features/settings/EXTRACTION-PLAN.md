@@ -167,26 +167,66 @@ first.
   files (155 tests) all green; `pnpm guard` prints the boundary-check-passed
   line.
 
-### 4. BYOK model-discovery cluster — **pending**
-- **Owns**: `providerModelsState`, `providerModelsCommittedKey`,
-  `providerModelsAbortRef`, `providerModelsRevisionRef`,
-  `providerModelsFirstResetRef`, `providerModelsSkipNextResetRef`,
-  `deferAfterKeyCleanRef`, `handleFetchProviderModels`,
-  `commitProviderModelsInputs`, `onByokKeyCommit`, the reset effect
-  (~582-602), the auto-fetch debounce effect (~1894-1920), the
-  deferred-after-key-clean effect (~1850-1869). Transport already isolated in
-  `providers/provider-models.ts` (`fetchProviderModels`).
-- **Coupling**: needs cluster 2's notice/focus hook, cluster 5's
-  `byokModelFetchDraftValidation`, and the `activeProviderModelsCache` /
-  `activeSetProviderModelsCache` pair (already prop-derived in the
-  orchestrator from `sharedProviderModelsCache`/`onProviderModelsCacheChange`
-  — pass through as hook params, don't relocate the cache-selection logic
-  itself unless it turns out to have a natural owning hook).
-- **Target shape**: mirrors cluster 3 —
-  `ByokModelDiscoveryPort` in `ports.ts`, binding in `dependencies.ts`,
-  `hooks/useByokModelDiscovery.hooks.ts`.
-- **Risk**: medium.
-- **Status**: pending.
+### 4. BYOK model-discovery cluster — **done**
+- **Owned**: `providerModelsState`, `providerModelsCommittedKey` (+ its
+  lazy-initializer seeded from `initial`), `providerModelsAbortRef`,
+  `providerModelsRevisionRef`, `providerModelsFirstResetRef`,
+  `providerModelsSkipNextResetRef`, `deferAfterKeyCleanRef`,
+  `handleFetchProviderModels`, `commitProviderModelsInputs`,
+  `onByokKeyCommit`, the reset effect, the deferred-after-key-clean effect,
+  and the auto-fetch debounce effect. Transport already isolated in
+  `providers/provider-models.ts` (`fetchProviderModels`); added
+  `scheduleProviderModelsAutoFetchTimeout` alongside it (mirrors cluster 3's
+  `scheduleByokAutoTestTimeout`).
+- **Coupling**: took cluster 2's notice/focus hook, cluster 3's
+  `handleAutoTestProvider` (re-tests the connection right after a key
+  commit, same as before extraction), and cluster 5's still-inline
+  `byokModelFetchDraftValidation`/`byokFirstPartyBaseUrl`/`providerModelsKey`
+  as hook params, plus the `activeProviderModelsCache`/
+  `activeSetProviderModelsCache` pair (left owned by the orchestrator,
+  passed through unchanged) and `updateApiConfig` (the orchestrator's
+  generic cfg-patch helper, used by `onByokKeyCommit`'s dirty-paste-key
+  clean path).
+- **Landed shape**: `ByokModelDiscoveryPort` (`ports.ts`) —
+  `fetchModels(input, signal)` mirroring `ByokConnectionTestPort.testProvider`'s
+  shape, plus `scheduleAutoFetchTimeout`; bound in `dependencies.ts`.
+  `hooks/useByokModelDiscovery.hooks.ts` owns the state/refs/effects/handlers
+  exactly as before extraction. Unlike cluster 3's controller (read-only),
+  this one's controller exposes `providerModelsState`/
+  `providerModelsCommittedKey` AND their setters, plus a
+  `skipNextProviderModelsReset` function — because the still-inline
+  `setByokProvider` handler (BYOK-provider-switch cluster, not yet
+  extracted) snapshots and restores this cluster's state as part of its
+  per-provider form draft (`ByokProviderFormDraft`) and flags a same-render
+  skip-next-reset before calling `setCfg`. The orchestrator's
+  `useWiredByokModelDiscovery(...)` call site sits right after
+  `providerModelsKey` is computed (~cluster 5 territory), later in the
+  render than the removed code's original declaration point — safe because
+  nothing before that point in the render reads the controller (same
+  "hook call site moves later" pattern as cluster 3); `setByokProvider`'s
+  own reads/writes of the exposed state/setters/skip-flag are all inside a
+  callback invoked after the full render commits, so the later `const`
+  declaration order is fine. `ProviderModelsState` (previously a
+  SettingsDialog-local type) moved to `types.ts`.
+- **Verified difference from cluster 3**: this cluster's reset-on-cfg-change
+  effect unconditionally aborts and resets to `idle` on any relevant cfg
+  change (even mid-fetch) — unlike cluster 3's gentler reset, which leaves a
+  `running` test alone. Preserved verbatim; a first draft of this cluster's
+  unit test wrongly assumed cluster 3's behavior and had to be corrected.
+- **Risk**: medium — realized as expected. One extra fix needed:
+  `SettingsDialog.execution.test.tsx` and `InlineModelSwitcher.test.tsx`
+  both `vi.mock('../../src/providers/provider-models', ...)` with an
+  explicit export list, which didn't include the new
+  `scheduleProviderModelsAutoFetchTimeout` — `dependencies.ts`'s binding
+  resolved to `undefined` and threw at import time until both mocks were
+  updated to include it.
+- **Status**: **done**. `pnpm --filter @open-design/web typecheck`; the new
+  `useByokModelDiscovery.hooks.ts` unit tests (22 tests against a
+  hand-written fake `ByokModelDiscoveryPort`) plus the full
+  `tests/features/settings` suite (286 tests across 29 files); the existing
+  `SettingsDialog.*.test.tsx` suites (243 tests) and `InlineModelSwitcher.test.tsx`
+  all green; `pnpm guard` prints the boundary-check-passed line.
+  `SettingsDialog.tsx` went from 2466 → 2163 lines.
 
 ### 5. BYOK derived-config cluster (the composing hook) — **pending**
 - **Owns**: everything derived from `cfg`/`apiProtocol` that clusters 3+4 (and

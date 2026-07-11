@@ -14,6 +14,8 @@ import type {
   ConnectionTestResponse,
   OrbitRunStartResponse,
   OrbitStatusResponse,
+  ProviderModelsRequest,
+  ProviderModelsResponse,
   ProviderTestRequest,
   SkillSummary,
 } from '../../types';
@@ -113,6 +115,18 @@ export interface ByokConnectionTestPort {
   /** Run `onTimeout` once after `delayMs` for the debounced auto-test.
    *  Returns cancel. */
   scheduleAutoTestTimeout: (onTimeout: () => void, delayMs: number) => () => void;
+}
+
+/** Transport the BYOK model-discovery cluster of the execution-mode section
+ *  depends on: the provider account-model list request itself plus the
+ *  debounced auto-fetch's timer bridge. Mirrors `ByokConnectionTestPort`'s
+ *  shape. */
+export interface ByokModelDiscoveryPort {
+  /** `POST /api/provider/models`. Aborts via the given signal. */
+  fetchModels: (input: ProviderModelsRequest, signal: AbortSignal) => Promise<ProviderModelsResponse>;
+  /** Run `onTimeout` once after `delayMs` for the debounced auto-fetch.
+   *  Returns cancel. */
+  scheduleAutoFetchTimeout: (onTimeout: () => void, delayMs: number) => () => void;
 }
 
 /** Transport the local-CLI agent list cluster (rescan / connection test /
