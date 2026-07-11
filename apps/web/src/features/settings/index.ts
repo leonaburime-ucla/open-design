@@ -54,3 +54,10 @@ export { NotificationsSection } from './components/NotificationsSection';
 // subscription the guard's port-binding rule targets); the section component
 // layers analytics tracking on top of the hook's actions.
 export { AppearanceSection } from './components/AppearanceSection';
+
+// Critique Theater rollout toggle. Reaches `components/Theater`'s
+// useCritiqueTheaterEnabled/setCritiqueTheaterEnabled directly (that pair
+// already encapsulates the browser localStorage read/write + the
+// daemon-side project-metadata PATCH); the section component layers
+// analytics tracking on top of the hook's action.
+export { CritiqueTheaterSection } from './components/CritiqueTheaterSection';
