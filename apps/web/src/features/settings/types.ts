@@ -25,3 +25,26 @@ export type ComposioCredentialState =
   | 'pending-new'
   | 'saved'
   | 'saved-pending';
+
+/** A transient run notice shown by the Orbit section (success/error banner). */
+export interface OrbitNotice {
+  kind: 'success' | 'error';
+  message: string;
+}
+
+/**
+ * Proportional widths (0-100) for the Orbit run-result meter's three
+ * segments. Each non-zero segment is floored to a small sliver so it stays
+ * visible even when its share rounds to 0%.
+ */
+export interface OrbitMeterSegments {
+  succeeded: number;
+  skipped: number;
+  failed: number;
+}
+
+/** The Composio-gate copy/CTA i18n keys, branched on saved-key presence. */
+export interface OrbitConfigGateCopyKeys {
+  bodyKey: 'settings.orbit.gateBody' | 'settings.orbit.gateBodyNoKey';
+  actionKey: 'settings.orbit.gateAction' | 'settings.orbit.gateActionNoKey';
+}

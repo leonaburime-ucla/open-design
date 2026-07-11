@@ -20,3 +20,8 @@ export interface OrbitStatusResponse {
   lastRun?: OrbitRunSummary | null;
   lastRunsByTemplate?: Record<string, OrbitRunSummary>;
 }
+
+export interface OrbitRunStartResponse {
+  projectId: string;
+  agentRunId: string;
+}

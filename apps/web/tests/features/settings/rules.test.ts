@@ -1,13 +1,29 @@
 // Pure-rules tests for the settings slice: no doubles, just `contracts`/app
-// types (ADR 0002). Covers the provider-model cache keying/merging and the
-// Composio credential-state derivation now homed in the slice.
+// types (ADR 0002). Covers the provider-model cache keying/merging, the
+// Composio credential-state derivation, and the Orbit automation section's
+// business logic now homed in the slice.
 import { describe, expect, it } from 'vitest';
-import type { ProviderModelOption } from '../../../src/types';
+import type { ConnectorDetail } from '@open-design/contracts';
+import type { AppConfig, OrbitRunSummary, OrbitStatusResponse, ProviderModelOption, SkillSummary } from '../../../src/types';
 import {
   deriveComposioCredentialState,
   mergeProviderModelOptions,
   providerModelsCacheKey,
 } from '../../../src/features/settings';
+import {
+  computeOrbitMeterSegments,
+  configForManualOrbitRun,
+  countConnectedConnectors,
+  deriveEffectiveOrbitTemplateId,
+  deriveOrbitLastRun,
+  filterAndSortOrbitTemplates,
+  findOrbitTemplate,
+  isOrbitRunDisabled,
+  nextLegacyLastRunTemplateSkillId,
+  orbitConfigGateCopyKeys,
+  orbitLiveArtifactHref,
+  orbitTriggerLabelKey,
+} from '../../../src/features/settings/rules';
 
 describe('providerModelsCacheKey', () => {
   it('fingerprints the API key instead of embedding the raw secret', () => {
@@ -97,5 +113,236 @@ describe('deriveComposioCredentialState', () => {
 
   it('treats a whitespace-only draft as no draft', () => {
     expect(deriveComposioCredentialState({ apiKey: '   ' })).toBe('empty');
+  });
+});
+
+function baseConfig(over: Partial<AppConfig> = {}): AppConfig {
+  return {
+    mode: 'api',
+    apiKey: 'sk-test',
+    apiProtocol: 'anthropic',
+    baseUrl: 'https://api.anthropic.com',
+    model: 'claude-sonnet-4-5',
+    apiProviderBaseUrl: 'https://api.anthropic.com',
+    agentId: null,
+    skillId: null,
+    designSystemId: null,
+    ...over,
+  } as AppConfig;
+}
+
+function runSummary(over: Partial<OrbitRunSummary> = {}): OrbitRunSummary {
+  return {
+    completedAt: '2026-01-01T00:00:00.000Z',
+    connectorsChecked: 3,
+    connectorsSucceeded: 2,
+    connectorsFailed: 1,
+    connectorsSkipped: 0,
+    markdown: 'summary',
+    ...over,
+  };
+}
+
+describe('configForManualOrbitRun', () => {
+  it('coalesces a missing templateSkillId to the built-in default', () => {
+    const result = configForManualOrbitRun(baseConfig({ orbit: { enabled: true, time: '08:00', templateSkillId: null } }));
+    expect(result.orbit?.templateSkillId).toBe('orbit-general');
+  });
+
+  it('leaves an explicit templateSkillId untouched', () => {
+    const result = configForManualOrbitRun(
+      baseConfig({ orbit: { enabled: true, time: '08:00', templateSkillId: 'custom' } }),
+    );
+    expect(result.orbit?.templateSkillId).toBe('custom');
+  });
+
+  it('fills in the built-in default orbit config when the config has none at all', () => {
+    const result = configForManualOrbitRun(baseConfig());
+    expect(result.orbit).toEqual({ enabled: false, time: '08:00', templateSkillId: 'orbit-general' });
+  });
+});
+
+describe('isOrbitRunDisabled', () => {
+  it('is disabled while busy', () => {
+    expect(isOrbitRunDisabled(true, 3)).toBe(true);
+  });
+
+  it('is disabled while the connector count is unknown (still loading)', () => {
+    expect(isOrbitRunDisabled(false, null)).toBe(true);
+  });
+
+  it('is disabled with zero connected integrations', () => {
+    expect(isOrbitRunDisabled(false, 0)).toBe(true);
+  });
+
+  it('is enabled once idle with at least one connected integration', () => {
+    expect(isOrbitRunDisabled(false, 1)).toBe(false);
+  });
+});
+
+describe('deriveEffectiveOrbitTemplateId', () => {
+  it('prefers the saved id', () => {
+    expect(deriveEffectiveOrbitTemplateId('custom', 'orbit-general')).toBe('custom');
+  });
+
+  it('falls back to the default when the saved id is null/empty', () => {
+    expect(deriveEffectiveOrbitTemplateId(null, 'orbit-general')).toBe('orbit-general');
+    expect(deriveEffectiveOrbitTemplateId('', 'orbit-general')).toBe('orbit-general');
+  });
+
+  it('is empty when neither is set', () => {
+    expect(deriveEffectiveOrbitTemplateId(null, undefined)).toBe('');
+  });
+});
+
+describe('filterAndSortOrbitTemplates', () => {
+  const templates: SkillSummary[] = [
+    { id: 'b', name: 'Beta', scenario: 'orbit', featured: 0 } as SkillSummary,
+    { id: 'a', name: 'Alpha', scenario: 'orbit', featured: 1 } as SkillSummary,
+    { id: 'c', name: 'Other', scenario: 'not-orbit' } as SkillSummary,
+    { id: 'd', name: 'Delta', scenario: 'orbit' } as SkillSummary,
+  ];
+
+  it('filters to scenario === orbit and sorts featured-first, then by name', () => {
+    const result = filterAndSortOrbitTemplates(templates);
+    expect(result.map((s) => s.id)).toEqual(['a', 'b', 'd']);
+  });
+});
+
+describe('findOrbitTemplate', () => {
+  const templates: SkillSummary[] = [{ id: 'a', name: 'Alpha' } as SkillSummary];
+
+  it('finds the matching template', () => {
+    expect(findOrbitTemplate(templates, 'a')?.name).toBe('Alpha');
+  });
+
+  it('is null when the templates list is still loading', () => {
+    expect(findOrbitTemplate(null, 'a')).toBeNull();
+  });
+
+  it('is null when the id is empty or unmatched', () => {
+    expect(findOrbitTemplate(templates, '')).toBeNull();
+    expect(findOrbitTemplate(templates, 'missing')).toBeNull();
+  });
+});
+
+describe('countConnectedConnectors', () => {
+  it('counts only status === connected', () => {
+    const connectors = [
+      { status: 'connected' },
+      { status: 'connected' },
+      { status: 'disconnected' },
+    ] as ConnectorDetail[];
+    expect(countConnectedConnectors(connectors)).toBe(2);
+  });
+
+  it('is zero for an empty list', () => {
+    expect(countConnectedConnectors([])).toBe(0);
+  });
+});
+
+describe('nextLegacyLastRunTemplateSkillId', () => {
+  it('is null when the daemon already supports template-scoped history', () => {
+    const status: OrbitStatusResponse = {
+      lastRun: runSummary({ templateSkillId: null }),
+      lastRunsByTemplate: { 'orbit-general': runSummary() },
+    };
+    expect(nextLegacyLastRunTemplateSkillId(status, 'orbit-general', null)).toBeNull();
+  });
+
+  it('is null when the last run is already template-scoped', () => {
+    const status: OrbitStatusResponse = { lastRun: runSummary({ templateSkillId: 'orbit-general' }) };
+    expect(nextLegacyLastRunTemplateSkillId(status, 'orbit-general', null)).toBeNull();
+  });
+
+  it('locks onto the effective template id for a legacy unscoped run', () => {
+    const status: OrbitStatusResponse = { lastRun: runSummary({ templateSkillId: null }) };
+    expect(nextLegacyLastRunTemplateSkillId(status, 'orbit-general', null)).toBe('orbit-general');
+  });
+
+  it('holds the current value once locked instead of re-deriving it', () => {
+    const status: OrbitStatusResponse = { lastRun: runSummary({ templateSkillId: null }) };
+    expect(nextLegacyLastRunTemplateSkillId(status, 'orbit-general', 'already-locked')).toBe('already-locked');
+  });
+});
+
+describe('deriveOrbitLastRun', () => {
+  it('falls back to the bare last run when the daemon has no template-scoped history support', () => {
+    const status: OrbitStatusResponse = { lastRun: runSummary() };
+    expect(deriveOrbitLastRun(status, 'orbit-general', null)).toBe(status.lastRun);
+  });
+
+  it('prefers the template-scoped run when the daemon supports it', () => {
+    const scoped = runSummary({ markdown: 'scoped' });
+    const status: OrbitStatusResponse = {
+      lastRun: runSummary({ markdown: 'unscoped' }),
+      lastRunsByTemplate: { 'orbit-general': scoped },
+    };
+    expect(deriveOrbitLastRun(status, 'orbit-general', null)).toBe(scoped);
+  });
+
+  it('falls back to a matching legacy unscoped run when no scoped entry exists yet', () => {
+    const legacy = runSummary({ templateSkillId: null });
+    const status: OrbitStatusResponse = { lastRun: legacy, lastRunsByTemplate: {} };
+    expect(deriveOrbitLastRun(status, 'orbit-general', 'orbit-general')).toBe(legacy);
+  });
+
+  it('is null with template-scoped support but no matching run at all', () => {
+    const status: OrbitStatusResponse = { lastRunsByTemplate: {} };
+    expect(deriveOrbitLastRun(status, 'orbit-general', null)).toBeNull();
+  });
+});
+
+describe('computeOrbitMeterSegments', () => {
+  it('is all-zero with no last run', () => {
+    expect(computeOrbitMeterSegments(null)).toEqual({ succeeded: 0, skipped: 0, failed: 0 });
+  });
+
+  it('floors a non-zero segment to a visible sliver', () => {
+    const segments = computeOrbitMeterSegments(
+      runSummary({ connectorsSucceeded: 99, connectorsSkipped: 1, connectorsFailed: 0 }),
+    );
+    expect(segments.succeeded).toBeCloseTo(99);
+    expect(segments.skipped).toBe(3);
+    expect(segments.failed).toBe(0);
+  });
+});
+
+describe('orbitLiveArtifactHref', () => {
+  it('builds the preview href when both ids are present', () => {
+    const href = orbitLiveArtifactHref(runSummary({ artifactId: 'art', artifactProjectId: 'proj' }));
+    expect(href).toBe('/api/live-artifacts/art/preview?projectId=proj');
+  });
+
+  it('is null for a legacy run without artifact ids', () => {
+    expect(orbitLiveArtifactHref(runSummary())).toBeNull();
+    expect(orbitLiveArtifactHref(null)).toBeNull();
+  });
+});
+
+describe('orbitTriggerLabelKey', () => {
+  it('is the manual key for a manual trigger', () => {
+    expect(orbitTriggerLabelKey(runSummary({ trigger: 'manual' }))).toBe('settings.orbit.triggerManual');
+  });
+
+  it('is the scheduled key otherwise (including no last run)', () => {
+    expect(orbitTriggerLabelKey(runSummary({ trigger: 'scheduled' }))).toBe('settings.orbit.triggerScheduled');
+    expect(orbitTriggerLabelKey(null)).toBe('settings.orbit.triggerScheduled');
+  });
+});
+
+describe('orbitConfigGateCopyKeys', () => {
+  it('points at the with-key copy when a Composio key is already saved', () => {
+    expect(orbitConfigGateCopyKeys(true)).toEqual({
+      bodyKey: 'settings.orbit.gateBody',
+      actionKey: 'settings.orbit.gateAction',
+    });
+  });
+
+  it('points at the no-key copy otherwise', () => {
+    expect(orbitConfigGateCopyKeys(false)).toEqual({
+      bodyKey: 'settings.orbit.gateBodyNoKey',
+      actionKey: 'settings.orbit.gateActionNoKey',
+    });
   });
 });

@@ -19,3 +19,11 @@ export type { ProviderModelsCache } from './types';
 export { deriveComposioCredentialState } from './rules';
 export type { ComposioCredentialState } from './types';
 export { ConnectorSection } from './components/ConnectorSection';
+
+// Orbit automation section + its pure rules. Its transport
+// (`persistConfigAndRunOrbit`, `fetchOrbitStatus`) lives in `providers/orbit`
+// directly — outside `features/**` a provider is reachable without going
+// through a slice barrel, and the SettingsDialog orchestrator imports it from
+// there for its backward-compatible re-export.
+export { configForManualOrbitRun, isOrbitRunDisabled } from './rules';
+export { OrbitSection } from './components/OrbitSection';
