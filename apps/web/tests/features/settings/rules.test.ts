@@ -32,8 +32,10 @@ import {
   orbitTriggerLabelKey,
   sanitizeMediaProviderDocsUrl,
   settingsShortcut,
+  soundIdToTracking,
   sortAvailableMediaProviders,
   sortComingSoonMediaProviders,
+  testNotificationStatusText,
   utf8Btoa,
 } from '../../../src/features/settings/rules';
 import type { MediaProvider } from '../../../src/media/models';
@@ -576,5 +578,34 @@ describe('buildMcpClients', () => {
     const clients = buildMcpClients(fakeT);
     const withDeeplink = clients.filter((c) => c.buildDeeplink);
     expect(withDeeplink.map((c) => c.id)).toEqual(['cursor']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Notifications section
+// ---------------------------------------------------------------------------
+
+describe('soundIdToTracking', () => {
+  it('maps every known sound id to its underscored tracking enum', () => {
+    expect(soundIdToTracking('ding')).toBe('ding');
+    expect(soundIdToTracking('chime')).toBe('chime');
+    expect(soundIdToTracking('two-tone-up')).toBe('two_tone_up');
+    expect(soundIdToTracking('pluck')).toBe('pluck');
+    expect(soundIdToTracking('buzz')).toBe('buzz');
+    expect(soundIdToTracking('two-tone-down')).toBe('two_tone_down');
+    expect(soundIdToTracking('thud')).toBe('thud');
+  });
+
+  it('is undefined for an unrecognized sound id', () => {
+    expect(soundIdToTracking('unknown')).toBeUndefined();
+  });
+});
+
+describe('testNotificationStatusText', () => {
+  it('maps each completion-notification result to its i18n key', () => {
+    expect(testNotificationStatusText('shown')).toBe('settings.notifyTestSent');
+    expect(testNotificationStatusText('permission-denied')).toBe('settings.notifyDesktopBlocked');
+    expect(testNotificationStatusText('unsupported')).toBe('settings.notifyDesktopUnsupported');
+    expect(testNotificationStatusText('failed')).toBe('settings.notifyTestFailed');
   });
 });

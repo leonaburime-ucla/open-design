@@ -17,12 +17,15 @@ import type {
   ProviderModelOption,
   SkillSummary,
 } from '../../types';
+import type { CompletionNotificationResult } from '../../utils/notifications';
 import type {
   ComposioCredentialState,
   MediaProviderRowState,
   McpClient,
   McpInstallInfo,
   McpStdioServerConfig,
+  NotificationSoundTrackingId,
+  NotificationTestStatusKey,
   OrbitConfigGateCopyKeys,
   OrbitMeterSegments,
 } from './types';
@@ -502,4 +505,44 @@ export function buildMcpClients(t: Translate): McpClient[] {
       buildSnippetLang: () => 'json',
     },
   ];
+}
+
+// ---------------------------------------------------------------------------
+// Notifications section
+// ---------------------------------------------------------------------------
+
+/**
+ * Map the runtime SoundId (hyphenated, used by `utils/notifications.ts`) onto
+ * the analytics contract's underscored enum. Sounds that don't have a
+ * tracking entry drop to `undefined` so we never emit an off-enum value.
+ */
+export function soundIdToTracking(id: string): NotificationSoundTrackingId {
+  switch (id) {
+    case 'ding':
+      return 'ding';
+    case 'chime':
+      return 'chime';
+    case 'two-tone-up':
+      return 'two_tone_up';
+    case 'pluck':
+      return 'pluck';
+    case 'buzz':
+      return 'buzz';
+    case 'two-tone-down':
+      return 'two_tone_down';
+    case 'thud':
+      return 'thud';
+    default:
+      return undefined;
+  }
+}
+
+/** i18n key for the "send test notification" status line, keyed off the result. */
+export function testNotificationStatusText(
+  result: CompletionNotificationResult,
+): NotificationTestStatusKey {
+  if (result === 'shown') return 'settings.notifyTestSent';
+  if (result === 'permission-denied') return 'settings.notifyDesktopBlocked';
+  if (result === 'unsupported') return 'settings.notifyDesktopUnsupported';
+  return 'settings.notifyTestFailed';
 }

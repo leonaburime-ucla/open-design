@@ -135,3 +135,27 @@ export interface CodexInstallMessage {
   kind: 'success' | 'error';
   text: string;
 }
+
+// ---------------------------------------------------------------------------
+// Notifications section
+// ---------------------------------------------------------------------------
+
+/** The analytics-tracking id for a notification sound, `undefined` for an
+ *  unrecognized sound id (a `settings.notify*Sound` config value the
+ *  tracking schema doesn't enumerate). */
+export type NotificationSoundTrackingId =
+  | 'ding'
+  | 'chime'
+  | 'two_tone_up'
+  | 'pluck'
+  | 'buzz'
+  | 'two_tone_down'
+  | 'thud'
+  | undefined;
+
+/** i18n key for the "send test notification" status line. */
+export type NotificationTestStatusKey =
+  | 'settings.notifyTestSent'
+  | 'settings.notifyDesktopBlocked'
+  | 'settings.notifyDesktopUnsupported'
+  | 'settings.notifyTestFailed';

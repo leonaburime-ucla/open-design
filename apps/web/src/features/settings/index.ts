@@ -39,3 +39,11 @@ export { MediaProvidersSection } from './components/MediaProvidersSection';
 // pre-existing MCP OAuth/server adapters; the picker-dismiss and
 // copy-reset/deeplink browser bridges live in `providers/mcp/install-bridge`.
 export { IntegrationsSection } from './components/IntegrationsSection';
+
+// Notifications section: the completion sound toggle/pickers, the desktop
+// notification permission flow, and the test-notification action. Its
+// business logic reaches the browser Notification/Web Audio APIs through
+// `utils/notifications` directly (a synchronous browser call, not the
+// transport/DOM subscription the guard's port-binding rule targets); the
+// section component layers analytics tracking on top of the hook's actions.
+export { NotificationsSection } from './components/NotificationsSection';
