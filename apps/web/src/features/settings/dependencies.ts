@@ -11,6 +11,7 @@ import {
 } from '../../providers/orbit';
 import { fetchConnectors, fetchDesignTemplates, openExternalUrl } from '../../providers/registry';
 import { scheduleMediaProvidersReloadNoticeTimeout } from '../../providers/media-providers';
+import { scheduleByokFieldFocusTimeout } from '../../providers/byok-focus';
 import {
   fetchCodexInstallStatus,
   fetchMcpInstallInfo,
@@ -32,6 +33,7 @@ import { testAgent } from '../../providers/connection-test';
 import type {
   AboutPort,
   AmrAccountPort,
+  ByokFieldFocusPort,
   DaemonAgentPort,
   IntegrationsPort,
   MediaProvidersPort,
@@ -53,6 +55,11 @@ export const orbitPort: OrbitPort = {
 /** Default binding: the media-providers section's timer bridge. */
 export const mediaProvidersPort: MediaProvidersPort = {
   scheduleReloadNoticeTimeout: scheduleMediaProvidersReloadNoticeTimeout,
+};
+
+/** Default binding: the BYOK field-focus cluster's deferred-focus timer bridge. */
+export const byokFieldFocusPort: ByokFieldFocusPort = {
+  scheduleFocusTimeout: scheduleByokFieldFocusTimeout,
 };
 
 /** Default binding: the Integrations (MCP install snippet) section's transport + bridges. */

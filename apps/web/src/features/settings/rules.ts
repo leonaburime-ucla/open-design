@@ -887,6 +887,65 @@ export function missingByokModelFetchFields(
   return missing;
 }
 
+/** Human-readable label for a required BYOK field, e.g. for the "Missing:
+ *  API key, Base URL" precondition notice. The model field's label depends
+ *  on the protocol (Azure calls it a "deployment"). */
+export function byokRequiredLabel(
+  t: Translate,
+  apiProtocol: ApiProtocol,
+  field: ByokRequiredField,
+): string {
+  switch (field) {
+    case 'api_key':
+      return t('settings.apiKey');
+    case 'base_url':
+      return t('settings.baseUrl');
+    case 'model':
+      return apiProtocol === 'azure'
+        ? t('settings.azureDeploymentModel')
+        : t('settings.model');
+    default: {
+      const exhaustive: never = field;
+      return exhaustive;
+    }
+  }
+}
+
+export function formatByokMissingFields(
+  t: Translate,
+  apiProtocol: ApiProtocol,
+  fields: ByokRequiredField[],
+): string {
+  return fields.map((field) => byokRequiredLabel(t, apiProtocol, field)).join(', ');
+}
+
+/** Message for a single blocking BYOK draft-validation issue (malformed key,
+ *  invalid base URL, a missing required field). */
+export function byokDraftIssueMessage(
+  t: Translate,
+  apiProtocol: ApiProtocol,
+  issue: ByokDraftIssue,
+): string {
+  switch (issue.code) {
+    case 'api_key_required':
+    case 'base_url_required':
+    case 'model_required':
+      return t('settings.testMissingFields', {
+        fields: byokRequiredLabel(t, apiProtocol, issue.field),
+      });
+    case 'api_key_extra_whitespace':
+    case 'api_key_malformed':
+    case 'api_key_wrong_protocol':
+      return t('settings.apiKeyInvalid');
+    case 'base_url_invalid':
+      return t('settings.baseUrlInvalid');
+    default: {
+      const exhaustive: never = issue.code;
+      return exhaustive;
+    }
+  }
+}
+
 export function providerConnectionTestKey(
   protocol: ApiProtocol,
   config: Pick<AppConfig, 'apiKey' | 'baseUrl' | 'model' | 'apiVersion'>,

@@ -82,7 +82,7 @@ first.
   `<ByokProviderChips ... onSelect={(provider, active) => {...tracking...}} />`
   call. Tests added to `tests/features/settings/rules.test.ts`.
 
-### 2. BYOK field-focus + precondition-notice bridge — **pending**
+### 2. BYOK field-focus + precondition-notice bridge — **done**
 - **Owns**: `byokRequiredLabel`, `formatByokMissingFields`,
   `focusByokRequiredField` (uses 4 input refs + `window.setTimeout`),
   `byokPreconditionNotice` state, `showByokPreconditionNotice`,
@@ -91,17 +91,34 @@ first.
   (model discovery) — this must land before/alongside those two, or they take
   it as a hook-composition param per SKILL.md Phase 6's "hook takes other
   clusters' outputs as params" pattern.
-- **Target shape**: `window.setTimeout` scheduling can't live in
-  `features/**` — add a small SSR-guarded `scheduleFocus(el, delayMs)` (or
-  reuse an existing DOM provider if one exists; check `providers/` first)
-  bridge, then a `hooks/useByokFieldFocus.hooks.ts` owning the 4 refs +
-  `focusByokRequiredField` + the notice state + the two `show*` helpers.
-  Pure label helpers (`byokRequiredLabel`, `formatByokMissingFields`,
-  `byokDraftIssueMessage`) go in `rules.ts` (they already take `t` as a
-  param-like closure today — will need `t` passed explicitly since rules.ts
-  has no i18n access).
-- **Risk**: medium (shared by two other pending clusters).
-- **Status**: pending.
+- **Landed shape**: `providers/byok-focus.ts` (`scheduleByokFieldFocusTimeout`,
+  mirrors `providers/media-providers.ts`'s SSR-guarded timer bridge) +
+  `ByokFieldFocusPort` (`ports.ts`) bound in `dependencies.ts`; the three pure
+  label helpers (`byokRequiredLabel`, `formatByokMissingFields`,
+  `byokDraftIssueMessage`) moved to `rules.ts` taking `t`/`apiProtocol`
+  explicitly as params (no more closure capture); `ByokPreconditionAction`/
+  `ByokPreconditionNotice` moved to `types.ts` (was a SettingsDialog-local
+  `type ByokPreconditionAction = 'test'`); `hooks/useByokFieldFocus.hooks.ts`
+  owns the 4 refs + `byokPreconditionNotice` state +
+  `focusByokRequiredField`/`showByokPreconditionNotice`/
+  `showByokDraftValidationNotice`. The orchestrator destructures the
+  controller (refs keep their original local names so the JSX below —
+  `ByokKeyField`/`ByokProviderBaseUrl`/the model-picker block — is untouched);
+  `showByokPreconditionNotice` itself isn't destructured since (same as
+  before extraction) nothing outside the hook calls it directly. Also moved
+  `const apiProtocol = cfg.apiProtocol ?? 'anthropic'` earlier in the
+  component (right after `cfg`'s `useState`) since the hook needs it and the
+  original declaration site was ~700 lines below the hook's call site — pure
+  reordering of a `cfg`-only derivation, no behavior change. Clusters 3/4
+  (still inline) now call the hook's returned `focusByokRequiredField`/
+  `showByokDraftValidationNotice`/`setByokPreconditionNotice` instead of
+  locally-declared versions.
+- **Risk**: medium (shared by two other pending clusters) — realized as
+  expected, no surprises.
+- **Status**: **done**. `pnpm --filter @open-design/web typecheck`,
+  `tests/features/settings` (247 tests), and the 4 existing
+  `SettingsDialog.*.test.tsx` files (218 tests) all green; `pnpm guard`
+  prints the boundary-check-passed line.
 
 ### 3. BYOK connection-test cluster — **pending**
 - **Owns**: `providerTestState`, `providerTestAbortRef`,

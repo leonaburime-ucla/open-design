@@ -73,6 +73,15 @@ export interface AboutPort {
   openExternalUrl: (url: string) => void;
 }
 
+/** Browser-subscription bridge the BYOK field-focus/precondition-notice
+ *  cluster of the execution-mode section depends on. It owns no data
+ *  transport of its own — only the deferred-focus timer. */
+export interface ByokFieldFocusPort {
+  /** Run `onFocus` once after `delayMs`, so the precondition notice renders
+   *  before focus moves to the offending field. Returns cancel. */
+  scheduleFocusTimeout: (onFocus: () => void, delayMs: number) => () => void;
+}
+
 /** Transport the AMR account cluster (execution mode's vela sign-in/wallet
  *  card) depends on. */
 export interface AmrAccountPort {

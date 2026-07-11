@@ -194,3 +194,21 @@ export { LanguageSection } from './components/LanguageSection';
 
 // Custom-instructions section: a single free-text field on `cfg.customInstructions`.
 export { InstructionsSection } from './components/InstructionsSection';
+
+// BYOK field-focus + precondition-notice cluster of the execution-mode
+// section: the four field refs (API key/base URL/model select/custom model)
+// and the missing-field/draft-validation notice banner state. The
+// connection-test and model-discovery clusters (still inline in
+// `SettingsDialog.tsx`) take this hook's controller as a param rather than
+// owning their own copies of this state.
+export {
+  byokDraftIssueMessage,
+  byokRequiredLabel,
+  formatByokMissingFields,
+} from './rules';
+export type { ByokPreconditionAction, ByokPreconditionNotice } from './types';
+export { useWiredByokFieldFocus } from './hooks/useByokFieldFocus.hooks';
+export type {
+  ByokFieldFocusController,
+  ByokFieldFocusInput,
+} from './hooks/useByokFieldFocus.hooks';

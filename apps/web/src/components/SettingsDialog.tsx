@@ -124,6 +124,7 @@ import {
   useAmrHighlight,
   useWiredAbout,
   useWiredAmrAccount,
+  useWiredByokFieldFocus,
   useWiredDaemonAgents,
   formatAmrWalletBalance,
   type AgentRefreshOptions,
@@ -215,14 +216,11 @@ import { ByokModelField } from './byok/ByokModelField';
 import { ByokProviderBaseUrl } from './byok/ByokProviderBaseUrl';
 import { ByokProviderPicker } from './byok/ByokProviderPicker';
 import {
-  blockingByokDraftFields,
   blockingByokDraftIssues,
   cleanByokApiKey,
   resolveByokModelPreference,
   validateByokDraft,
   type ByokDraftField,
-  type ByokDraftIssue,
-  type ByokDraftValidation,
 } from './byok/validation';
 import {
   DEFAULT_ACCENT_COLOR,
@@ -310,11 +308,6 @@ interface ByokProviderFormDraft {
   apiModelUserSelected: boolean;
 }
 
-type ByokPreconditionAction = 'test';
-
-
-
-
 
 export function SettingsDialog({
   initial,
@@ -350,6 +343,7 @@ export function SettingsDialog({
     ...initial,
     baseUrl: resolveFixedOriginBaseUrl(initial.apiProtocol ?? 'anthropic', initial.baseUrl),
   }));
+  const apiProtocol = cfg.apiProtocol ?? 'anthropic';
   const [maxTokensInput, setMaxTokensInput] = useState(
     initial.maxTokens == null ? '' : String(initial.maxTokens),
   );
@@ -456,11 +450,16 @@ export function SettingsDialog({
     onAmrAgentUnavailable: () => setHoveredAgentCardId(null),
   });
 
-  const [byokPreconditionNotice, setByokPreconditionNotice] = useState<{
-    action: ByokPreconditionAction;
-    field?: ByokRequiredField;
-    message: string;
-  } | null>(null);
+  const {
+    apiKeyInputRef,
+    baseUrlInputRef,
+    modelSelectRef,
+    customModelInputRef,
+    byokPreconditionNotice,
+    setByokPreconditionNotice,
+    focusByokRequiredField,
+    showByokDraftValidationNotice,
+  } = useWiredByokFieldFocus({ apiProtocol, t });
   const [providerModelsState, setProviderModelsState] =
     useState<ProviderModelsState>({ status: 'idle' });
   const [localProviderModelsCache, setLocalProviderModelsCache] =
@@ -504,10 +503,6 @@ export function SettingsDialog({
   const deferAfterKeyCleanRef = useRef(false);
   const providerAutoTestKeyRef = useRef<string | null>(null);
   const byokLastUnsuccessfulTestKeyRef = useRef<string | null>(null);
-  const apiKeyInputRef = useRef<HTMLInputElement | null>(null);
-  const baseUrlInputRef = useRef<HTMLInputElement | null>(null);
-  const modelSelectRef = useRef<HTMLButtonElement | null>(null);
-  const customModelInputRef = useRef<HTMLInputElement | null>(null);
   const focusByokRequiredFieldAfterProtocolSwitchRef = useRef(false);
   const visualStabilityMode = isVisualStabilityMode();
   // Tracks whether the current BYOK model value came from an explicit user
@@ -1139,7 +1134,6 @@ export function SettingsDialog({
     }
   };
 
-  const apiProtocol = cfg.apiProtocol ?? 'anthropic';
   const apiKeyConsoleLink = API_KEY_CONSOLE_LINKS[apiProtocol];
   const customByokProvider = customByokProviderPreset(t, apiProtocol, cfg.baseUrl, cfg.model);
   const byokProviderOptions = buildByokProviderOptions(customByokProvider);
@@ -1151,101 +1145,6 @@ export function SettingsDialog({
   );
   const baseUrlValid = isValidApiBaseUrl(cfg.baseUrl);
   const baseUrlInvalid = Boolean(cfg.baseUrl.trim() && !baseUrlValid);
-  const byokRequiredLabel = (field: ByokRequiredField): string => {
-    switch (field) {
-      case 'api_key':
-        return t('settings.apiKey');
-      case 'base_url':
-        return t('settings.baseUrl');
-      case 'model':
-        return apiProtocol === 'azure'
-          ? t('settings.azureDeploymentModel')
-          : t('settings.model');
-      default: {
-        const exhaustive: never = field;
-        return exhaustive;
-      }
-    }
-  };
-  const formatByokMissingFields = (fields: ByokRequiredField[]): string =>
-    fields.map(byokRequiredLabel).join(', ');
-  const focusByokRequiredField = (field: ByokRequiredField | undefined) => {
-    if (!field) return;
-    window.setTimeout(() => {
-      if (field === 'api_key') {
-        apiKeyInputRef.current?.focus();
-        return;
-      }
-      if (field === 'base_url') {
-        baseUrlInputRef.current?.focus();
-        return;
-      }
-      if (customModelInputRef.current) {
-        customModelInputRef.current.focus();
-        return;
-      }
-      modelSelectRef.current?.focus();
-    }, 0);
-  };
-  const showByokPreconditionNotice = (
-    action: ByokPreconditionAction,
-    fields: ByokRequiredField[],
-  ) => {
-    setByokPreconditionNotice({
-      action,
-      message: t('settings.testMissingFields', {
-        fields: formatByokMissingFields(fields),
-      }),
-    });
-    focusByokRequiredField(fields[0]);
-  };
-  const byokDraftIssueMessage = (issue: ByokDraftIssue): string => {
-    switch (issue.code) {
-      case 'api_key_required':
-      case 'base_url_required':
-      case 'model_required':
-        return t('settings.testMissingFields', {
-          fields: byokRequiredLabel(issue.field),
-        });
-      case 'api_key_extra_whitespace':
-      case 'api_key_malformed':
-      case 'api_key_wrong_protocol':
-        return t('settings.apiKeyInvalid');
-      case 'base_url_invalid':
-        return t('settings.baseUrlInvalid');
-      default: {
-        const exhaustive: never = issue.code;
-        return exhaustive;
-      }
-    }
-  };
-  const showByokDraftValidationNotice = (
-    action: ByokPreconditionAction,
-    validation: ByokDraftValidation,
-  ) => {
-    const blockingFields = blockingByokDraftFields(validation);
-    if (blockingFields.length === 0) return;
-    const blockingIssues = blockingByokDraftIssues(validation);
-    const missingFields = blockingIssues
-      .filter((issue) =>
-        issue.code === 'api_key_required' ||
-        issue.code === 'base_url_required' ||
-        issue.code === 'model_required'
-      )
-      .map((issue) => issue.field);
-    if (missingFields.length > 0) {
-      showByokPreconditionNotice(action, missingFields);
-      return;
-    }
-    const firstIssue = blockingIssues[0];
-    if (!firstIssue) return;
-    setByokPreconditionNotice({
-      action,
-      field: firstIssue.field,
-      message: byokDraftIssueMessage(firstIssue),
-    });
-    focusByokRequiredField(firstIssue.field);
-  };
   // Autosave loop. Every committed edit to `cfg` schedules a debounced
   // sync to localStorage + the daemon. We keep a 400ms debounce so rapid
   // typing in text fields doesn't flood the daemon with PUTs while still

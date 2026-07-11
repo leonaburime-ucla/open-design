@@ -214,6 +214,20 @@ export interface AboutUpdateControl {
 export type ByokRequiredField = ByokDraftField;
 export type ByokFieldMissing = 'api_key' | 'base_url' | 'model' | 'multiple' | 'none';
 
+/** The BYOK precondition action a notice attaches to. Only `'test'` today
+ *  (the connection-test button); kept as a union so a future action can
+ *  reuse the same notice shape. */
+export type ByokPreconditionAction = 'test';
+
+/** A missing-field or draft-validation notice surfaced above the BYOK form.
+ *  `field` scopes the notice to a specific input (e.g. the API key field's
+ *  invalid-state ring) instead of the standalone banner. */
+export interface ByokPreconditionNotice {
+  action: ByokPreconditionAction;
+  field?: ByokRequiredField;
+  message: string;
+}
+
 /** A first-party base URL suggestion for a BYOK draft that looks like a typo'd host. */
 export interface ByokFirstPartyBaseUrlHint {
   baseUrl: string;
