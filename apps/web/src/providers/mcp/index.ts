@@ -15,6 +15,19 @@ export {
   openMcpAuthorizeUrl,
   type McpOAuthCallbackResult,
 } from './oauth-bridge';
+export {
+  fetchMcpInstallInfo,
+  fetchCodexInstallStatus,
+  installCodexMcp,
+  uninstallCodexMcp,
+  type McpInstallInfoResponse,
+  type McpCodexInstallStatusResponse,
+} from './install';
+export {
+  subscribeOutsideClickAndEscape,
+  scheduleMcpCopyResetTimeout,
+  openMcpDeeplink,
+} from './install-bridge';
 
 // Wire types re-exported for convenience so callers migrating off the former
 // `state/mcp.ts` module keep importing value + type from one place. The

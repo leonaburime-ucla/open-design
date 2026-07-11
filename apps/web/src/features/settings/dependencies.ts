@@ -11,7 +11,16 @@ import {
 } from '../../providers/orbit';
 import { fetchConnectors, fetchDesignTemplates } from '../../providers/registry';
 import { scheduleMediaProvidersReloadNoticeTimeout } from '../../providers/media-providers';
-import type { MediaProvidersPort, OrbitPort } from './ports';
+import {
+  fetchCodexInstallStatus,
+  fetchMcpInstallInfo,
+  installCodexMcp,
+  openMcpDeeplink,
+  scheduleMcpCopyResetTimeout,
+  subscribeOutsideClickAndEscape,
+  uninstallCodexMcp,
+} from '../../providers/mcp';
+import type { IntegrationsPort, MediaProvidersPort, OrbitPort } from './ports';
 
 /** Default binding: the real Orbit status/template/connector/run transport +
  *  browser-subscription bridges. */
@@ -28,4 +37,15 @@ export const orbitPort: OrbitPort = {
 /** Default binding: the media-providers section's timer bridge. */
 export const mediaProvidersPort: MediaProvidersPort = {
   scheduleReloadNoticeTimeout: scheduleMediaProvidersReloadNoticeTimeout,
+};
+
+/** Default binding: the Integrations (MCP install snippet) section's transport + bridges. */
+export const integrationsPort: IntegrationsPort = {
+  fetchInstallInfo: fetchMcpInstallInfo,
+  fetchCodexStatus: fetchCodexInstallStatus,
+  installCodex: installCodexMcp,
+  uninstallCodex: uninstallCodexMcp,
+  scheduleCopyResetTimeout: scheduleMcpCopyResetTimeout,
+  subscribePickerDismiss: subscribeOutsideClickAndEscape,
+  openDeeplink: openMcpDeeplink,
 };

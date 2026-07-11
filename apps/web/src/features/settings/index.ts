@@ -32,3 +32,10 @@ export { OrbitSection } from './components/OrbitSection';
 // callback (no port); the only owned transport is the reload-notice
 // auto-dismiss timer bridge in `providers/media-providers`.
 export { MediaProvidersSection } from './components/MediaProvidersSection';
+
+// Integrations section: the per-client MCP install snippet + the Codex
+// one-click install toggle it nests. Transport lives in `providers/mcp`
+// (install-info fetch, Codex probe/install/uninstall) alongside the
+// pre-existing MCP OAuth/server adapters; the picker-dismiss and
+// copy-reset/deeplink browser bridges live in `providers/mcp/install-bridge`.
+export { IntegrationsSection } from './components/IntegrationsSection';

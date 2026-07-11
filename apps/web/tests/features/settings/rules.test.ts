@@ -11,6 +11,11 @@ import {
   providerModelsCacheKey,
 } from '../../../src/features/settings';
 import {
+  buildCodexEnvToml,
+  buildMcpClients,
+  buildMcpStdioServerConfig,
+  buildSharedMcpJson,
+  commandPaletteShortcut,
   computeOrbitMeterSegments,
   configForManualOrbitRun,
   countConnectedConnectors,
@@ -19,16 +24,20 @@ import {
   deriveOrbitLastRun,
   filterAndSortOrbitTemplates,
   findOrbitTemplate,
+  homeConfigPath,
   isOrbitRunDisabled,
   nextLegacyLastRunTemplateSkillId,
   orbitConfigGateCopyKeys,
   orbitLiveArtifactHref,
   orbitTriggerLabelKey,
   sanitizeMediaProviderDocsUrl,
+  settingsShortcut,
   sortAvailableMediaProviders,
   sortComingSoonMediaProviders,
+  utf8Btoa,
 } from '../../../src/features/settings/rules';
 import type { MediaProvider } from '../../../src/media/models';
+import type { McpInstallInfo } from '../../../src/features/settings/types';
 
 describe('providerModelsCacheKey', () => {
   it('fingerprints the API key instead of embedding the raw secret', () => {
@@ -429,5 +438,143 @@ describe('deriveMediaProviderRowState', () => {
     expect(state.isSavedState).toBe(true);
     expect(state.tail).toBe('••••1234');
     expect(state.clearable).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Integrations (MCP install snippet) section
+// ---------------------------------------------------------------------------
+
+function mcpInfo(over: Partial<McpInstallInfo> = {}): McpInstallInfo {
+  return {
+    command: '/usr/bin/node',
+    args: ['/opt/open-design/cli.js', 'mcp'],
+    daemonUrl: 'http://127.0.0.1:7456',
+    platform: 'darwin',
+    cliExists: true,
+    nodeExists: true,
+    buildHint: null,
+    ...over,
+  };
+}
+
+const fakeT = (key: string, vars?: Record<string, string | number>): string =>
+  vars ? `${key}:${JSON.stringify(vars)}` : key;
+
+describe('homeConfigPath', () => {
+  it('picks the windows path on win32', () => {
+    expect(homeConfigPath('win32', '~/.codex/config.toml', '%USERPROFILE%\\.codex\\config.toml'))
+      .toBe('%USERPROFILE%\\.codex\\config.toml');
+  });
+
+  it('picks the posix path otherwise', () => {
+    expect(homeConfigPath('darwin', '~/.codex/config.toml', '%USERPROFILE%\\.codex\\config.toml'))
+      .toBe('~/.codex/config.toml');
+    expect(homeConfigPath('linux', '~/.codex/config.toml', '%USERPROFILE%\\.codex\\config.toml'))
+      .toBe('~/.codex/config.toml');
+  });
+});
+
+describe('commandPaletteShortcut', () => {
+  it('is the Mac chord on darwin, Ctrl elsewhere', () => {
+    expect(commandPaletteShortcut('darwin')).toBe('⌘⇧P');
+    expect(commandPaletteShortcut('win32')).toBe('Ctrl+Shift+P');
+    expect(commandPaletteShortcut('linux')).toBe('Ctrl+Shift+P');
+  });
+});
+
+describe('settingsShortcut', () => {
+  it('is the Mac chord on darwin, Ctrl elsewhere', () => {
+    expect(settingsShortcut('darwin')).toBe('⌘,');
+    expect(settingsShortcut('win32')).toBe('Ctrl+,');
+  });
+});
+
+describe('utf8Btoa', () => {
+  it('base64-encodes plain ASCII', () => {
+    expect(utf8Btoa('hello')).toBe(btoa('hello'));
+  });
+
+  it('encodes a non-Latin-1 path without throwing', () => {
+    expect(() => utf8Btoa('/Users/Émile/.fnm/node')).not.toThrow();
+    expect(typeof utf8Btoa('/Users/Émile/.fnm/node')).toBe('string');
+  });
+});
+
+describe('buildMcpStdioServerConfig', () => {
+  it('omits the env field when there are no env entries', () => {
+    const config = buildMcpStdioServerConfig(mcpInfo({ env: {} }));
+    expect(config).toEqual({ command: '/usr/bin/node', args: ['/opt/open-design/cli.js', 'mcp'] });
+  });
+
+  it('includes env when non-empty', () => {
+    const config = buildMcpStdioServerConfig(mcpInfo({ env: { OD_DATA_DIR: '/data' } }));
+    expect(config.env).toEqual({ OD_DATA_DIR: '/data' });
+  });
+});
+
+describe('buildCodexEnvToml', () => {
+  it('is empty with no env entries', () => {
+    expect(buildCodexEnvToml(mcpInfo())).toBe('');
+  });
+
+  it('renders a mcp_servers.open-design.env TOML table', () => {
+    const toml = buildCodexEnvToml(mcpInfo({ env: { OD_DATA_DIR: '/data' } }));
+    expect(toml).toContain('[mcp_servers.open-design.env]');
+    expect(toml).toContain('OD_DATA_DIR = "/data"');
+  });
+});
+
+describe('buildSharedMcpJson', () => {
+  it('nests the stdio config under mcpServers["open-design"]', () => {
+    const json = buildSharedMcpJson(mcpInfo());
+    const parsed = JSON.parse(json);
+    expect(parsed.mcpServers['open-design']).toEqual({
+      command: '/usr/bin/node',
+      args: ['/opt/open-design/cli.js', 'mcp'],
+    });
+  });
+});
+
+describe('buildMcpClients', () => {
+  it('builds one row per supported client', () => {
+    const clients = buildMcpClients(fakeT);
+    expect(clients.map((c) => c.id)).toEqual([
+      'claude',
+      'codex',
+      'cursor',
+      'vscode',
+      'antigravity',
+      'zed',
+      'windsurf',
+    ]);
+  });
+
+  it('the Claude row emits a claude mcp add-json one-liner in bash', () => {
+    const claude = buildMcpClients(fakeT).find((c) => c.id === 'claude')!;
+    const info = mcpInfo();
+    expect(claude.buildSnippetLang(info)).toBe('bash');
+    expect(claude.buildSnippet(info)).toContain('claude mcp add-json --scope user open-design');
+  });
+
+  it('the Codex row emits a TOML snippet including any env table', () => {
+    const codex = buildMcpClients(fakeT).find((c) => c.id === 'codex')!;
+    const info = mcpInfo({ env: { OD_DATA_DIR: '/data' } });
+    expect(codex.buildSnippetLang(info)).toBe('toml');
+    expect(codex.buildSnippet(info)).toContain('[mcp_servers.open-design]');
+    expect(codex.buildSnippet(info)).toContain('[mcp_servers.open-design.env]');
+  });
+
+  it('the Cursor row supports a deeplink built from the utf8-safe base64 config', () => {
+    const cursor = buildMcpClients(fakeT).find((c) => c.id === 'cursor')!;
+    const info = mcpInfo();
+    const deeplink = cursor.buildDeeplink!(info);
+    expect(deeplink).toMatch(/^cursor:\/\/anysphere\.cursor-deeplink\/mcp\/install\?name=open-design&config=/);
+  });
+
+  it('only Cursor offers a deeplink', () => {
+    const clients = buildMcpClients(fakeT);
+    const withDeeplink = clients.filter((c) => c.buildDeeplink);
+    expect(withDeeplink.map((c) => c.id)).toEqual(['cursor']);
   });
 });

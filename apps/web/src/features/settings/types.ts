@@ -66,3 +66,72 @@ export interface MediaProviderRowState {
   /** True when the row has any persisted credential to clear. */
   clearable: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// Integrations (MCP install snippet) section
+// ---------------------------------------------------------------------------
+
+/** The agent CLIs/IDEs the Integrations panel can render an install snippet for. */
+export type McpClientId =
+  | 'claude'
+  | 'codex'
+  | 'cursor'
+  | 'vscode'
+  | 'zed'
+  | 'windsurf'
+  | 'antigravity';
+
+/**
+ * View-model shape of `GET /api/mcp/install-info`'s payload. This is the
+ * `IntegrationsPort`'s result type, defined in-slice per ADR 0002 rather than
+ * imported from `providers/mcp/install` — the guard's provider-import rule is
+ * AST-level and would flag even an `import type` reaching past `dependencies.ts`.
+ */
+export interface McpInstallInfo {
+  command: string;
+  args: string[];
+  env?: Record<string, string>;
+  daemonUrl: string;
+  platform: 'darwin' | 'linux' | 'win32' | string;
+  cliExists: boolean;
+  nodeExists: boolean;
+  buildHint: string | null;
+}
+
+/** The `mcpServers`/`context_servers` stdio entry every client snippet builds around. */
+export interface McpStdioServerConfig {
+  command: string;
+  args: string[];
+  env?: Record<string, string>;
+}
+
+/** One row of the Integrations client picker: how to render its method/instruction/snippet. */
+export interface McpClient {
+  id: McpClientId;
+  label: string;
+  /** Function so the dropdown can show different methods per OS (Claude Code
+   *  uses CLI on POSIX but JSON edit on Windows because the bash/PowerShell/
+   *  cmd.exe quoting is too fragile to reliably emit a single command that
+   *  works in every shell). */
+  buildMethod: (info: McpInstallInfo) => string;
+  /** Function so per-OS path hints (~/.cursor on POSIX vs %USERPROFILE%\.cursor
+   *  on Windows) and shortcut differences (⌘⇧P vs Ctrl+Shift+P) render correctly. */
+  buildInstruction: (info: McpInstallInfo) => string;
+  buildSnippet: (info: McpInstallInfo) => string;
+  buildSnippetLang: (info: McpInstallInfo) => 'bash' | 'json' | 'toml';
+  /** Optional one-click install action. Currently only Cursor supports deeplinks of this shape. */
+  buildDeeplink?: (info: McpInstallInfo) => string;
+  deeplinkLabel?: () => string;
+}
+
+/** Result of the Codex one-click-install probe. */
+export interface CodexInstallStatus {
+  available: boolean;
+  installed: boolean;
+}
+
+/** A transient success/error message shown by the Codex one-click install toggle. */
+export interface CodexInstallMessage {
+  kind: 'success' | 'error';
+  text: string;
+}

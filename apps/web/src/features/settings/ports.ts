@@ -3,6 +3,7 @@
 // allowed to import `providers/`) binds the real transport to it (ADR 0002).
 import type { ConnectorDetail } from '@open-design/contracts';
 import type { AppConfig, OrbitRunStartResponse, OrbitStatusResponse, SkillSummary } from '../../types';
+import type { CodexInstallStatus, McpInstallInfo } from './types';
 
 /** Transport the Orbit automation section depends on. */
 export interface OrbitPort {
@@ -36,4 +37,22 @@ export interface OrbitPort {
 export interface MediaProvidersPort {
   /** Auto-dismiss the reload-success notice after a delay. Returns cancel. */
   scheduleReloadNoticeTimeout: (onTimeout: () => void, delayMs: number) => () => void;
+}
+
+/** Transport the Integrations (MCP install snippet) section depends on. */
+export interface IntegrationsPort {
+  /** `GET /api/mcp/install-info`. Throws on a non-2xx response or transport failure. */
+  fetchInstallInfo: () => Promise<McpInstallInfo>;
+  /** `GET /api/mcp/install/codex/status`. Resolves `null` on failure — see the provider. */
+  fetchCodexStatus: () => Promise<CodexInstallStatus | null>;
+  /** `POST /api/mcp/install/codex`. Throws with the daemon's error message on failure. */
+  installCodex: () => Promise<void>;
+  /** `DELETE /api/mcp/install/codex`. Throws with the daemon's error message on failure. */
+  uninstallCodex: () => Promise<void>;
+  /** Auto-dismiss the "Copied" badge after a delay. Returns cancel. */
+  scheduleCopyResetTimeout: (onTimeout: () => void, delayMs: number) => () => void;
+  /** Close the client picker on outside click or Escape. Returns unsubscribe. */
+  subscribePickerDismiss: (getContainer: () => HTMLElement | null, onClose: () => void) => () => void;
+  /** Open a client deeplink (Cursor's one-click install) via a hidden anchor click. */
+  openDeeplink: (url: string) => void;
 }
