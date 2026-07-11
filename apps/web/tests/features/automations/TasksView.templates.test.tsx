@@ -7,7 +7,7 @@ import type {
   AutomationTemplate as ContractAutomationTemplate,
 } from '@open-design/contracts';
 
-import { TasksView } from '../../src/components/TasksView';
+import { TasksView } from '../../../src/components/TasksView';
 
 const originalFetch = globalThis.fetch;
 

@@ -4,18 +4,18 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ConnectorDetail, InstalledPluginRecord } from '@open-design/contracts';
 
-import { NewAutomationModal } from '../../src/components/NewAutomationModal';
-import type { AutomationTemplate } from '../../src/components/NewAutomationModal';
-import { I18nProvider } from '../../src/i18n';
-import type { SkillSummary } from '../../src/types';
-import { listPlugins } from '../../src/state/projects';
-import { fetchMcpServers } from '../../src/providers/mcp';
+import { NewAutomationModal } from '../../../src/features/automations';
+import type { AutomationTemplate } from '../../../src/features/automations';
+import { I18nProvider } from '../../../src/i18n';
+import type { SkillSummary } from '../../../src/types';
+import { listPlugins } from '../../../src/state/projects';
+import { fetchMcpServers } from '../../../src/providers/mcp';
 
-vi.mock('../../src/state/projects', () => ({
+vi.mock('../../../src/state/projects', () => ({
   listPlugins: vi.fn(),
 }));
 
-vi.mock('../../src/providers/mcp', () => ({
+vi.mock('../../../src/providers/mcp', () => ({
   fetchMcpServers: vi.fn(),
 }));
 

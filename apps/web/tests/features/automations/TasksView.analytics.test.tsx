@@ -4,8 +4,8 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Routine } from '@open-design/contracts';
 
-import { TasksView } from '../../src/components/TasksView';
-import * as router from '../../src/router';
+import { TasksView } from '../../../src/components/TasksView';
+import * as router from '../../../src/router';
 
 // Capture every analytics event the tab emits. The page_view + ui_click
 // instrumentation lives in TasksView; this suite is the acceptance gate for
@@ -16,7 +16,7 @@ const analyticsMocks = vi.hoisted(() => ({
   newRequestId: vi.fn(() => 'request-1'),
 }));
 
-vi.mock('../../src/analytics/provider', () => ({
+vi.mock('../../../src/analytics/provider', () => ({
   useAnalytics: () => ({
     track: analyticsMocks.track,
     newRequestId: analyticsMocks.newRequestId,

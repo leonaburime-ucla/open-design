@@ -14,15 +14,15 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { NewAutomationModal } from '../../src/components/NewAutomationModal';
-import { listPlugins } from '../../src/state/projects';
-import { fetchMcpServers } from '../../src/providers/mcp';
+import { NewAutomationModal } from '../../../src/features/automations';
+import { listPlugins } from '../../../src/state/projects';
+import { fetchMcpServers } from '../../../src/providers/mcp';
 
-vi.mock('../../src/state/projects', () => ({
+vi.mock('../../../src/state/projects', () => ({
   listPlugins: vi.fn().mockResolvedValue([]),
 }));
 
-vi.mock('../../src/providers/mcp', () => ({
+vi.mock('../../../src/providers/mcp', () => ({
   fetchMcpServers: vi.fn().mockResolvedValue({ servers: [], templates: [] }),
 }));
 

@@ -4,8 +4,8 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Routine, RoutineRun } from '@open-design/contracts';
 
-import { TasksView } from '../../src/components/TasksView';
-import * as router from '../../src/router';
+import { TasksView } from '../../../src/components/TasksView';
+import * as router from '../../../src/router';
 
 const originalFetch = globalThis.fetch;
 

@@ -4,9 +4,9 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Routine } from '@open-design/contracts';
 
-import { I18nProvider } from '../../src/i18n';
-import { TasksView } from '../../src/components/TasksView';
-import * as router from '../../src/router';
+import { I18nProvider } from '../../../src/i18n';
+import { TasksView } from '../../../src/components/TasksView';
+import * as router from '../../../src/router';
 
 const originalFetch = globalThis.fetch;
 const originalConfirm = window.confirm;

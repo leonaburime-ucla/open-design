@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Routine } from '@open-design/contracts';
 
-import { sortRoutinesNewestFirst, TasksView } from '../../src/components/TasksView';
+import { sortRoutinesNewestFirst, TasksView } from '../../../src/components/TasksView';
 
 const originalFetch = globalThis.fetch;
 
@@ -24,36 +24,41 @@ function makeRoutine(overrides: Partial<Routine> & Pick<Routine, 'id' | 'name'>)
   };
 }
 
-vi.mock('../../src/components/NewAutomationModal', () => ({
-  NewAutomationModal: ({
-    open,
-    onSaved,
-  }: {
-    open: boolean;
-    onSaved: (routine: Routine) => void;
-  }) => {
-    if (!open) return null;
-    return (
-      <button
-        type="button"
-        data-testid="mock-save-routine"
-        onClick={() =>
-          onSaved(
-            makeRoutine({
-              id: 'routine-new',
-              name: 'Fresh automation',
-              createdAt: 9000,
-              updatedAt: 9000,
-            }),
-          )
-        }
-      >
-        Mock save
-      </button>
-    );
-  },
-  describeScheduleSummary: () => 'Daily at 9:00',
-}));
+vi.mock('../../../src/features/automations', async () => {
+  const actual = await vi.importActual<typeof import('../../../src/features/automations')>(
+    '../../../src/features/automations',
+  );
+  return {
+    ...actual,
+    NewAutomationModal: ({
+      open,
+      onSaved,
+    }: {
+      open: boolean;
+      onSaved: (routine: Routine) => void;
+    }) => {
+      if (!open) return null;
+      return (
+        <button
+          type="button"
+          data-testid="mock-save-routine"
+          onClick={() =>
+            onSaved(
+              makeRoutine({
+                id: 'routine-new',
+                name: 'Fresh automation',
+                createdAt: 9000,
+                updatedAt: 9000,
+              }),
+            )
+          }
+        >
+          Mock save
+        </button>
+      );
+    },
+  };
+});
 
 function mockTasksFetch(routines: Routine[]) {
   globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
