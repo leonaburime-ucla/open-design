@@ -105,6 +105,7 @@ import {
   defaultApiProtocolConfig,
   displayAgentName,
   hidesAccountModelSourceLabel,
+  InstructionsSection,
   IntegrationsSection,
   isOrbitRunDisabled,
   isProviderModelDiscoveryUnsupported,
@@ -4381,31 +4382,7 @@ export function SettingsDialog({
           ) : null}
 
           {activeSection === 'instructions' ? (
-            <section className="settings-section settings-section-card instructions-rules-section">
-              <div className="memory-field-block instructions-rules-card">
-                <div className="memory-block-head">
-                  <div>
-                    <h4>{t('settings.customInstructionsTitle')}</h4>
-                    <p className="hint">
-                      {t('settings.customInstructionsDesc')}
-                    </p>
-                  </div>
-                </div>
-                <textarea
-                  className="custom-instructions-input memory-global-rules-input instructions-rules-input"
-                  rows={5}
-                  maxLength={5000}
-                  placeholder={t('settings.customInstructionsPlaceholder')}
-                  value={cfg.customInstructions ?? ''}
-                  onChange={(event) =>
-                    setCfg({
-                      ...cfg,
-                      customInstructions: event.target.value || undefined,
-                    })
-                  }
-                />
-              </div>
-            </section>
+            <InstructionsSection cfg={cfg} setCfg={setCfg} />
           ) : null}
 
           {activeSection === 'memory' ? (

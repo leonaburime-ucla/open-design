@@ -147,3 +147,6 @@ export type { AboutController, AboutInput } from './hooks/useAbout.hooks';
 // app-wide state already owned by `I18nProvider`; the feature-local hook's
 // only job is layering the picker's analytics tracking on top.
 export { LanguageSection } from './components/LanguageSection';
+
+// Custom-instructions section: a single free-text field on `cfg.customInstructions`.
+export { InstructionsSection } from './components/InstructionsSection';
