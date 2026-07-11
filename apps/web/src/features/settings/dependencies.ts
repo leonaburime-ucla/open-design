@@ -9,7 +9,7 @@ import {
   subscribeOrbitStatusPolling,
   subscribeWindowFocus,
 } from '../../providers/orbit';
-import { fetchConnectors, fetchDesignTemplates } from '../../providers/registry';
+import { fetchConnectors, fetchDesignTemplates, openExternalUrl } from '../../providers/registry';
 import { scheduleMediaProvidersReloadNoticeTimeout } from '../../providers/media-providers';
 import {
   fetchCodexInstallStatus,
@@ -20,7 +20,7 @@ import {
   subscribeOutsideClickAndEscape,
   uninstallCodexMcp,
 } from '../../providers/mcp';
-import type { IntegrationsPort, MediaProvidersPort, OrbitPort } from './ports';
+import type { AboutPort, IntegrationsPort, MediaProvidersPort, OrbitPort } from './ports';
 
 /** Default binding: the real Orbit status/template/connector/run transport +
  *  browser-subscription bridges. */
@@ -48,4 +48,9 @@ export const integrationsPort: IntegrationsPort = {
   scheduleCopyResetTimeout: scheduleMcpCopyResetTimeout,
   subscribePickerDismiss: subscribeOutsideClickAndEscape,
   openDeeplink: openMcpDeeplink,
+};
+
+/** Default binding: the About section's external-URL opener. */
+export const aboutPort: AboutPort = {
+  openExternalUrl,
 };

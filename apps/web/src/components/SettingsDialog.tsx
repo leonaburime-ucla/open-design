@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, Dispatch, SetStateAction } from 'react';
-import { Button, VisuallyHidden } from '@open-design/components';
+import { VisuallyHidden } from '@open-design/components';
 import type { AmrWalletSnapshot } from '@open-design/contracts';
 import {
   agentIdToTracking,
@@ -53,7 +53,6 @@ import {
   amrProfileBadgeLabel,
 } from '../runtime/amr-guidance';
 import { isVisibleLocalCliAgent } from '../utils/visibleAgents';
-import { ExportDiagnosticsRow } from './ExportDiagnosticsButton';
 import { Icon } from './Icon';
 import {
   CUSTOM_MODEL_SENTINEL,
@@ -62,11 +61,8 @@ import {
 import {
   KNOWN_PROVIDERS,
   hasAnyConfiguredProvider,
-  saveConfig,
   syncComposioConfigToDaemon,
-  syncConfigToDaemon,
 } from '../state/config';
-import { navigate as navigateRoute } from '../router';
 import {
   API_PROTOCOL_TABS,
   DEFAULT_BASE_URL_BY_PROTOCOL,
@@ -88,6 +84,7 @@ import {
   AMR_SIGN_IN_RESCAN_RETRY_MS,
   apiModelOptionLabel,
   API_KEY_CONSOLE_LINKS,
+  AboutSection,
   AppearanceSection,
   applyApiProtocolConfig,
   byokDraftBaseUrlHost,
@@ -107,7 +104,6 @@ import {
   currentApiProtocolConfig,
   CritiqueTheaterSection,
   defaultApiProtocolConfig,
-  deriveAboutUpdateControl,
   displayAgentName,
   hidesAccountModelSourceLabel,
   IntegrationsSection,
@@ -119,7 +115,6 @@ import {
   missingByokConnectionFields,
   missingByokModelFetchFields,
   NotificationsSection,
-  OPEN_DESIGN_RELEASES_URL,
   OrbitSection,
   persistByokProviderConfigDraft,
   providerConnectionTestKey,
@@ -136,7 +131,7 @@ import {
   testStatusVariant,
   updateAgentCliEnvValue,
   updateCurrentApiProtocolConfig,
-  type AboutUpdateControl,
+  useWiredAbout,
   type AgentRefreshOptions,
   type ByokFieldMissing,
   type ByokFirstPartyBaseUrlHint,
@@ -209,17 +204,6 @@ import { useByokImageModelOptions, useByokVideoModelOptions, useByokSpeechModelO
 import { isVisualStabilityMode } from '../utils/visualStability';
 import { byokProviderRequiresApiKey } from '../utils/byokProvider';
 import { Toast } from './Toast';
-import {
-  checkForUpdaterUpdate,
-  deriveUpdaterModel,
-  downloadUpdaterUpdate,
-  openUpdaterInstaller,
-  quitAfterUpdaterInstallerOpen,
-  readUpdaterStatus,
-  subscribeToUpdaterStatus,
-  type UpdaterActionResult,
-  type UpdaterModel,
-} from '../lib/updater';
 import { PetSettings } from './pet/PetSettings';
 import { McpClientSection } from './McpClientSection';
 import { DesignSystemsSection } from './DesignSystemsSection';
@@ -693,92 +677,12 @@ export function SettingsDialog({
   const [agentCustomModelIds, setAgentCustomModelIds] = useState<
     ReadonlySet<string>
   >(() => new Set());
-  const [aboutUpdaterModel, setAboutUpdaterModel] = useState<UpdaterModel>(() => deriveUpdaterModel(null));
-  const [aboutUpdateActionBusy, setAboutUpdateActionBusy] = useState(false);
-  const [aboutToast, setAboutToast] = useState<string | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-    const unsubscribe = subscribeToUpdaterStatus((status) => {
-      if (!mounted) return;
-      setAboutUpdaterModel(deriveUpdaterModel(status, { hostAvailable: true }));
-    });
-    void readUpdaterStatus({ payload: { source: 'settings-about:mount' } }).then((result) => {
-      if (!mounted) return;
-      setAboutUpdaterModel(result.ok ? result.model : deriveUpdaterModel(null, { hostAvailable: false }));
-    });
-    return () => {
-      mounted = false;
-      unsubscribe();
-    };
-  }, []);
-
-  const aboutUpdateControl = useMemo(
-    () => deriveAboutUpdateControl(aboutUpdaterModel, appVersionInfo),
-    [aboutUpdaterModel, appVersionInfo],
-  );
-
-  const applyAboutUpdaterResult = useCallback((result: UpdaterActionResult): boolean => {
-    if (!result.ok) {
-      setAboutToast(t('settings.updateActionFailed'));
-      return false;
-    }
-    setAboutUpdaterModel(result.model);
-    if (result.model.errorMessage != null) {
-      setAboutToast(t('settings.updateActionFailed'));
-      return false;
-    }
-    return true;
-  }, [t]);
-
-  const handleAboutUpdateAction = useCallback(async () => {
-    if (aboutUpdateActionBusy || aboutUpdaterModel.busy || aboutUpdateControl.primaryAction == null) return;
-    setAboutUpdateActionBusy(true);
-    try {
-      const options = { payload: { source: 'settings-about' } };
-      if (aboutUpdateControl.primaryAction === 'check') {
-        applyAboutUpdaterResult(await checkForUpdaterUpdate(options));
-      } else if (aboutUpdateControl.primaryAction === 'download') {
-        applyAboutUpdaterResult(await downloadUpdaterUpdate(options));
-      } else if (aboutUpdateControl.primaryAction === 'quit') {
-        const quitResult = await quitAfterUpdaterInstallerOpen(options);
-        if (!quitResult.ok) setAboutToast(t('settings.updateQuitFailed'));
-      } else {
-        const installed = applyAboutUpdaterResult(await openUpdaterInstaller(options));
-        if (installed) {
-          const quitResult = await quitAfterUpdaterInstallerOpen(options);
-          if (!quitResult.ok) setAboutToast(t('settings.updateQuitFailed'));
-        }
-      }
-    } catch {
-      setAboutToast(t('settings.updateActionFailed'));
-    } finally {
-      setAboutUpdateActionBusy(false);
-    }
-  }, [
-    aboutUpdateActionBusy,
-    aboutUpdateControl.primaryAction,
-    aboutUpdaterModel.busy,
-    applyAboutUpdaterResult,
-    t,
-  ]);
-
-  const handleOpenReleaseNotes = useCallback(() => {
-    void openExternalUrl(OPEN_DESIGN_RELEASES_URL);
-  }, []);
-
-  // Precise inverse of App.handleCompleteOnboarding: flip
-  // onboardingCompleted back to false, mirror it to localStorage and the
-  // daemon through the same config-persist path, then route the user into
-  // the first-run flow so they can replay setup (including brand extraction).
-  const handleResetOnboarding = useCallback(() => {
-    const next: AppConfig = { ...cfg, onboardingCompleted: false };
-    setCfg(next);
-    saveConfig(next);
-    void syncConfigToDaemon(next);
-    onClose();
-    navigateRoute({ kind: 'home', view: 'onboarding' });
-  }, [cfg, onClose]);
+  // About section: app-version/updater status row, diagnostics export, and
+  // reset-onboarding. Called here (not inside the dumb `AboutSection`) so
+  // the toast survives the user switching away from the About section
+  // mid-action, mirroring the original `<Toast>` placement outside the
+  // section's conditional block.
+  const about = useWiredAbout({ cfg, setCfg, appVersionInfo, onClose });
 
   // Imperative handle for the External MCP section. The dialog footer Save
   // routes through this when the MCP tab is active so the user can press the
@@ -4555,102 +4459,12 @@ export function SettingsDialog({
           ) : null}
 
           {activeSection === 'about' ? (
-            <section className="settings-section">
-              {appVersionInfo ? (
-                <dl className="settings-about-list">
-                  <div className="settings-about-version-row">
-                    <div className="settings-about-version-copy">
-                      <div className="settings-about-version-left">
-                        <dt>{t('settings.appVersion')}</dt>
-                        <span className="settings-about-version-num">{appVersionInfo.version}</span>
-                        <dd
-                          aria-live="polite"
-                          className={`settings-about-update-status settings-about-update-status--${aboutUpdateControl.statusTone}`}
-                        >
-                          {t(aboutUpdateControl.statusKey, aboutUpdateControl.statusVars)}
-                        </dd>
-                      </div>
-                    </div>
-                    <div className="settings-about-update-actions">
-                      {aboutUpdateControl.primaryLabelKey ? (
-                        <button
-                          type="button"
-                          className={`settings-about-update-button${
-                            aboutUpdateControl.primaryAction === 'download'
-                              || aboutUpdateControl.primaryAction === 'install'
-                              || aboutUpdateControl.primaryAction === 'quit'
-                              ? ' settings-about-update-button--primary'
-                              : ''
-                          }`}
-                          disabled={
-                            aboutUpdateActionBusy
-                            || aboutUpdaterModel.busy
-                            || aboutUpdateControl.primaryAction == null
-                          }
-                          onClick={handleAboutUpdateAction}
-                        >
-                          {aboutUpdateActionBusy
-                            ? t('common.loading')
-                            : t(aboutUpdateControl.primaryLabelKey)}
-                        </button>
-                      ) : null}
-                      {aboutUpdateControl.showReleaseLink ? (
-                        <button
-                          type="button"
-                          className="settings-about-release-link"
-                          onClick={handleOpenReleaseNotes}
-                        >
-                          {t('settings.updateViewReleases')}
-                        </button>
-                      ) : null}
-                    </div>
-                  </div>
-                  <div>
-                    <dt>{t('settings.appChannel')}</dt>
-                    <dd>{appVersionInfo.channel}</dd>
-                  </div>
-                  <div>
-                    <dt>{t('settings.appRuntime')}</dt>
-                    <dd>
-                      {appVersionInfo.packaged
-                        ? t('settings.runtimePackaged')
-                        : t('settings.runtimeDevelopment')}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>{t('settings.appPlatform')}</dt>
-                    <dd>{appVersionInfo.platform}</dd>
-                  </div>
-                  <div>
-                    <dt>{t('settings.appArchitecture')}</dt>
-                    <dd>{appVersionInfo.arch}</dd>
-                  </div>
-                </dl>
-              ) : (
-                <div className="empty-card">{t('settings.versionUnavailable')}</div>
-              )}
-              <div className="settings-about-diagnostics">
-                <div className="settings-about-diagnostics-text">
-                  <h4>{t('diagnostics.exportTitle')}</h4>
-                  <p className="hint">{t('diagnostics.exportHint')}</p>
-                </div>
-                <ExportDiagnosticsRow />
-              </div>
-              <div className="settings-about-diagnostics">
-                <div className="settings-about-diagnostics-text">
-                  <h4>{t('settings.resetOnboarding')}</h4>
-                  <p className="hint">{t('settings.resetOnboardingDesc')}</p>
-                </div>
-                <Button onClick={handleResetOnboarding}>
-                  {t('settings.resetOnboardingButton')}
-                </Button>
-              </div>
-            </section>
+            <AboutSection appVersionInfo={appVersionInfo} about={about} />
           ) : null}
-          {aboutToast ? (
+          {about.toast ? (
             <Toast
-              message={aboutToast}
-              onDismiss={() => setAboutToast(null)}
+              message={about.toast}
+              onDismiss={about.dismissToast}
             />
           ) : null}
           </div>

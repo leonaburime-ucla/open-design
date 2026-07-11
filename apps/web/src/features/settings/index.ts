@@ -131,3 +131,14 @@ export {
   API_KEY_CONSOLE_LINKS,
   OPEN_DESIGN_RELEASES_URL,
 } from './constants';
+
+// About section: app-version/updater status row, diagnostics export, and
+// reset-onboarding. The updater subscription/actions reach `lib/updater`
+// directly (a host bridge, not a `providers/` route); only the release-notes
+// external-URL open goes through the injected `AboutPort`. The orchestrator
+// calls `useWiredAbout` itself (not the dumb `AboutSection`) so the toast
+// survives a section switch, mirroring the original `<Toast>` placement
+// outside the section's conditional block.
+export { AboutSection } from './components/AboutSection';
+export { useWiredAbout } from './hooks/useAbout.hooks';
+export type { AboutController, AboutInput } from './hooks/useAbout.hooks';

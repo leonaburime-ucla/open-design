@@ -56,3 +56,12 @@ export interface IntegrationsPort {
   /** Open a client deeplink (Cursor's one-click install) via a hidden anchor click. */
   openDeeplink: (url: string) => void;
 }
+
+/** Transport the About section depends on for the "View release notes" link.
+ *  The updater status subscription/actions themselves reach `../../lib/updater`
+ *  directly (a host-bridge module, not a `providers/` transport route) — only
+ *  the registry's external-URL opener needs a port binding. */
+export interface AboutPort {
+  /** Open a URL in the system browser (desktop) or a new tab (web). */
+  openExternalUrl: (url: string) => void;
+}
