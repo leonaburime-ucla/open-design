@@ -40,6 +40,8 @@ function makePort(over: Partial<DaemonAgentPort> = {}): DaemonAgentPort {
     openExternalUrl: vi.fn(),
     scheduleRescanNoticeTimeout: vi.fn(() => () => {}),
     subscribeInstallReturn: vi.fn(() => () => {}),
+    canUpgradeVelaPlan: vi.fn(() => false),
+    formatVelaBalanceUsd: vi.fn(() => null),
     ...over,
   };
 }
@@ -57,6 +59,7 @@ function renderDaemonAgents(port: DaemonAgentPort, over: Partial<DaemonAgentsInp
     ...renderHook(() =>
       useDaemonAgents(port, {
         cfg: cfg(),
+        setCfg: vi.fn(),
         agents: CLAUDE_AVAILABLE,
         agentsLoading: false,
         onRefreshAgents,
@@ -87,6 +90,7 @@ describe('useDaemonAgents', () => {
       (props: Partial<DaemonAgentsInput>) =>
         useDaemonAgents(port, {
           cfg: cfg(),
+          setCfg: vi.fn(),
           agents: [],
           agentsLoading: true,
           onRefreshAgents: vi.fn(),
@@ -247,6 +251,7 @@ describe('useDaemonAgents', () => {
     renderHook(() =>
       useDaemonAgents(port, {
         cfg: cfg(),
+        setCfg: vi.fn(),
         agents: [amrEmpty],
         agentsLoading: false,
         onRefreshAgents,
@@ -263,6 +268,7 @@ describe('useDaemonAgents', () => {
     renderHook(() =>
       useDaemonAgents(port, {
         cfg: cfg(),
+        setCfg: vi.fn(),
         agents: [amrEmpty],
         agentsLoading: false,
         onRefreshAgents,
@@ -279,5 +285,82 @@ describe('useDaemonAgents', () => {
     expect(result.current.hoveredAgentCardId).toBe('claude');
     act(() => result.current.setAgentCustomModelIds((prev) => new Set(prev).add('claude')));
     expect(result.current.agentCustomModelIds.has('claude')).toBe(true);
+  });
+
+  it('selectAgent sets cfg.agentId', () => {
+    const port = makePort();
+    const setCfg = vi.fn();
+    const { result } = renderDaemonAgents(port, { setCfg });
+    act(() => result.current.selectAgent('codex'));
+    const updater = setCfg.mock.calls[0]?.[0] as (c: AppConfig) => AppConfig;
+    expect(updater(cfg()).agentId).toBe('codex');
+  });
+
+  it('openAmrUpgrade opens the attributed AMR plans URL through the port', () => {
+    const port = makePort();
+    const { result } = renderDaemonAgents(port);
+    act(() => result.current.openAmrUpgrade('default'));
+    expect(port.openExternalUrl).toHaveBeenCalledTimes(1);
+    expect(port.openExternalUrl).toHaveBeenCalledWith(expect.any(String));
+  });
+
+  it('canUpgradeVelaPlan/formatVelaBalanceUsd pass through the port', () => {
+    const canUpgradeVelaPlan = vi.fn(() => true);
+    const formatVelaBalanceUsd = vi.fn(() => '$1.00');
+    const port = makePort({ canUpgradeVelaPlan, formatVelaBalanceUsd });
+    const { result } = renderDaemonAgents(port);
+    expect(result.current.canUpgradeVelaPlan('pro')).toBe(true);
+    expect(canUpgradeVelaPlan).toHaveBeenCalledWith('pro');
+    expect(result.current.formatVelaBalanceUsd('1.00')).toBe('$1.00');
+    expect(formatVelaBalanceUsd).toHaveBeenCalledWith('1.00');
+  });
+
+  it('applyCodexDetectedPath sets CODEX_BIN and resets the test state', () => {
+    const port = makePort();
+    const setCfg = vi.fn();
+    const { result } = renderDaemonAgents(port, { setCfg });
+    act(() => result.current.applyCodexDetectedPath('/usr/local/bin/codex'));
+    const updater = setCfg.mock.calls[0]?.[0] as (c: AppConfig) => AppConfig;
+    expect(updater(cfg()).agentCliEnv?.codex?.CODEX_BIN).toBe('/usr/local/bin/codex');
+    expect(result.current.agentTestState).toEqual({ status: 'idle' });
+  });
+
+  it('clearCodexCustomPath clears CODEX_BIN and resets the test state', () => {
+    const port = makePort();
+    const setCfg = vi.fn();
+    const { result } = renderDaemonAgents(port, { setCfg });
+    act(() => result.current.clearCodexCustomPath());
+    const updater = setCfg.mock.calls[0]?.[0] as (c: AppConfig) => AppConfig;
+    expect(updater(cfg({ agentCliEnv: { codex: { CODEX_BIN: '/custom' } } })).agentCliEnv?.codex?.CODEX_BIN).toBeUndefined();
+  });
+
+  it('onAgentModelChange toggles the custom-model-id set and clears the model on switching into custom mode', () => {
+    const port = makePort();
+    const setCfg = vi.fn();
+    const { result } = renderDaemonAgents(port, { setCfg });
+
+    act(() => result.current.onAgentModelChange('claude', '__custom__'));
+    expect(result.current.agentCustomModelIds.has('claude')).toBe(true);
+    let updater = setCfg.mock.calls[0]?.[0] as (c: AppConfig) => AppConfig;
+    expect(updater(cfg()).agentModels?.claude?.model).toBe('');
+
+    act(() => result.current.onAgentModelChange('claude', 'claude-opus'));
+    expect(result.current.agentCustomModelIds.has('claude')).toBe(false);
+    updater = setCfg.mock.calls[1]?.[0] as (c: AppConfig) => AppConfig;
+    expect(updater(cfg()).agentModels?.claude?.model).toBe('claude-opus');
+  });
+
+  it('onAgentModelCustomTextChange/onAgentReasoningChange set the model choice directly', () => {
+    const port = makePort();
+    const setCfg = vi.fn();
+    const { result } = renderDaemonAgents(port, { setCfg });
+
+    act(() => result.current.onAgentModelCustomTextChange('claude', 'my-model'));
+    let updater = setCfg.mock.calls[0]?.[0] as (c: AppConfig) => AppConfig;
+    expect(updater(cfg()).agentModels?.claude?.model).toBe('my-model');
+
+    act(() => result.current.onAgentReasoningChange('claude', 'high'));
+    updater = setCfg.mock.calls[1]?.[0] as (c: AppConfig) => AppConfig;
+    expect(updater(cfg()).agentModels?.claude?.reasoning).toBe('high');
   });
 });

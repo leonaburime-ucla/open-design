@@ -102,4 +102,11 @@ export interface DaemonAgentPort {
    *  visibility), so a pending post-install rescan can fire. Returns
    *  unsubscribe. */
   subscribeInstallReturn: (onReturn: () => void) => () => void;
+  /** Whether to surface an "Upgrade" affordance for the AMR card's plan tier.
+   *  Pure, but lives in `providers/daemon` alongside the rest of the vela
+   *  account helpers, so it is reached through the port like the rest of
+   *  this cluster's transport rather than imported directly. */
+  canUpgradeVelaPlan: (plan?: string | null) => boolean;
+  /** Fixed `$X.XX` formatting for the AMR card's plan-status balance. */
+  formatVelaBalanceUsd: (raw?: string | null) => string | null;
 }

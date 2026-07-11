@@ -89,6 +89,7 @@ export {
   defaultApiProtocolConfig,
   deriveAboutUpdateControl,
   displayAgentName,
+  formatConnectionTestMessage,
   hidesAccountModelSourceLabel,
   isProviderModelDiscoveryUnsupported,
   isValidApiBaseUrl,
@@ -155,8 +156,13 @@ export {
 // rescan/test state machines + the on-return-to-tab and post-AMR-sign-in
 // catalog-chase effects; its transport (the CLI connection test + the
 // external-URL opener) reaches only the injected `DaemonAgentPort`.
+// `LocalCliSection` is the dumb component the orchestrator mounts for the
+// daemon-mode panel; it composes the agent grid, the per-agent model picker
+// (`AgentModelPicker`), the AMR sign-in/wallet card, and the CLI env var
+// disclosure over that hook's controller.
 export { useWiredDaemonAgents } from './hooks/useDaemonAgents.hooks';
 export type { DaemonAgentsController, DaemonAgentsInput } from './hooks/useDaemonAgents.hooks';
+export { LocalCliSection } from './components/LocalCliSection';
 
 // About section: app-version/updater status row, diagnostics export, and
 // reset-onboarding. The updater subscription/actions reach `lib/updater`

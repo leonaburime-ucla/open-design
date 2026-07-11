@@ -20,7 +20,12 @@ import {
   subscribeOutsideClickAndEscape,
   uninstallCodexMcp,
 } from '../../providers/mcp';
-import { fetchAmrWalletSnapshot, fetchVelaLoginStatus } from '../../providers/daemon';
+import {
+  canUpgradeVelaPlan,
+  fetchAmrWalletSnapshot,
+  fetchVelaLoginStatus,
+  formatVelaBalanceUsd,
+} from '../../providers/daemon';
 import { subscribeAmrLoginStatusEvent, subscribeAmrWindowResync } from '../../providers/amr';
 import { scheduleAgentRescanNoticeTimeout, subscribeAgentInstallReturn } from '../../providers/agents';
 import { testAgent } from '../../providers/connection-test';
@@ -82,4 +87,6 @@ export const daemonAgentPort: DaemonAgentPort = {
   openExternalUrl,
   scheduleRescanNoticeTimeout: scheduleAgentRescanNoticeTimeout,
   subscribeInstallReturn: subscribeAgentInstallReturn,
+  canUpgradeVelaPlan,
+  formatVelaBalanceUsd,
 };

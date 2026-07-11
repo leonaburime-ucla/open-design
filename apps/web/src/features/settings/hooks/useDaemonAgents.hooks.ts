@@ -15,19 +15,22 @@ import {
   type TrackingAmrEntrySource,
 } from '../../../analytics/amr-attribution';
 import { getResolvedDeviceId } from '../../../analytics/client';
-import { trackSettingsCliTestResult } from '../../../analytics/events';
+import { trackSettingsCliTestResult, trackSettingsLocalCliClick } from '../../../analytics/events';
 import { orderAgentsWithOpenDesignFirst } from '../../../components/agentOrdering';
+import { CUSTOM_MODEL_SENTINEL } from '../../../components/modelOptions';
+import { amrPlansUrlForProfile } from '../../../runtime/amr-guidance';
 import { isVisibleLocalCliAgent } from '../../../utils/visibleAgents';
 import type { AgentInfo, AppConfig } from '../../../types';
 import { daemonAgentPort } from '../dependencies';
 import type { DaemonAgentPort } from '../ports';
 import { AMR_SIGN_IN_RESCAN_ATTEMPTS, AMR_SIGN_IN_RESCAN_RETRY_MS } from '../constants';
-import { agentRefreshOptionsForConfig, sanitizeHttpsUrl } from '../rules';
+import { agentRefreshOptionsForConfig, sanitizeHttpsUrl, updateAgentCliEnvValue } from '../rules';
 import type { AgentRefreshOptions, RescanNotice, TestState } from '../types';
 
 /** Inputs the local-CLI agent list cluster needs from its caller. */
 export interface DaemonAgentsInput {
   cfg: AppConfig;
+  setCfg: Dispatch<SetStateAction<AppConfig>>;
   agents: AgentInfo[];
   agentsLoading: boolean;
   onRefreshAgents: (
@@ -66,13 +69,33 @@ export interface DaemonAgentsController {
     onOpenDocs?: () => void;
     onOpenInstall?: () => void;
   };
+  /** Selects the given agent id as `cfg.agentId`, recording the local-CLI
+   *  click + (for AMR) an AMR-entry attribution. */
+  selectAgent: (agentId: string) => void;
+  /** Opens the AMR plan-upgrade console link, attributed to the current AMR
+   *  entry attribution + device id, for the given login profile. */
+  openAmrUpgrade: (profile: string | undefined) => void;
+  /** Pass-through from `DaemonAgentPort` — see the port doc for why these
+   *  two pure `providers/daemon` helpers are reached through the port. */
+  canUpgradeVelaPlan: (plan?: string | null) => boolean;
+  formatVelaBalanceUsd: (raw?: string | null) => string | null;
+  /** Applies the Codex connection-test failure's detected executable path
+   *  as the `CODEX_BIN` override, resetting the test state. */
+  applyCodexDetectedPath: (detectedPath: string) => void;
+  /** Clears a custom `CODEX_BIN` override, resetting the test state. */
+  clearCodexCustomPath: () => void;
+  /** Handles the agent model picker's raw `onChange` value, including the
+   *  `CUSTOM_MODEL_SENTINEL` toggle into/out of the custom-text field. */
+  onAgentModelChange: (agentId: string, nextValue: string) => void;
+  onAgentModelCustomTextChange: (agentId: string, value: string) => void;
+  onAgentReasoningChange: (agentId: string, value: string) => void;
 }
 
 export function useDaemonAgents(
   port: DaemonAgentPort,
   input: DaemonAgentsInput,
 ): DaemonAgentsController {
-  const { cfg, agents, agentsLoading, onRefreshAgents, amrLoggedIn } = input;
+  const { cfg, setCfg, agents, agentsLoading, onRefreshAgents, amrLoggedIn } = input;
   const analytics = useAnalytics();
 
   const [agentRescanRunning, setAgentRescanRunning] = useState(false);
@@ -270,6 +293,78 @@ export function useDaemonAgents(
     };
   }, [amrLoggedIn]);
 
+  const selectAgent = (agentId: string) => {
+    trackSettingsLocalCliClick(analytics.track, {
+      page_name: 'settings',
+      area: 'configure_execution_mode_local_cli',
+      element: 'cli_provider',
+      cli_provider_id: agentIdToTracking(agentId),
+      install_status: 'installed',
+    });
+    if (agentId === 'amr') {
+      recordAmrEntry(analytics.track, 'settings_amr_agent_card', new Date(), {
+        metricsConsent: cfg.telemetry?.metrics === true,
+      });
+    }
+    setCfg((c) => ({ ...c, agentId }));
+  };
+
+  const openAmrUpgrade = (profile: string | undefined) => {
+    port.openExternalUrl(
+      attributedAmrSettingsUrl(amrPlansUrlForProfile(profile), 'settings_amr_upgrade'),
+    );
+  };
+
+  const applyCodexDetectedPath = (detectedPath: string) => {
+    setCfg((c) => updateAgentCliEnvValue(c, 'codex', 'CODEX_BIN', detectedPath));
+    setAgentTestState({ status: 'idle' });
+  };
+
+  const clearCodexCustomPath = () => {
+    setCfg((c) => updateAgentCliEnvValue(c, 'codex', 'CODEX_BIN', ''));
+    setAgentTestState({ status: 'idle' });
+  };
+
+  const setAgentModelChoice = (agentId: string, next: { model?: string; reasoning?: string }) => {
+    setCfg((c) => {
+      const prev = c.agentModels?.[agentId] ?? {};
+      return {
+        ...c,
+        agentModels: {
+          ...(c.agentModels ?? {}),
+          [agentId]: { ...prev, ...next },
+        },
+      };
+    });
+  };
+
+  const onAgentModelChange = (agentId: string, nextValue: string) => {
+    if (nextValue === CUSTOM_MODEL_SENTINEL) {
+      setAgentCustomModelIds((prev) => {
+        const next = new Set(prev);
+        next.add(agentId);
+        return next;
+      });
+      setAgentModelChoice(agentId, { model: '' });
+      return;
+    }
+    setAgentCustomModelIds((prev) => {
+      if (!prev.has(agentId)) return prev;
+      const next = new Set(prev);
+      next.delete(agentId);
+      return next;
+    });
+    setAgentModelChoice(agentId, { model: nextValue });
+  };
+
+  const onAgentModelCustomTextChange = (agentId: string, value: string) => {
+    setAgentModelChoice(agentId, { model: value.trim() });
+  };
+
+  const onAgentReasoningChange = (agentId: string, value: string) => {
+    setAgentModelChoice(agentId, { reasoning: value });
+  };
+
   const handleTestAgent = async () => {
     if (agentTestState.status === 'running') {
       return;
@@ -363,6 +458,15 @@ export function useDaemonAgents(
     attributedAmrSettingsUrl,
     openAgentFixUrl,
     diagnosticHandlersForAgent,
+    selectAgent,
+    openAmrUpgrade,
+    canUpgradeVelaPlan: port.canUpgradeVelaPlan,
+    formatVelaBalanceUsd: port.formatVelaBalanceUsd,
+    applyCodexDetectedPath,
+    clearCodexCustomPath,
+    onAgentModelChange,
+    onAgentModelCustomTextChange,
+    onAgentReasoningChange,
   };
 }
 

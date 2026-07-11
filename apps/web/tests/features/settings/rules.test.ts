@@ -11,6 +11,7 @@ import {
   providerModelsCacheKey,
 } from '../../../src/features/settings';
 import {
+  agentModelSummary,
   buildCodexEnvToml,
   buildMcpClients,
   buildMcpStdioServerConfig,
@@ -25,6 +26,7 @@ import {
   filterAndSortOrbitTemplates,
   findOrbitTemplate,
   formatAmrWalletBalance,
+  formatConnectionTestMessage,
   homeConfigPath,
   isOrbitRunDisabled,
   nextLegacyLastRunTemplateSkillId,
@@ -40,6 +42,7 @@ import {
   utf8Btoa,
 } from '../../../src/features/settings/rules';
 import type { MediaProvider } from '../../../src/media/models';
+import type { AgentInfo, ConnectionTestResponse } from '../../../src/types';
 import type { McpInstallInfo } from '../../../src/features/settings/types';
 
 describe('providerModelsCacheKey', () => {
@@ -628,5 +631,97 @@ describe('formatAmrWalletBalance', () => {
 
   it('falls back to a raw dollar-prefixed string for an unparseable balance', () => {
     expect(formatAmrWalletBalance('en', 'not-a-number')).toBe('$not-a-number');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Execution mode: Local CLI agent grid
+// ---------------------------------------------------------------------------
+
+function agentInfo(over: Partial<AgentInfo> = {}): AgentInfo {
+  return {
+    id: 'claude',
+    name: 'Claude Code',
+    bin: 'claude',
+    available: true,
+    ...over,
+  } as AgentInfo;
+}
+
+describe('agentModelSummary', () => {
+  it('returns null when the agent has no model list', () => {
+    expect(agentModelSummary(agentInfo({ models: undefined }), {}, fakeT)).toBeNull();
+  });
+
+  it('falls back to the custom-model copy when the sole known model has no id', () => {
+    const agent = agentInfo({ models: [{ id: '', label: 'Custom' }] });
+    expect(agentModelSummary(agent, {}, fakeT)).toBe('settings.modelCustom');
+  });
+
+  it('labels the configured model, falling back to the first known model', () => {
+    const agent = agentInfo({ models: [{ id: 'sonnet', label: 'Latest' }] });
+    expect(agentModelSummary(agent, {}, fakeT)).toBe('Latest (sonnet)');
+    expect(agentModelSummary(agent, { claude: { model: 'sonnet' } }, fakeT)).toBe('Latest (sonnet)');
+  });
+});
+
+function connectionTestResult(over: Partial<ConnectionTestResponse> = {}): ConnectionTestResponse {
+  return { ok: true, latencyMs: 42, model: 'sonnet', ...over } as ConnectionTestResponse;
+}
+
+describe('formatConnectionTestMessage', () => {
+  const context = { model: 'sonnet', agentId: 'claude', locale: 'en' as const, t: fakeT };
+
+  it('renders the API success copy for an ok result', () => {
+    const message = formatConnectionTestMessage(connectionTestResult({ sample: 'hi' }), 'api', context);
+    expect(message).toBe('settings.testSuccessApi:{"ms":42,"sample":"hi"}');
+  });
+
+  it('renders the CLI success copy for an ok result', () => {
+    const message = formatConnectionTestMessage(
+      connectionTestResult({ agentName: 'Claude Code', sample: 'hi' }),
+      'cli',
+      context,
+    );
+    expect(message).toBe('settings.testSuccessCli:{"agentName":"Claude Code","ms":42,"sample":"hi"}');
+  });
+
+  it('appends the raw detail to a success message when present', () => {
+    const message = formatConnectionTestMessage(
+      connectionTestResult({ sample: '', detail: 'note' }),
+      'api',
+      context,
+    );
+    expect(message).toBe('settings.testSuccessApi:{"ms":42,"sample":""} note');
+  });
+
+  it('maps a failure kind to its i18n key', () => {
+    const message = formatConnectionTestMessage(
+      connectionTestResult({ ok: false, kind: 'auth_failed' }),
+      'api',
+      context,
+    );
+    expect(message).toBe('settings.testAuthFailed');
+  });
+
+  it('falls back to the context model for not_found_model', () => {
+    const message = formatConnectionTestMessage(
+      connectionTestResult({ ok: false, kind: 'not_found_model', model: undefined }),
+      'api',
+      context,
+    );
+    expect(message).toBe('settings.testNotFoundModel:{"model":"sonnet"}');
+  });
+
+  it('surfaces the Codex configured-path guidance for a codex CLI success', () => {
+    const message = formatConnectionTestMessage(
+      connectionTestResult({
+        usedExecutableSource: 'configured',
+        configuredExecutablePath: '/usr/local/bin/codex',
+      }),
+      'cli',
+      { ...context, agentId: 'codex' },
+    );
+    expect(message).toContain('/usr/local/bin/codex');
   });
 });

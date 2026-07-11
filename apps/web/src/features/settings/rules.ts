@@ -1447,3 +1447,106 @@ export function agentModelOptionLabel(
   return label || id;
 }
 
+/** The Local CLI agent card's collapsed model summary (shown when the card
+ *  isn't the active selection), or `null` when the agent has no model list. */
+export function agentModelSummary(
+  agent: AgentInfo,
+  agentModels: AppConfig['agentModels'],
+  t: Translate,
+): string | null {
+  if (!Array.isArray(agent.models) || agent.models.length === 0) return null;
+  const choice = agentModels?.[agent.id] ?? {};
+  const modelValue = choice.model ?? agent.models[0]?.id ?? '';
+  if (!modelValue) return t('settings.modelCustom');
+  return agentModelOptionLabel(
+    agent.models.find((m) => m.id === modelValue),
+    modelValue,
+  );
+}
+
+/**
+ * Human-readable message for a connection-test result, shared by the Local
+ * CLI agent test and the BYOK provider test. `kindForSuccess` picks the
+ * success copy (API vs. CLI); a Codex CLI test additionally layers on the
+ * executable-path repair guidance.
+ */
+export function formatConnectionTestMessage(
+  result: ConnectionTestResponse,
+  kindForSuccess: 'api' | 'cli',
+  context: { model: string; agentId: string | null; locale: Locale; t: Translate },
+): string {
+  const { model, agentId, locale, t } = context;
+  const ms = Math.max(0, Math.round(result.latencyMs));
+  const sample = result.sample ?? '';
+  const agentName = result.agentName ?? '';
+  const testedModel = result.model ?? model;
+  if (result.ok) {
+    const baseMessage = kindForSuccess === 'api'
+      ? t('settings.testSuccessApi', { ms, sample })
+      : t('settings.testSuccessCli', { agentName, ms, sample });
+    if (kindForSuccess === 'cli' && agentId === 'codex') {
+      const codexStrings = codexPathStrings(locale);
+      if (
+        result.usedExecutableSource === 'configured' &&
+        result.configuredExecutablePath
+      ) {
+        return `${baseMessage} ${codexStrings.configuredSuccess(result.configuredExecutablePath)}`;
+      }
+      if (
+        result.usedExecutableSource === 'fallback_invalid' &&
+        result.configuredExecutablePath &&
+        result.detectedExecutablePath
+      ) {
+        return `${baseMessage} ${codexStrings.invalidFallback(
+          result.configuredExecutablePath,
+          result.detectedExecutablePath,
+        )}`;
+      }
+      if (
+        result.usedExecutableSource === 'fallback_failed' &&
+        result.configuredExecutablePath &&
+        result.detectedExecutablePath
+      ) {
+        return `${baseMessage} ${codexStrings.failedFallback(
+          result.configuredExecutablePath,
+          result.detectedExecutablePath,
+        )}`;
+      }
+    }
+    return result.detail ? `${baseMessage} ${result.detail}` : baseMessage;
+  }
+  switch (result.kind) {
+    case 'auth_failed':
+      return t('settings.testAuthFailed');
+    case 'forbidden':
+      return t('settings.testForbidden');
+    case 'not_found_model':
+      return t('settings.testNotFoundModel', { model: testedModel });
+    case 'invalid_model_id':
+      return t('settings.testInvalidModelId', { model: testedModel });
+    case 'invalid_base_url':
+      return t('settings.testInvalidBaseUrl');
+    case 'rate_limited':
+      return t('settings.testRateLimited');
+    case 'upstream_unavailable': {
+      const baseMessage = t('settings.testUpstream', {
+        status: result.status ?? 0,
+      });
+      return result.detail ? `${baseMessage} ${result.detail}` : baseMessage;
+    }
+    case 'timeout':
+      return t('settings.testTimeout', { ms });
+    case 'agent_not_installed':
+      return t('settings.testAgentMissing', { agentName });
+    case 'agent_auth_required':
+      return result.detail || 'Agent authentication is required.';
+    case 'agent_spawn_failed':
+      return t('settings.testAgentSpawn', {
+        agentName,
+        detail: result.detail ?? '',
+      });
+    default:
+      return t('settings.testUnknown', { detail: result.detail ?? '' });
+  }
+}
+
