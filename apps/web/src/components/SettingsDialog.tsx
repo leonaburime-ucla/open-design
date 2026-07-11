@@ -11,7 +11,6 @@ import { useAnalytics } from '../analytics/provider';
 import { recordAmrEntry } from '../analytics/amr-attribution';
 import {
   trackSettingsByokModelsFetchResult,
-  trackSettingsByokTestResult,
   trackSettingsByokFieldClick,
   trackSettingsByokProviderOptionClick,
   trackSettingsConnectorAuthResult,
@@ -75,7 +74,6 @@ import {
   byokFirstPartyBaseUrlHint,
   byokProviderDraftKey,
   byokProviderKeyForConfig,
-  byokTrackingTestResult,
   ByokProviderChips,
   canFetchProviderModels,
   canRunProviderConnectionTest,
@@ -108,7 +106,6 @@ import {
   persistByokProviderConfigDraft,
   PrivacySection,
   ProjectLocationsSection,
-  providerConnectionTestKey,
   providerFamilyLabel,
   providerModelsCacheKey,
   reconcileAmrModelChoice,
@@ -126,6 +123,7 @@ import {
   useAmrHighlight,
   useWiredAbout,
   useWiredAmrAccount,
+  useWiredByokConnectionTest,
   useWiredByokFieldFocus,
   useWiredDaemonAgents,
   formatAmrWalletBalance,
@@ -137,7 +135,6 @@ import {
   type ProviderModelsCache,
   type RescanNotice,
   type SettingsSection,
-  type TestState,
 } from '../features/settings';
 import { persistConfigAndRunOrbit } from '../providers/orbit';
 // Backward-compatible re-export: the definitions, ConnectorSection, and
@@ -196,7 +193,6 @@ import type {
   ExecMode,
   ProviderModelsResponse,
 } from '../types';
-import { testApiProvider } from '../providers/connection-test';
 import { fetchProviderModels } from '../providers/provider-models';
 import { openExternalUrl } from '../providers/registry';
 import { useByokImageModelOptions, useByokVideoModelOptions, useByokSpeechModelOptions } from '../media/aihubmix-image-models';
@@ -433,9 +429,6 @@ export function SettingsDialog({
     dismissCoachmark,
   } = useAmrHighlight({ initialHighlight, activeSection });
   const [hoveredAgentCardId, setHoveredAgentCardId] = useState<string | null>(null);
-  const [providerTestState, setProviderTestState] = useState<TestState>({
-    status: 'idle',
-  });
 
   const {
     amrCardStatus,
@@ -493,16 +486,11 @@ export function SettingsDialog({
         initial.apiVersion ?? '',
       );
     });
-  const providerTestAbortRef = useRef<AbortController | null>(null);
   const providerModelsAbortRef = useRef<AbortController | null>(null);
-  const providerTestRevisionRef = useRef(0);
   const providerModelsRevisionRef = useRef(0);
-  const providerTestFirstResetRef = useRef(true);
   const providerModelsFirstResetRef = useRef(true);
   const providerModelsSkipNextResetRef = useRef(false);
   const deferAfterKeyCleanRef = useRef(false);
-  const providerAutoTestKeyRef = useRef<string | null>(null);
-  const byokLastUnsuccessfulTestKeyRef = useRef<string | null>(null);
   const focusByokRequiredFieldAfterProtocolSwitchRef = useRef(false);
   const visualStabilityMode = isVisualStabilityMode();
   // Tracks whether the current BYOK model value came from an explicit user
@@ -556,24 +544,6 @@ export function SettingsDialog({
       ?? null
     : null;
   useEffect(() => {
-    if (providerTestFirstResetRef.current) {
-      providerTestFirstResetRef.current = false;
-      return;
-    }
-    providerTestRevisionRef.current += 1;
-    providerAutoTestKeyRef.current = null;
-    setByokPreconditionNotice(null);
-    setProviderTestState((state) =>
-      state.status === 'running' ? state : { status: 'idle' },
-    );
-  }, [
-    cfg.apiProtocol,
-    cfg.apiKey,
-    cfg.baseUrl,
-    cfg.model,
-    cfg.apiVersion,
-  ]);
-  useEffect(() => {
     if (providerModelsFirstResetRef.current) {
       providerModelsFirstResetRef.current = false;
       return;
@@ -594,11 +564,12 @@ export function SettingsDialog({
     cfg.baseUrl,
     cfg.apiVersion,
   ]);
-  // Releasing the abort controllers on unmount avoids the "setState after
-  // unmount" warning if the dialog closes while a test is still running.
+  // Releasing the abort controller on unmount avoids the "setState after
+  // unmount" warning if the dialog closes while a model-fetch is still
+  // running. The connection-test cluster's own abort controller is released
+  // by an equivalent unmount effect inside `useByokConnectionTest`.
   useEffect(() => {
     return () => {
-      providerTestAbortRef.current?.abort();
       providerModelsAbortRef.current?.abort();
     };
   }, []);
@@ -787,159 +758,6 @@ export function SettingsDialog({
     onRefreshAgents,
     amrLoggedIn: amrCardStatus?.loggedIn === true,
   });
-
-  const handleTestProvider = async (
-    options: { silentPreconditions?: boolean } = {},
-  ) => {
-    if (providerTestState.status === 'running') {
-      return;
-    }
-    const blockingIssues = blockingByokDraftIssues(byokDraftValidation);
-    const hasFirstPartyHostTypo = Boolean(byokFirstPartyBaseUrl?.hostTypo);
-    const currentConfigKey = providerConnectionTestKey(apiProtocol, cfg);
-    const lastUnsuccessfulConfigKey = byokLastUnsuccessfulTestKeyRef.current;
-    const configKeyChanged = lastUnsuccessfulConfigKey !== null &&
-      lastUnsuccessfulConfigKey !== currentConfigKey;
-    if (hasFirstPartyHostTypo) {
-      if (!options.silentPreconditions) {
-        setByokPreconditionNotice({
-          action: 'test',
-          field: 'base_url',
-          message: t('settings.testInvalidBaseUrl'),
-        });
-        focusByokRequiredField('base_url');
-      }
-      byokLastUnsuccessfulTestKeyRef.current = currentConfigKey;
-      return;
-    }
-    if (blockingIssues.length > 0) {
-      if (options.silentPreconditions) {
-        return;
-      }
-      showByokDraftValidationNotice('test', byokDraftValidation);
-      const byokProviderId = byokProtocolToTracking(apiProtocol);
-      if (byokProviderId) {
-        trackSettingsByokTestResult(analytics.track, {
-          page_name: 'settings',
-          area: 'execution_model',
-          provider_id: byokProviderId,
-          result: 'failed',
-          error_code: byokErrorKindFromIssues(blockingIssues),
-          error_kind: byokErrorKindFromIssues(blockingIssues),
-          field_missing: byokFieldMissingFromIssues(blockingIssues),
-          config_key_changed: configKeyChanged,
-          success_after_action: false,
-          duration_ms: 0,
-        });
-      }
-      byokLastUnsuccessfulTestKeyRef.current = currentConfigKey;
-      return;
-    }
-    const controller = new AbortController();
-    const revision = providerTestRevisionRef.current;
-    providerTestAbortRef.current = controller;
-    setProviderTestState({ status: 'running' });
-    const startedAt = performance.now();
-    const clearIfStale = () => {
-      if (providerTestAbortRef.current === controller) {
-        setProviderTestState({ status: 'idle' });
-      }
-    };
-    try {
-      const result = await testApiProvider(
-        {
-          protocol: apiProtocol,
-          baseUrl: cfg.baseUrl,
-          apiKey: cleanByokApiKey(cfg.apiKey),
-          model: cfg.model,
-          apiVersion:
-            apiProtocol === 'azure'
-              ? cfg.apiVersion?.trim() || undefined
-              : undefined,
-        },
-        controller.signal,
-      );
-      if (controller.signal.aborted) return;
-      if (providerTestRevisionRef.current !== revision) {
-        clearIfStale();
-        return;
-      }
-      setProviderTestState({ status: 'done', result });
-      if (!result.ok && result.kind === 'not_found_model') {
-        focusByokRequiredField('model');
-      }
-      const byokProviderId = byokProtocolToTracking(apiProtocol);
-      if (byokProviderId) {
-        trackSettingsByokTestResult(analytics.track, {
-          page_name: 'settings',
-          area: 'execution_model',
-          provider_id: byokProviderId,
-          result: byokTrackingTestResult(result),
-          ...(result.ok ? {} : { error_code: result.kind || 'UNKNOWN' }),
-          ...(result.ok ? {} : { error_kind: result.kind || 'UNKNOWN' }),
-          field_missing: 'none',
-          config_key_changed: configKeyChanged,
-          success_after_action: result.ok && configKeyChanged,
-          duration_ms: Math.round(performance.now() - startedAt),
-        });
-      }
-      byokLastUnsuccessfulTestKeyRef.current = result.ok ? null : currentConfigKey;
-    } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return;
-      if (providerTestRevisionRef.current !== revision) {
-        clearIfStale();
-        return;
-      }
-      setProviderTestState({
-        status: 'done',
-        result: {
-          ok: false,
-          kind: 'unknown',
-          latencyMs: 0,
-          model: cfg.model,
-          detail: err instanceof Error ? err.message : 'Test request failed',
-        },
-      });
-      const byokProviderId = byokProtocolToTracking(apiProtocol);
-      if (byokProviderId) {
-        trackSettingsByokTestResult(analytics.track, {
-          page_name: 'settings',
-          area: 'execution_model',
-          provider_id: byokProviderId,
-          result: 'failed',
-          error_code: err instanceof Error ? err.name : 'UNKNOWN',
-          error_kind: err instanceof Error ? err.name : 'UNKNOWN',
-          field_missing: 'none',
-          config_key_changed: configKeyChanged,
-          success_after_action: false,
-          duration_ms: Math.round(performance.now() - startedAt),
-        });
-      }
-      byokLastUnsuccessfulTestKeyRef.current = currentConfigKey;
-    } finally {
-      if (providerTestAbortRef.current === controller) {
-        providerTestAbortRef.current = null;
-      }
-    }
-  };
-
-  const handleAutoTestProvider = () => {
-    if (providerTestState.status === 'running') {
-      return;
-    }
-    if (byokFirstPartyBaseUrl?.hostTypo) {
-      return;
-    }
-    if (blockingByokDraftIssues(byokDraftValidation).length > 0) {
-      return;
-    }
-    const key = providerConnectionTestKey(apiProtocol, cfg);
-    if (providerAutoTestKeyRef.current === key) {
-      return;
-    }
-    providerAutoTestKeyRef.current = key;
-    void handleTestProvider({ silentPreconditions: true });
-  };
 
   const handleFetchProviderModels = async (
     options: { silent?: boolean; trigger?: 'auto' | 'manual' } = {},
@@ -1378,6 +1196,26 @@ export function SettingsDialog({
   const apiKeyDraftInvalid = byokBlockingDraftIssues.some((issue) =>
     issue.field === 'api_key' && issue.code !== 'api_key_required'
   );
+  // BYOK connection-test cluster: the "Test connection" state machine + its
+  // debounced auto-test. Called here (rather than up near the other
+  // execution-mode hooks) because it needs `byokDraftValidation`/
+  // `byokFirstPartyBaseUrl`, which are still-inline derived-config values
+  // computed just above (SKILL.md's "hook call site moves later in the
+  // render" note — safe because nothing before this point reads the
+  // controller it returns).
+  const { providerTestState, handleTestProvider, handleAutoTestProvider } =
+    useWiredByokConnectionTest({
+      apiProtocol,
+      cfg,
+      t,
+      track: analytics.track,
+      byokDraftValidation,
+      byokFirstPartyBaseUrl,
+      visualStabilityMode,
+      focusByokRequiredField,
+      setByokPreconditionNotice,
+      showByokDraftValidationNotice,
+    });
   const byokModelFetchDraftValidation = useMemo(
     () => validateByokDraft(
       apiProtocol,
@@ -1465,30 +1303,6 @@ export function SettingsDialog({
     byokModelFetchDraftValidation,
     cfg.apiKey,
     providerModelsKey,
-  ]);
-  useEffect(() => {
-    if (cfg.mode !== 'api') return;
-    if (visualStabilityMode) return;
-    if (providerTestState.status === 'running') return;
-    if (byokFirstPartyBaseUrl?.hostTypo) return;
-    if (blockingByokDraftIssues(byokDraftValidation).length > 0) return;
-    const key = providerConnectionTestKey(apiProtocol, cfg);
-    if (providerAutoTestKeyRef.current === key) return;
-    const timer = window.setTimeout(() => {
-      handleAutoTestProvider();
-    }, 500);
-    return () => window.clearTimeout(timer);
-  }, [
-    apiProtocol,
-    byokFirstPartyBaseUrl?.hostTypo,
-    byokDraftValidation,
-    cfg.apiKey,
-    cfg.apiVersion,
-    cfg.baseUrl,
-    cfg.mode,
-    cfg.model,
-    providerTestState.status,
-    visualStabilityMode,
   ]);
   useEffect(() => {
     if (cfg.mode !== 'api') return;

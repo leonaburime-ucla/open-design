@@ -74,3 +74,18 @@ export function testAgent(
 ): Promise<ConnectionTestResponse> {
   return postTest({ mode: 'agent', ...input }, signal);
 }
+
+/**
+ * Run `onTimeout` once after `delayMs`. Backs the BYOK connection-test
+ * cluster's debounced auto-test (waits for the user to stop editing the
+ * key/base URL/model/api-version fields before silently re-running the
+ * test). Returns a cancel function.
+ */
+export function scheduleByokAutoTestTimeout(
+  onTimeout: () => void,
+  delayMs: number,
+): () => void {
+  if (typeof window === 'undefined') return () => {};
+  const handle = window.setTimeout(onTimeout, delayMs);
+  return () => window.clearTimeout(handle);
+}

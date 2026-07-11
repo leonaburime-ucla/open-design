@@ -121,23 +121,51 @@ first.
   `SettingsDialog.*.test.tsx` files (218 tests) all green; `pnpm guard`
   prints the boundary-check-passed line.
 
-### 3. BYOK connection-test cluster — **pending**
-- **Owns**: `providerTestState`, `providerTestAbortRef`,
+### 3. BYOK connection-test cluster — **done**
+- **Owned**: `providerTestState`, `providerTestAbortRef`,
   `providerTestRevisionRef`, `providerTestFirstResetRef`,
   `providerAutoTestKeyRef`, `byokLastUnsuccessfulTestKeyRef`,
-  `handleTestProvider`, `handleAutoTestProvider`, `renderTestMessage`, the
-  reset-on-cfg-change effect (~564-581), the auto-test debounce effect
-  (~1870-1893). Transport already isolated in `providers/connection-test.ts`
-  (`testApiProvider`).
-- **Coupling**: needs cluster 2's notice/focus hook and `byokDraftValidation`
-  (from cluster 5) as params.
-- **Target shape**: `ports.ts` gets a `ByokConnectionTestPort` (mirrors
-  `DaemonAgentPort`'s shape: `testProvider(input, signal)`); `dependencies.ts`
-  binds `testApiProvider`; `hooks/useByokConnectionTest.hooks.ts` owns the
-  state/refs/effects/handlers, taking the focus/notice hook's output as a
-  param per SKILL.md Phase 6.
-- **Risk**: medium.
-- **Status**: pending.
+  `handleTestProvider`, `handleAutoTestProvider`, the reset-on-cfg-change
+  effect, and the auto-test debounce effect. `renderTestMessage` was already
+  extracted to `rules.ts`'s `formatConnectionTestMessage` by the earlier
+  concurrent pass — no further work needed there. Transport already isolated
+  in `providers/connection-test.ts` (`testApiProvider`).
+- **Coupling**: takes cluster 2's `useWiredByokFieldFocus` output
+  (`focusByokRequiredField`/`setByokPreconditionNotice`/
+  `showByokDraftValidationNotice`) and the still-inline derived-config
+  cluster's `byokDraftValidation`/`byokFirstPartyBaseUrl` as hook params, per
+  SKILL.md's "hook takes other clusters' outputs as params" pattern.
+- **Landed shape**: `ByokConnectionTestPort` (`ports.ts`) — `testProvider(input,
+  signal)` mirroring `DaemonAgentPort.testAgent`'s shape, plus a
+  `scheduleAutoTestTimeout` timer bridge (the debounce effect's
+  `window.setTimeout` had to move behind a port to satisfy the guard's
+  transport/DOM-global rule — added alongside `testApiProvider` in
+  `providers/connection-test.ts` as `scheduleByokAutoTestTimeout`, mirroring
+  `providers/agents.ts`'s `scheduleAgentRescanNoticeTimeout` precedent of a
+  timer bridge living alongside its domain's fetch wrappers); bound in
+  `dependencies.ts`. `hooks/useByokConnectionTest.hooks.ts` owns the
+  state/refs/effects/handlers exactly as before extraction; `visualStabilityMode`
+  is computed once in the orchestrator (also read by cluster 4's own debounce
+  effect) and passed through as a hook input rather than recomputed. The
+  orchestrator's `useWiredByokConnectionTest(...)` call site sits right after
+  `byokDraftValidation`/`apiKeyDraftInvalid` are computed (~cluster 5
+  territory), later in the render than the removed functions' original
+  declaration point — safe because nothing before that point in the render
+  reads the controller (SKILL.md's "hook call site moves later in the render"
+  note). The shared abort-on-unmount effect that used to release both
+  `providerTestAbortRef` and `providerModelsAbortRef` was split: cluster 3's
+  half moved into the hook's own unmount effect (mirroring
+  `useDaemonAgents.hooks.ts`'s `agentTestAbortRef` cleanup), and the
+  orchestrator's effect now only releases `providerModelsAbortRef` (cluster
+  4, untouched otherwise).
+- **Risk**: medium — realized as expected (the `window.setTimeout` guard trip
+  was the only surprise, fixed with the timer-bridge port field above).
+- **Status**: **done**. `pnpm --filter @open-design/web typecheck`, the new
+  `useByokConnectionTest.hooks.ts` unit tests (16 tests against a hand-written
+  fake `ByokConnectionTestPort`) plus the full `tests/features/settings` suite
+  (264 tests across 27 files) and the 3 existing `SettingsDialog.*.test.tsx`
+  files (155 tests) all green; `pnpm guard` prints the boundary-check-passed
+  line.
 
 ### 4. BYOK model-discovery cluster — **pending**
 - **Owns**: `providerModelsState`, `providerModelsCommittedKey`,

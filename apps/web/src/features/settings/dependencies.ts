@@ -29,7 +29,7 @@ import {
 } from '../../providers/daemon';
 import { subscribeAmrLoginStatusEvent, subscribeAmrWindowResync } from '../../providers/amr';
 import { scheduleAgentRescanNoticeTimeout, subscribeAgentInstallReturn } from '../../providers/agents';
-import { testAgent } from '../../providers/connection-test';
+import { scheduleByokAutoTestTimeout, testAgent, testApiProvider } from '../../providers/connection-test';
 import {
   fetchProjectLocations,
   openProjectLocationFolderDialog,
@@ -39,6 +39,7 @@ import {
 import type {
   AboutPort,
   AmrAccountPort,
+  ByokConnectionTestPort,
   ByokFieldFocusPort,
   DaemonAgentPort,
   IntegrationsPort,
@@ -92,6 +93,13 @@ export const amrAccountPort: AmrAccountPort = {
   fetchWalletSnapshot: fetchAmrWalletSnapshot,
   subscribeWindowResync: subscribeAmrWindowResync,
   subscribeLoginStatusEvent: subscribeAmrLoginStatusEvent,
+};
+
+/** Default binding: the BYOK connection-test cluster's provider test
+ *  transport + its debounced auto-test timer bridge. */
+export const byokConnectionTestPort: ByokConnectionTestPort = {
+  testProvider: testApiProvider,
+  scheduleAutoTestTimeout: scheduleByokAutoTestTimeout,
 };
 
 /** Default binding: the local-CLI agent list cluster's connection-test

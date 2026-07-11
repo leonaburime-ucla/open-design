@@ -14,6 +14,7 @@ import type {
   ConnectionTestResponse,
   OrbitRunStartResponse,
   OrbitStatusResponse,
+  ProviderTestRequest,
   SkillSummary,
 } from '../../types';
 import type { AmrLoginStatus, AmrLoginStatusEventReason, CodexInstallStatus, McpInstallInfo } from './types';
@@ -100,6 +101,18 @@ export interface AmrAccountPort {
   /** The cross-component `od:amr-login-status-change` signal (login started
    *  elsewhere, e.g. `AmrLoginPill`/`InlineModelSwitcher`). Returns unsubscribe. */
   subscribeLoginStatusEvent: (onEvent: (reason: AmrLoginStatusEventReason) => void) => () => void;
+}
+
+/** Transport the BYOK connection-test cluster of the execution-mode section
+ *  depends on: the provider connection test request itself (mirroring
+ *  `DaemonAgentPort.testAgent`'s shape) plus the debounced auto-test's timer
+ *  bridge. */
+export interface ByokConnectionTestPort {
+  /** `POST /api/test/connection` (mode: 'provider'). Aborts via the given signal. */
+  testProvider: (input: ProviderTestRequest, signal: AbortSignal) => Promise<ConnectionTestResponse>;
+  /** Run `onTimeout` once after `delayMs` for the debounced auto-test.
+   *  Returns cancel. */
+  scheduleAutoTestTimeout: (onTimeout: () => void, delayMs: number) => () => void;
 }
 
 /** Transport the local-CLI agent list cluster (rescan / connection test /

@@ -206,9 +206,9 @@ export type { PrivacyController, PrivacyInput } from './hooks/usePrivacy.hooks';
 // BYOK field-focus + precondition-notice cluster of the execution-mode
 // section: the four field refs (API key/base URL/model select/custom model)
 // and the missing-field/draft-validation notice banner state. The
-// connection-test and model-discovery clusters (still inline in
-// `SettingsDialog.tsx`) take this hook's controller as a param rather than
-// owning their own copies of this state.
+// connection-test cluster below and the model-discovery cluster (still
+// inline in `SettingsDialog.tsx`) take this hook's controller as a param
+// rather than owning their own copies of this state.
 export {
   byokDraftIssueMessage,
   byokRequiredLabel,
@@ -220,6 +220,19 @@ export type {
   ByokFieldFocusController,
   ByokFieldFocusInput,
 } from './hooks/useByokFieldFocus.hooks';
+
+// BYOK connection-test cluster of the execution-mode section: the "Test
+// connection" state machine, its abort/revision/last-unsuccessful-key
+// bookkeeping, and the debounced auto-test. Transport reaches only the
+// injected `ByokConnectionTestPort` (`providers/connection-test`'s
+// `testApiProvider`); the field-focus/notice callbacks and the derived
+// draft-validation/first-party-base-url hint come from the field-focus
+// cluster and the still-inline derived-config cluster as hook params.
+export { useWiredByokConnectionTest } from './hooks/useByokConnectionTest.hooks';
+export type {
+  ByokConnectionTestController,
+  ByokConnectionTestInput,
+} from './hooks/useByokConnectionTest.hooks';
 
 // Project Locations section: the built-in default location card, the
 // editable list of external project folders, and the add-folder/remove/
