@@ -127,6 +127,12 @@ export { formatAmrWalletBalance } from './rules';
 export { useWiredAmrAccount } from './hooks/useAmrAccount.hooks';
 export type { AmrAccountController, AmrAccountInput } from './hooks/useAmrAccount.hooks';
 export type { AmrAgentPresence, AmrLoginStatus } from './types';
+
+// AMR-card one-shot nudge (scroll-into-view + pulse + sign-in coachmark)
+// driven by the failed-run `initialHighlight === 'amr'` entry point. Pure
+// UI/timing state, so it needs no port/`useWiredX` wrapper.
+export { useAmrHighlight } from './hooks/useAmrHighlight.hooks';
+export type { AmrHighlightController, AmrHighlightInput } from './hooks/useAmrHighlight.hooks';
 export {
   ACCOUNT_MODEL_SOURCE_LABEL_HIDDEN,
   AGENT_CLI_AUTH_ENV_KEYS,

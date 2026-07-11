@@ -125,6 +125,7 @@ import {
   testStatusVariant,
   updateAgentCliEnvValue,
   updateCurrentApiProtocolConfig,
+  useAmrHighlight,
   useWiredAbout,
   useWiredAmrAccount,
   formatAmrWalletBalance,
@@ -451,17 +452,13 @@ export function SettingsDialog({
   // (About) keeps the previous scrollTop, so the new section's header
   // can land out of view and the panel reads as half-loaded. Issue #634.
   const settingsContentRef = useRef<HTMLDivElement | null>(null);
-  // AMR-card focus, driven by the failed-run nudge (`initialHighlight==='amr'`).
-  const amrCardRef = useRef<HTMLDivElement | null>(null);
-  // Card pulse: a brief attention flash that auto-clears after a few seconds.
-  const [amrHighlightActive, setAmrHighlightActive] = useState(false);
-  // Coachmark: persists (unlike the card pulse) until the real pointer reaches
-  // the authorize button — so it won't vanish while the user is still moving
-  // toward it.
-  const [amrCoachmarkArmed, setAmrCoachmarkArmed] = useState(false);
-  // The fake-cursor coachmark dismisses as soon as the real pointer reaches the
-  // authorize button — once the user has found it, the hint has done its job.
-  const [amrCoachmarkDismissed, setAmrCoachmarkDismissed] = useState(false);
+  const {
+    amrCardRef,
+    amrHighlightActive,
+    amrCoachmarkArmed,
+    amrCoachmarkDismissed,
+    dismissCoachmark,
+  } = useAmrHighlight({ initialHighlight, activeSection });
   const [agentRescanRunning, setAgentRescanRunning] = useState(false);
   const [agentRescanNotice, setAgentRescanNotice] =
     useState<RescanNotice | null>(null);
@@ -587,34 +584,6 @@ export function SettingsDialog({
     const el = settingsContentRef.current;
     if (el) el.scrollTop = 0;
   }, [activeSection]);
-
-  // One-shot AMR-card focus from the failed-run nudge: scroll the card into
-  // view (on the next frame, so it wins over the section's scrollTop reset
-  // above) and play a brief highlight + arm the sign-in coachmark. The
-  // coachmark only actually shows when the AMR card reports a signed-out state
-  // (`amrCardStatus?.loggedIn === false`). If the execution pane is in API mode
-  // the AMR card is absent and this no-ops.
-  useEffect(() => {
-    if (initialHighlight !== 'amr' || activeSection !== 'execution') return;
-    let cancelled = false;
-    const raf = requestAnimationFrame(() => {
-      if (cancelled) return;
-      amrCardRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      setAmrCoachmarkDismissed(false);
-      setAmrHighlightActive(true);
-      setAmrCoachmarkArmed(true);
-    });
-    // Only the card pulse auto-clears; the coachmark persists until the pointer
-    // reaches the authorize button (or the user signs in).
-    const clear = setTimeout(() => {
-      if (!cancelled) setAmrHighlightActive(false);
-    }, 3200);
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(raf);
-      clearTimeout(clear);
-    };
-  }, [initialHighlight, activeSection]);
 
   const selectedMemoryChatAgent =
     cfg.mode === 'daemon' && cfg.agentId
@@ -3314,7 +3283,7 @@ export function SettingsDialog({
                                   active && amrCardStatusReady ? (
                                     <span
                                       className="amr-auth-anchor"
-                                      onMouseEnter={() => setAmrCoachmarkDismissed(true)}
+                                      onMouseEnter={dismissCoachmark}
                                     >
                                       {amrCoachmarkArmed &&
                                       amrCardStatus?.loggedIn === false &&
