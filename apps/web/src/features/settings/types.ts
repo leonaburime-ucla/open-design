@@ -3,7 +3,7 @@
 // these are the view-model shapes the slice's rules, hooks, and components pass
 // around. Per ADR 0002 they are never redeclared wire DTOs — they compose the
 // app's existing types into slice-local view models.
-import type { AppConfig, ConnectionTestResponse, ProviderModelOption } from '../../types';
+import type { ApiProtocol, AppConfig, ConnectionTestResponse, ProviderModelOption } from '../../types';
 import type { ByokDraftField } from '../../components/byok/validation';
 import type { Dict } from '../../i18n/types';
 
@@ -218,6 +218,19 @@ export type ByokFieldMissing = 'api_key' | 'base_url' | 'model' | 'multiple' | '
 export interface ByokFirstPartyBaseUrlHint {
   baseUrl: string;
   hostTypo: boolean;
+}
+
+/** A selectable BYOK provider option — a first-party preset (Anthropic,
+ *  OpenAI, ...), a bare-protocol fallback for a protocol with no preset, or
+ *  the always-present "Custom" entry (`custom: true`, built from the current
+ *  draft rather than a static preset). */
+export interface ByokProviderPreset {
+  id: string;
+  title: string;
+  protocol: ApiProtocol;
+  baseUrl: string;
+  model: string;
+  custom?: boolean;
 }
 
 // ---------------------------------------------------------------------------

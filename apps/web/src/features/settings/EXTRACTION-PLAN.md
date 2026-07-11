@@ -74,7 +74,13 @@ first.
   functions; a new dumb component `components/ByokProviderChips.tsx` for the
   protocol-chips JSX (props: options, selected, onSelect, track callback).
 - **Risk**: low.
-- **Status**: pending (targeted this pass).
+- **Status**: **done**. Landed as `BYOK_PROVIDER_PRESETS` (`constants.ts`),
+  `customByokProviderPreset`/`buildByokProviderOptions`/`selectByokProvider`/
+  `isByokProviderConfigured` (`rules.ts`), `ByokProviderPreset` (`types.ts`),
+  and the `ByokProviderChips` dumb component. The orchestrator now composes
+  these through the barrel; the protocol-chips JSX is a single
+  `<ByokProviderChips ... onSelect={(provider, active) => {...tracking...}} />`
+  call. Tests added to `tests/features/settings/rules.test.ts`.
 
 ### 2. BYOK field-focus + precondition-notice bridge — **pending**
 - **Owns**: `byokRequiredLabel`, `formatByokMissingFields`,

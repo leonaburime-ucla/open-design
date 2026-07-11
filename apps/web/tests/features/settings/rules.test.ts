@@ -6,9 +6,13 @@ import { describe, expect, it } from 'vitest';
 import type { ConnectorDetail } from '@open-design/contracts';
 import type { AppConfig, OrbitRunSummary, OrbitStatusResponse, ProviderModelOption, SkillSummary } from '../../../src/types';
 import {
+  buildByokProviderOptions,
+  customByokProviderPreset,
   deriveComposioCredentialState,
+  isByokProviderConfigured,
   mergeProviderModelOptions,
   providerModelsCacheKey,
+  selectByokProvider,
 } from '../../../src/features/settings';
 import {
   agentModelSummary,
@@ -723,5 +727,115 @@ describe('formatConnectionTestMessage', () => {
       { ...context, agentId: 'codex' },
     );
     expect(message).toContain('/usr/local/bin/codex');
+  });
+});
+
+describe('customByokProviderPreset', () => {
+  it('builds the custom entry from the live draft', () => {
+    const preset = customByokProviderPreset(fakeT, 'openai', 'https://my.gateway/v1', 'gpt-4o-mini');
+    expect(preset).toEqual({
+      id: 'custom',
+      title: 'settings.customProvider',
+      protocol: 'openai',
+      baseUrl: 'https://my.gateway/v1',
+      model: 'gpt-4o-mini',
+      custom: true,
+    });
+  });
+});
+
+describe('buildByokProviderOptions', () => {
+  it('lists the first-party presets before a fallback entry per uncovered protocol, then the custom entry last', () => {
+    const custom = customByokProviderPreset(fakeT, 'anthropic', '', '');
+    const options = buildByokProviderOptions(custom);
+    expect(options[0]).toMatchObject({ id: 'anthropic', protocol: 'anthropic' });
+    expect(options.at(-1)).toBe(custom);
+    // 'aihubmix' (a fixed-origin gateway) has no first-party preset of its
+    // own — it must still appear as a bare-protocol fallback so every
+    // API_PROTOCOL_TABS entry is selectable.
+    const aihubmixFallback = options.find((option) => option.protocol === 'aihubmix');
+    expect(aihubmixFallback).toBeDefined();
+    expect(aihubmixFallback?.id).toBe('protocol-aihubmix');
+  });
+
+  it('does not add a bare-protocol fallback for a protocol that already has a first-party preset', () => {
+    const custom = customByokProviderPreset(fakeT, 'anthropic', '', '');
+    const options = buildByokProviderOptions(custom);
+    // Anthropic and MiniMax both preset `protocol: 'anthropic'` (different
+    // base URLs) — the fallback-entry generator must still skip 'anthropic'
+    // entirely rather than adding a redundant `protocol-anthropic` entry.
+    const fallbackAnthropicEntries = options.filter((option) => option.id === 'protocol-anthropic');
+    expect(fallbackAnthropicEntries).toHaveLength(0);
+  });
+});
+
+describe('selectByokProvider', () => {
+  const custom = customByokProviderPreset(fakeT, 'anthropic', 'https://custom.example', 'model-x');
+  const options = buildByokProviderOptions(custom);
+
+  it('returns the custom entry when the draft has no committed provider', () => {
+    const cfg = baseConfig({ apiProviderBaseUrl: null });
+    expect(selectByokProvider(options, cfg, 'anthropic', custom)).toBe(custom);
+  });
+
+  it('returns the matching preset for the committed provider base URL', () => {
+    const cfg = baseConfig({ apiProviderBaseUrl: 'https://api.anthropic.com' });
+    const selected = selectByokProvider(options, cfg, 'anthropic', custom);
+    expect(selected.id).toBe('anthropic');
+  });
+
+  it('falls back to the custom entry when nothing matches', () => {
+    const cfg = baseConfig({ apiProviderBaseUrl: 'https://unmatched.example', apiProtocol: 'openai' });
+    expect(selectByokProvider(options, cfg, 'openai', custom)).toBe(custom);
+  });
+});
+
+describe('isByokProviderConfigured', () => {
+  const anthropicPreset = { id: 'anthropic', title: 'Anthropic', protocol: 'anthropic' as const, baseUrl: 'https://api.anthropic.com', model: 'claude-sonnet-4-5' };
+
+  it('checks the live draft directly for the custom provider', () => {
+    const custom = customByokProviderPreset(fakeT, 'anthropic', 'https://api.anthropic.com', 'claude-sonnet-4-5');
+    const cfg = baseConfig({ apiKey: 'sk-test' });
+    expect(isByokProviderConfigured(custom, cfg, { byokRequiresApiKey: true, selectedByokProviderId: custom.id })).toBe(true);
+  });
+
+  it('reports the active (currently-selected) non-custom provider from the live config', () => {
+    const cfg = baseConfig({ apiKey: 'sk-test' });
+    expect(
+      isByokProviderConfigured(anthropicPreset, cfg, {
+        byokRequiresApiKey: true,
+        selectedByokProviderId: 'anthropic',
+      }),
+    ).toBe(true);
+  });
+
+  it('returns false for a non-active provider with no draft and no persisted config', () => {
+    const cfg = baseConfig({ apiProtocol: 'openai', apiProviderBaseUrl: null });
+    expect(
+      isByokProviderConfigured(anthropicPreset, cfg, {
+        byokRequiresApiKey: true,
+        selectedByokProviderId: 'custom',
+      }),
+    ).toBe(false);
+  });
+
+  it('reads a persisted per-protocol config for a non-active, non-current-protocol provider', () => {
+    const cfg = baseConfig({
+      apiProtocol: 'openai',
+      apiProviderBaseUrl: null,
+      apiProtocolConfigs: {
+        anthropic: {
+          apiKey: 'sk-persisted',
+          baseUrl: 'https://api.anthropic.com',
+          model: 'claude-sonnet-4-5',
+        },
+      },
+    } as Partial<AppConfig>);
+    expect(
+      isByokProviderConfigured(anthropicPreset, cfg, {
+        byokRequiresApiKey: true,
+        selectedByokProviderId: 'custom',
+      }),
+    ).toBe(true);
   });
 });

@@ -14,7 +14,13 @@ import {
   KNOWN_PROVIDERS,
 } from '../../state/config';
 import type { KnownProvider } from '../../state/config';
-import { resolveFixedOriginBaseUrl } from '../../state/apiProtocols';
+import {
+  API_PROTOCOL_TABS,
+  DEFAULT_BASE_URL_BY_PROTOCOL,
+  resolveFixedOriginBaseUrl,
+  SUGGESTED_MODELS_BY_PROTOCOL,
+} from '../../state/apiProtocols';
+import { byokProviderRequiresApiKey } from '../../utils/byokProvider';
 import type { MediaProvider } from '../../media/models';
 import type {
   AgentInfo,
@@ -39,6 +45,7 @@ import type {
   AgentRefreshOptions,
   ByokFieldMissing,
   ByokFirstPartyBaseUrlHint,
+  ByokProviderPreset,
   ByokRequiredField,
   ComposioCredentialState,
   MediaProviderRowState,
@@ -57,6 +64,7 @@ import {
   AGENT_CLI_BASE_URL_ENV_KEYS,
   AMR_PROFILE_AGENT_ID,
   AMR_PROFILE_ENV_KEY,
+  BYOK_PROVIDER_PRESETS,
 } from './constants';
 
 type Translate = ReturnType<typeof useT>;
@@ -1445,6 +1453,109 @@ export function agentModelOptionLabel(
       : `${label} (${id})`;
   }
   return label || id;
+}
+
+/** The always-present "Custom" BYOK provider entry, built from the live draft
+ *  rather than a static preset (it needs `t()` for its label and tracks
+ *  whatever base URL/model the user has currently typed). */
+export function customByokProviderPreset(
+  t: Translate,
+  apiProtocol: ApiProtocol,
+  baseUrl: string,
+  model: string,
+): ByokProviderPreset {
+  return {
+    id: 'custom',
+    title: t('settings.customProvider'),
+    protocol: apiProtocol,
+    baseUrl,
+    model,
+    custom: true,
+  };
+}
+
+/** The full BYOK provider chip row: the first-party presets, a bare-protocol
+ *  fallback entry for any protocol tab that has no preset of its own, then
+ *  the "Custom" entry last. */
+export function buildByokProviderOptions(
+  customProvider: ByokProviderPreset,
+): ReadonlyArray<ByokProviderPreset> {
+  const presetProtocols = new Set(BYOK_PROVIDER_PRESETS.map((provider) => provider.protocol));
+  return [
+    ...BYOK_PROVIDER_PRESETS,
+    ...API_PROTOCOL_TABS.filter((tab) => !presetProtocols.has(tab.id)).map((tab) => {
+      const fallback = defaultApiProtocolConfig(tab.id);
+      return {
+        id: `protocol-${tab.id}`,
+        title: tab.title,
+        protocol: tab.id,
+        baseUrl: fallback.baseUrl || DEFAULT_BASE_URL_BY_PROTOCOL[tab.id],
+        model: fallback.model || SUGGESTED_MODELS_BY_PROTOCOL[tab.id][0] || '',
+      };
+    }),
+    customProvider,
+  ];
+}
+
+/** The currently-selected chip: the exact preset/fallback matching the
+ *  config's committed provider base URL, or the "Custom" entry when the
+ *  draft has no committed provider (`apiProviderBaseUrl === null`) or
+ *  doesn't match any option. */
+export function selectByokProvider(
+  options: ReadonlyArray<ByokProviderPreset>,
+  cfg: Pick<AppConfig, 'apiProviderBaseUrl'>,
+  apiProtocol: ApiProtocol,
+  customProvider: ByokProviderPreset,
+): ByokProviderPreset {
+  if (cfg.apiProviderBaseUrl === null) return customProvider;
+  return (
+    options.find(
+      (provider) =>
+        !provider.custom &&
+        provider.protocol === apiProtocol &&
+        provider.baseUrl === cfg.apiProviderBaseUrl,
+    ) ?? customProvider
+  );
+}
+
+/** Whether a BYOK provider chip's underlying config (its own draft, the
+ *  live config when it's the active chip, or a persisted per-protocol
+ *  config) has everything a connection test needs. */
+export function isByokProviderConfigured(
+  provider: ByokProviderPreset,
+  cfg: AppConfig,
+  options: { byokRequiresApiKey: boolean; selectedByokProviderId: string | undefined },
+): boolean {
+  if (provider.custom) {
+    return (
+      canRunProviderConnectionTest(currentApiProtocolConfig(cfg), {
+        requiresApiKey: options.byokRequiresApiKey,
+      }) && isValidApiBaseUrl(cfg.baseUrl)
+    );
+  }
+  const apiProtocol = cfg.apiProtocol ?? 'anthropic';
+  const providerDraft = cfg.byokProviderConfigDrafts?.[
+    byokProviderDraftKey(provider.protocol, provider.baseUrl, provider.baseUrl)
+  ]?.apiConfig;
+  const activeProvider = options.selectedByokProviderId === provider.id;
+  const entry = activeProvider
+    ? currentApiProtocolConfig(cfg)
+    : providerDraft ?? (
+      provider.protocol === apiProtocol
+        ? undefined
+        : cfg.apiProtocolConfigs?.[provider.protocol]
+    );
+  if (!entry || entry.baseUrl !== provider.baseUrl) return false;
+  const knownProvider = KNOWN_PROVIDERS.find((item) => item.baseUrl === provider.baseUrl);
+  return (
+    canRunProviderConnectionTest(entry, {
+      requiresApiKey: byokProviderRequiresApiKey(
+        provider.protocol,
+        knownProvider,
+        entry.baseUrl,
+      ),
+    }) && isValidApiBaseUrl(entry.baseUrl)
+  );
 }
 
 /** The Local CLI agent card's collapsed model summary (shown when the card

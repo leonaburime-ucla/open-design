@@ -123,6 +123,18 @@ export type {
   TestState,
 } from './types';
 
+// BYOK provider chip row (protocol preset selection). The option list build/
+// selection/configured-status derivations are pure rules; `ByokProviderChips`
+// is the dumb component the orchestrator mounts for the chip row.
+export {
+  buildByokProviderOptions,
+  customByokProviderPreset,
+  isByokProviderConfigured,
+  selectByokProvider,
+} from './rules';
+export type { ByokProviderPreset } from './types';
+export { ByokProviderChips } from './components/ByokProviderChips';
+
 // AMR account cluster (vela sign-in status + wallet-balance card) of the
 // execution-mode section. `formatAmrWalletBalance` is the locale-aware
 // currency formatter the card renders; `useWiredAmrAccount` owns the
