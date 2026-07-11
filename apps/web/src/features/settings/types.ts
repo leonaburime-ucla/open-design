@@ -3,7 +3,7 @@
 // these are the view-model shapes the slice's rules, hooks, and components pass
 // around. Per ADR 0002 they are never redeclared wire DTOs — they compose the
 // app's existing types into slice-local view models.
-import type { AppConfig, ProviderModelOption } from '../../types';
+import type { AppConfig, ConnectionTestResponse, ProviderModelOption } from '../../types';
 import type { ByokDraftField } from '../../components/byok/validation';
 import type { Dict } from '../../i18n/types';
 
@@ -269,3 +269,15 @@ export interface AmrAgentPresence {
   id: string;
   available: boolean;
 }
+
+/** A one-shot "Rescan agents" outcome banner (local-CLI agent list cluster). */
+export type RescanNotice =
+  | { kind: 'success'; count: number }
+  | { kind: 'error' };
+
+/** A connection-test state machine, shared by the local-CLI agent test and
+ *  the BYOK provider test clusters. */
+export type TestState =
+  | { status: 'idle' }
+  | { status: 'running' }
+  | { status: 'done'; result: ConnectionTestResponse };

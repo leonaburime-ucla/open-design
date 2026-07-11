@@ -8,17 +8,10 @@ import {
   settingsSectionToTracking,
 } from '@open-design/contracts/analytics';
 import { useAnalytics } from '../analytics/provider';
-import {
-  amrHandoffDeviceId,
-  attributedAmrUrl,
-  recordAmrEntry,
-  type TrackingAmrEntrySource,
-} from '../analytics/amr-attribution';
-import { getResolvedDeviceId } from '../analytics/client';
+import { recordAmrEntry } from '../analytics/amr-attribution';
 import {
   trackSettingsByokModelsFetchResult,
   trackSettingsByokTestResult,
-  trackSettingsCliTestResult,
   trackSettingsByokFieldClick,
   trackSettingsByokProviderOptionClick,
   trackSettingsConnectorAuthResult,
@@ -34,7 +27,6 @@ import { AgentIcon } from './AgentIcon';
 import { AgentDiagnosticRow } from './AgentDiagnosticRow';
 import { AmrLoginPill } from './AmrLoginPill';
 import { PlanBadge } from './PlanBadge';
-import { orderAgentsWithOpenDesignFirst } from './agentOrdering';
 import {
   canUpgradeVelaPlan,
   formatVelaBalanceUsd,
@@ -44,7 +36,6 @@ import {
   amrPlansUrlForProfile,
   amrProfileBadgeLabel,
 } from '../runtime/amr-guidance';
-import { isVisibleLocalCliAgent } from '../utils/visibleAgents';
 import { Icon } from './Icon';
 import {
   CUSTOM_MODEL_SENTINEL,
@@ -64,7 +55,7 @@ import {
   SUGGESTED_MODELS_BY_PROTOCOL,
 } from '../state/apiProtocols';
 import {
-  agentRefreshOptionsForConfig,
+  agentModelOptionLabel,
   AGENT_CLI_AUTH_ENV_KEYS,
   AGENT_CLI_BASE_URL_ENV_KEYS,
   AGENT_CLI_ENV_FIELDS,
@@ -72,8 +63,6 @@ import {
   amrWalletValueLabel,
   AMR_PROFILE_AGENT_ID,
   AMR_PROFILE_ENV_KEY,
-  AMR_SIGN_IN_RESCAN_ATTEMPTS,
-  AMR_SIGN_IN_RESCAN_RETRY_MS,
   apiModelOptionLabel,
   API_KEY_CONSOLE_LINKS,
   AboutSection,
@@ -128,13 +117,16 @@ import {
   useAmrHighlight,
   useWiredAbout,
   useWiredAmrAccount,
+  useWiredDaemonAgents,
   formatAmrWalletBalance,
   type AgentRefreshOptions,
   type ByokFieldMissing,
   type ByokFirstPartyBaseUrlHint,
   type ByokRequiredField,
   type ProviderModelsCache,
+  type RescanNotice,
   type SettingsSection,
+  type TestState,
 } from '../features/settings';
 import { persistConfigAndRunOrbit } from '../providers/orbit';
 // Backward-compatible re-export: the definitions, ConnectorSection, and
@@ -191,10 +183,9 @@ import type {
   ConnectionTestResponse,
   DesignSystemGenerationJob,
   ExecMode,
-  ProviderModelOption,
   ProviderModelsResponse,
 } from '../types';
-import { testAgent, testApiProvider } from '../providers/connection-test';
+import { testApiProvider } from '../providers/connection-test';
 import { fetchProviderModels } from '../providers/provider-models';
 import { openExternalUrl } from '../providers/registry';
 import { useByokImageModelOptions, useByokVideoModelOptions, useByokSpeechModelOptions } from '../media/aihubmix-image-models';
@@ -303,16 +294,6 @@ interface Props {
   onProviderModelsCacheChange?: Dispatch<SetStateAction<ProviderModelsCache>>;
 }
 
-
-
-type RescanNotice =
-  | { kind: 'success'; count: number }
-  | { kind: 'error' };
-
-type TestState =
-  | { status: 'idle' }
-  | { status: 'running' }
-  | { status: 'done'; result: ConnectionTestResponse };
 
 
 type ProviderModelsState =
@@ -459,12 +440,6 @@ export function SettingsDialog({
     amrCoachmarkDismissed,
     dismissCoachmark,
   } = useAmrHighlight({ initialHighlight, activeSection });
-  const [agentRescanRunning, setAgentRescanRunning] = useState(false);
-  const [agentRescanNotice, setAgentRescanNotice] =
-    useState<RescanNotice | null>(null);
-  const [agentTestState, setAgentTestState] = useState<TestState>({
-    status: 'idle',
-  });
   const [hoveredAgentCardId, setHoveredAgentCardId] = useState<string | null>(null);
   const [providerTestState, setProviderTestState] = useState<TestState>({
     status: 'idle',
@@ -520,14 +495,8 @@ export function SettingsDialog({
         initial.apiVersion ?? '',
       );
     });
-  const agentTestAbortRef = useRef<AbortController | null>(null);
   const providerTestAbortRef = useRef<AbortController | null>(null);
   const providerModelsAbortRef = useRef<AbortController | null>(null);
-  const pendingAgentInstallRescanRef = useRef(false);
-  // Guards the AMR catalog-chase loop so concurrent renders can't start it
-  // twice (see the re-detect effect below).
-  const amrRescanInFlightRef = useRef(false);
-  const agentTestRevisionRef = useRef(0);
   const providerTestRevisionRef = useRef(0);
   const providerModelsRevisionRef = useRef(0);
   const providerTestFirstResetRef = useRef(true);
@@ -548,9 +517,6 @@ export function SettingsDialog({
   // deliberate choice, even when that choice equals the provider preset id.
   const apiModelUserSelectedRef = useRef(false);
   const [apiModelCustomEditing, setApiModelCustomEditing] = useState(false);
-  const [agentCustomModelIds, setAgentCustomModelIds] = useState<
-    ReadonlySet<string>
-  >(() => new Set());
   // About section: app-version/updater status row, diagnostics export, and
   // reset-onboarding. Called here (not inside the dumb `AboutSection`) so
   // the toast survives the user switching away from the About section
@@ -595,30 +561,6 @@ export function SettingsDialog({
       ?? selectedMemoryChatAgent?.models?.[0]?.id
       ?? null
     : null;
-  const agentChoiceForTest =
-    cfg.mode === 'daemon' && cfg.agentId
-      ? cfg.agentModels?.[cfg.agentId]
-      : null;
-  useEffect(() => {
-    agentTestRevisionRef.current += 1;
-    setAgentTestState((state) =>
-      state.status === 'running' ? state : { status: 'idle' },
-    );
-  }, [
-    cfg.agentId,
-    agentChoiceForTest?.model,
-    agentChoiceForTest?.reasoning,
-    cfg.agentCliEnv,
-  ]);
-  // Rescan notices are list-level feedback for a one-shot action and
-  // shouldn't linger in the content stream. After 6s, fade them out so
-  // repeated Rescan clicks don't pile up; the next click resets the
-  // notice immediately, so this only affects "user moved on" cases.
-  useEffect(() => {
-    if (!agentRescanNotice) return;
-    const id = window.setTimeout(() => setAgentRescanNotice(null), 6000);
-    return () => window.clearTimeout(id);
-  }, [agentRescanNotice]);
   useEffect(() => {
     if (providerTestFirstResetRef.current) {
       providerTestFirstResetRef.current = false;
@@ -662,16 +604,10 @@ export function SettingsDialog({
   // unmount" warning if the dialog closes while a test is still running.
   useEffect(() => {
     return () => {
-      agentTestAbortRef.current?.abort();
       providerTestAbortRef.current?.abort();
       providerModelsAbortRef.current?.abort();
     };
   }, []);
-
-  const installedCount = useMemo(
-    () => agents.filter((a) => a.available && isVisibleLocalCliAgent(a)).length,
-    [agents],
-  );
 
   const setMode = (mode: ExecMode) => {
     setCfg((c) => {
@@ -818,223 +754,35 @@ export function SettingsDialog({
         : undefined;
     setCfg((c) => ({ ...c, maxTokens: nextMaxTokens }));
   };
-  const markAgentInstallIntent = () => {
-    pendingAgentInstallRescanRef.current = true;
-  };
-  const handleRefreshAgents = async () => {
-    if (agentRescanRunning) return;
-    setAgentRescanRunning(true);
-    setAgentRescanNotice(null);
-    try {
-      const refreshed = await onRefreshAgents(agentRefreshOptionsForConfig(cfg));
-      const nextAgents = Array.isArray(refreshed) ? refreshed : agents;
-      setAgentRescanNotice({
-        kind: 'success',
-        count: nextAgents.filter((a) => a.available).length,
-      });
-    } catch {
-      setAgentRescanNotice({ kind: 'error' });
-    } finally {
-      setAgentRescanRunning(false);
-    }
-  };
-  const attributedAmrSettingsUrl = (
-    url: string,
-    sourceDetail: TrackingAmrEntrySource,
-  ) => {
-    const attribution = recordAmrEntry(analytics.track, sourceDetail, new Date(), {
-      metricsConsent: cfg.telemetry?.metrics === true,
-    });
-    const deviceId = amrHandoffDeviceId({
-      metricsConsent: cfg.telemetry?.metrics === true,
-      resolvedDeviceId: getResolvedDeviceId(),
-      installationId: cfg.installationId,
-    });
-    return attributedAmrUrl(url, attribution, deviceId);
-  };
-  const openAgentFixUrl = (
-    url: string | undefined,
-    amrEntrySourceDetail?: TrackingAmrEntrySource,
-  ) => {
-    const href = sanitizeHttpsUrl(url);
-    if (!href) return;
-    markAgentInstallIntent();
-    void openExternalUrl(
-      amrEntrySourceDetail
-        ? attributedAmrSettingsUrl(href, amrEntrySourceDetail)
-        : href,
-    );
-  };
-  const diagnosticHandlersForAgent = (agent: AgentInfo) => {
-    const docsUrl = sanitizeHttpsUrl(agent.docsUrl);
-    const installUrl = sanitizeHttpsUrl(agent.installUrl);
-    return {
-      onRescan: () => void handleRefreshAgents(),
-      ...(docsUrl ? { onOpenDocs: () => openAgentFixUrl(docsUrl) } : {}),
-      ...(installUrl
-        ? {
-            onOpenInstall: () =>
-              openAgentFixUrl(
-                installUrl,
-                agent.id === 'amr' ? 'settings_amr_install' : undefined,
-              ),
-          }
-        : {}),
-    };
-  };
-  useEffect(() => {
-    const handleReturnToSettings = () => {
-      if (
-        !pendingAgentInstallRescanRef.current ||
-        agentRescanRunning ||
-        document.visibilityState === 'hidden'
-      ) {
-        return;
-      }
-      pendingAgentInstallRescanRef.current = false;
-      void handleRefreshAgents();
-    };
-    document.addEventListener('visibilitychange', handleReturnToSettings);
-    window.addEventListener('focus', handleReturnToSettings);
-    return () => {
-      document.removeEventListener('visibilitychange', handleReturnToSettings);
-      window.removeEventListener('focus', handleReturnToSettings);
-    };
-  }, [agentRescanRunning, handleRefreshAgents]);
-
-  // Chase AMR's live model catalog whenever the user is signed in but the
-  // model list hasn't arrived yet. AMR is detected at app start (often while
-  // signed out, so it comes back with an empty, fail-closed list), and the
-  // live `vela models` catalog only becomes fetchable once the credential
-  // lands — and can lag the credential write by a beat. We must cover every
-  // way Settings ends up "signed in + empty", not just an in-Settings
-  // sign-in edge: onboarding signs in and re-detects exactly once, so if that
-  // single call lands during the propagation window Settings later mounts
-  // already signed in with an empty list. Keying on `loggedIn === true` +
-  // "AMR has no models" handles both; the picker shows its loading state
-  // (see renderAgentModelConfig) until the catalog fills in.
-  //
-  // `onRefreshAgents` / `agents` are read through refs so re-detecting (which
-  // changes their identity) can't tear the retry loop down mid-flight — that
-  // is what made the loading row flash and vanish before the catalog arrived.
-  // The in-flight ref keeps a single loop running across renders.
-  const onRefreshAgentsRef = useRef(onRefreshAgents);
-  onRefreshAgentsRef.current = onRefreshAgents;
-  const agentsRef = useRef(agents);
-  agentsRef.current = agents;
-  useEffect(() => {
-    if (amrCardStatus?.loggedIn !== true) return;
-    const amr = agentsRef.current.find((agent) => agent.id === 'amr');
-    if (!amr || (amr.models?.length ?? 0) > 0) return;
-    if (amrRescanInFlightRef.current) return;
-    amrRescanInFlightRef.current = true;
-    let cancelled = false;
-    void (async () => {
-      try {
-        for (
-          let attempt = 0;
-          attempt < AMR_SIGN_IN_RESCAN_ATTEMPTS && !cancelled;
-          attempt += 1
-        ) {
-          let next: void | AgentInfo[];
-          try {
-            next = await onRefreshAgentsRef.current();
-          } catch {
-            return;
-          }
-          if (cancelled) return;
-          const detected = Array.isArray(next) ? next : [];
-          const refreshed = detected.find((agent) => agent.id === 'amr');
-          // Stop once the live catalog has caught up (or AMR vanished); a
-          // still-empty list means vela hasn't published the catalog yet, so
-          // retry.
-          if (!refreshed || (refreshed.models?.length ?? 0) > 0) return;
-          await new Promise((resolve) => {
-            setTimeout(resolve, AMR_SIGN_IN_RESCAN_RETRY_MS);
-          });
-        }
-      } finally {
-        amrRescanInFlightRef.current = false;
-      }
-    })();
-    return () => {
-      cancelled = true;
-      amrRescanInFlightRef.current = false;
-    };
-  }, [amrCardStatus?.loggedIn]);
-
-  const handleTestAgent = async () => {
-    if (agentTestState.status === 'running') {
-      return;
-    }
-    const selected = agents.find((a) => a.id === cfg.agentId && a.available);
-    if (!selected) return;
-    const choice = cfg.agentModels?.[selected.id] ?? {};
-    const controller = new AbortController();
-    const revision = agentTestRevisionRef.current;
-    agentTestAbortRef.current = controller;
-    setAgentTestState({ status: 'running' });
-    const startedAt = performance.now();
-    const cliProviderId = agentIdToTracking(selected.id);
-    const clearIfStale = () => {
-      if (agentTestAbortRef.current === controller) {
-        setAgentTestState({ status: 'idle' });
-      }
-    };
-    try {
-      const result = await testAgent(
-        {
-          agentId: selected.id,
-          model: choice.model || undefined,
-          reasoning: choice.reasoning || undefined,
-          agentCliEnv: cfg.agentCliEnv ?? {},
-        },
-        controller.signal,
-      );
-      if (controller.signal.aborted) return;
-      if (agentTestRevisionRef.current !== revision) {
-        clearIfStale();
-        return;
-      }
-      setAgentTestState({ status: 'done', result });
-      trackSettingsCliTestResult(analytics.track, {
-        page_name: 'settings',
-        area: 'configure_execution_mode',
-        cli_provider_id: cliProviderId,
-        result: result.ok ? 'success' : 'failed',
-        ...(result.ok ? {} : { error_code: result.kind || 'UNKNOWN' }),
-        duration_ms: Math.round(performance.now() - startedAt),
-      });
-    } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return;
-      if (agentTestRevisionRef.current !== revision) {
-        clearIfStale();
-        return;
-      }
-      setAgentTestState({
-        status: 'done',
-        result: {
-          ok: false,
-          kind: 'unknown',
-          latencyMs: 0,
-          model: choice.model || 'default',
-          detail: err instanceof Error ? err.message : 'Test request failed',
-        },
-      });
-      trackSettingsCliTestResult(analytics.track, {
-        page_name: 'settings',
-        area: 'configure_execution_mode',
-        cli_provider_id: cliProviderId,
-        result: 'failed',
-        error_code: err instanceof Error ? err.name : 'UNKNOWN',
-        duration_ms: Math.round(performance.now() - startedAt),
-      });
-    } finally {
-      if (agentTestAbortRef.current === controller) {
-        agentTestAbortRef.current = null;
-      }
-    }
-  };
+  // Local-CLI agent list cluster (rescan / connection test / docs-install
+  // links, including the post-AMR-sign-in model-catalog chase) — moved to
+  // the settings slice's `useWiredDaemonAgents` hook; its transport reaches
+  // only the injected `DaemonAgentPort` (ADR 0002).
+  const {
+    agentRescanRunning,
+    agentRescanNotice,
+    agentTestState,
+    setAgentTestState,
+    agentCustomModelIds,
+    setAgentCustomModelIds,
+    installedCount,
+    visibleAgents,
+    installedAgents,
+    unavailableAgents,
+    initialAgentScanRunning,
+    handleTestAgent,
+    handleRefreshAgents,
+    markAgentInstallIntent,
+    attributedAmrSettingsUrl,
+    openAgentFixUrl,
+    diagnosticHandlersForAgent,
+  } = useWiredDaemonAgents({
+    cfg,
+    agents,
+    agentsLoading,
+    onRefreshAgents,
+    amrLoggedIn: amrCardStatus?.loggedIn === true,
+  });
 
   const handleTestProvider = async (
     options: { silentPreconditions?: boolean } = {},
@@ -2340,26 +2088,6 @@ export function SettingsDialog({
     about: { title: t('settings.about'), subtitle: t('settings.aboutHint') },
   };
   const activeHeader = sectionHeader[activeSection];
-  const visibleAgents = agents.filter(isVisibleLocalCliAgent);
-  const installedAgents = orderAgentsWithOpenDesignFirst(
-    visibleAgents.filter((a) => a.available),
-  );
-  const unavailableAgents = visibleAgents.filter((a) => !a.available);
-  const initialAgentScanRunning = agentsLoading && agents.length === 0;
-  const agentModelOptionLabel = (
-    model: ProviderModelOption | undefined,
-    fallback: string,
-  ) => {
-    if (!model) return fallback;
-    const label = model.label?.trim();
-    const id = model.id.trim();
-    if (label && label !== id) {
-      return label.toLowerCase().includes(id.toLowerCase())
-        ? label
-        : `${label} (${id})`;
-    }
-    return label || id;
-  };
   const agentModelSummary = (agent: AgentInfo) => {
     if (!Array.isArray(agent.models) || agent.models.length === 0) return null;
     const choice = cfg.agentModels?.[agent.id] ?? {};

@@ -2,7 +2,14 @@
 // cluster's hook is injected with; `dependencies.ts` (the only feature file
 // allowed to import `providers/`) binds the real transport to it (ADR 0002).
 import type { AmrWalletSnapshot, ConnectorDetail } from '@open-design/contracts';
-import type { AppConfig, OrbitRunStartResponse, OrbitStatusResponse, SkillSummary } from '../../types';
+import type {
+  AgentTestRequest,
+  AppConfig,
+  ConnectionTestResponse,
+  OrbitRunStartResponse,
+  OrbitStatusResponse,
+  SkillSummary,
+} from '../../types';
 import type { AmrLoginStatus, AmrLoginStatusEventReason, CodexInstallStatus, McpInstallInfo } from './types';
 
 /** Transport the Orbit automation section depends on. */
@@ -78,4 +85,21 @@ export interface AmrAccountPort {
   /** The cross-component `od:amr-login-status-change` signal (login started
    *  elsewhere, e.g. `AmrLoginPill`/`InlineModelSwitcher`). Returns unsubscribe. */
   subscribeLoginStatusEvent: (onEvent: (reason: AmrLoginStatusEventReason) => void) => () => void;
+}
+
+/** Transport the local-CLI agent list cluster (rescan / connection test /
+ *  install-doc links) of the execution-mode section depends on. */
+export interface DaemonAgentPort {
+  /** `POST /api/test/connection` (mode: 'agent'). Aborts via the given signal. */
+  testAgent: (input: AgentTestRequest, signal: AbortSignal) => Promise<ConnectionTestResponse>;
+  /** Open a URL in the system browser (desktop) or a new tab (web) — used for
+   *  agent docs/install links and the AMR-attributed install URL. */
+  openExternalUrl: (url: string) => void;
+  /** Auto-dismiss the "Rescan agents" success/error notice after a delay.
+   *  Returns cancel. */
+  scheduleRescanNoticeTimeout: (onTimeout: () => void, delayMs: number) => () => void;
+  /** Notify when the user returns to the Settings tab (window focus / tab
+   *  visibility), so a pending post-install rescan can fire. Returns
+   *  unsubscribe. */
+  subscribeInstallReturn: (onReturn: () => void) => () => void;
 }

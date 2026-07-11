@@ -1428,3 +1428,22 @@ export function switchApiProtocolConfig(
   );
 }
 
+/** Formats a local-CLI agent's model option for its card summary/picker:
+ *  prefers the label, appending the id in parens when the label doesn't
+ *  already read like it (distinct from `apiModelOptionLabel`, which is the
+ *  BYOK provider model picker's own formatter). */
+export function agentModelOptionLabel(
+  model: ProviderModelOption | undefined,
+  fallback: string,
+): string {
+  if (!model) return fallback;
+  const label = model.label?.trim();
+  const id = model.id.trim();
+  if (label && label !== id) {
+    return label.toLowerCase().includes(id.toLowerCase())
+      ? label
+      : `${label} (${id})`;
+  }
+  return label || id;
+}
+

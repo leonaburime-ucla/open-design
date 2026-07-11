@@ -69,6 +69,7 @@ export { CritiqueTheaterSection } from './components/CritiqueTheaterSection';
 // handlers and effects call through the barrel instead of declaring these
 // locally. Types are defined in-slice per ADR 0002.
 export {
+  agentModelOptionLabel,
   agentRefreshOptionsForConfig,
   amrWalletValueLabel,
   applyApiProtocolConfig,
@@ -116,7 +117,9 @@ export type {
   ByokFieldMissing,
   ByokFirstPartyBaseUrlHint,
   ByokRequiredField,
+  RescanNotice,
   SettingsSection,
+  TestState,
 } from './types';
 
 // AMR account cluster (vela sign-in status + wallet-balance card) of the
@@ -146,6 +149,14 @@ export {
   API_KEY_CONSOLE_LINKS,
   OPEN_DESIGN_RELEASES_URL,
 } from './constants';
+
+// Local-CLI agent list cluster (rescan / connection test / docs-install
+// links) of the execution-mode section. `useWiredDaemonAgents` owns the
+// rescan/test state machines + the on-return-to-tab and post-AMR-sign-in
+// catalog-chase effects; its transport (the CLI connection test + the
+// external-URL opener) reaches only the injected `DaemonAgentPort`.
+export { useWiredDaemonAgents } from './hooks/useDaemonAgents.hooks';
+export type { DaemonAgentsController, DaemonAgentsInput } from './hooks/useDaemonAgents.hooks';
 
 // About section: app-version/updater status row, diagnostics export, and
 // reset-onboarding. The updater subscription/actions reach `lib/updater`

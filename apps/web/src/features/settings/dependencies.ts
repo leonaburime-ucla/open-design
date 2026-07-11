@@ -22,7 +22,16 @@ import {
 } from '../../providers/mcp';
 import { fetchAmrWalletSnapshot, fetchVelaLoginStatus } from '../../providers/daemon';
 import { subscribeAmrLoginStatusEvent, subscribeAmrWindowResync } from '../../providers/amr';
-import type { AboutPort, AmrAccountPort, IntegrationsPort, MediaProvidersPort, OrbitPort } from './ports';
+import { scheduleAgentRescanNoticeTimeout, subscribeAgentInstallReturn } from '../../providers/agents';
+import { testAgent } from '../../providers/connection-test';
+import type {
+  AboutPort,
+  AmrAccountPort,
+  DaemonAgentPort,
+  IntegrationsPort,
+  MediaProvidersPort,
+  OrbitPort,
+} from './ports';
 
 /** Default binding: the real Orbit status/template/connector/run transport +
  *  browser-subscription bridges. */
@@ -64,4 +73,13 @@ export const amrAccountPort: AmrAccountPort = {
   fetchWalletSnapshot: fetchAmrWalletSnapshot,
   subscribeWindowResync: subscribeAmrWindowResync,
   subscribeLoginStatusEvent: subscribeAmrLoginStatusEvent,
+};
+
+/** Default binding: the local-CLI agent list cluster's connection-test
+ *  transport + the registry's external-URL opener. */
+export const daemonAgentPort: DaemonAgentPort = {
+  testAgent,
+  openExternalUrl,
+  scheduleRescanNoticeTimeout: scheduleAgentRescanNoticeTimeout,
+  subscribeInstallReturn: subscribeAgentInstallReturn,
 };
