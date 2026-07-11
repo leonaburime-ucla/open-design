@@ -1,9 +1,9 @@
 # SettingsDialog.tsx extraction plan
 
 One-time full inventory (SKILL.md Phase 1 step 4), written before any extraction
-in this pass. `SettingsDialog.tsx` is at 3987 lines as of this snapshot (git
-`e2fb1a6c7`). Already-extracted sections (do NOT redo): OrbitSection,
-MediaProvidersSection, IntegrationsSection, AppearanceSection,
+in this pass. `SettingsDialog.tsx` was at 3987 lines when this plan's profiling
+read started (git `e2fb1a6c7`). Already-extracted sections (do NOT redo):
+OrbitSection, MediaProvidersSection, IntegrationsSection, AppearanceSection,
 CritiqueTheaterSection, NotificationsSection, About/Language/custom-instructions
 sections, the AMR account cluster, the local-CLI agent-list cluster
 (`useWiredDaemonAgents`), the AMR-card highlight nudge (`useAmrHighlight`).
@@ -11,9 +11,26 @@ sections, the AMR account cluster, the local-CLI agent-list cluster
 already consume their own sibling slices (`features/memory`,
 `features/mcp-client`).
 
-**Line numbers are a snapshot at the commit above and will drift as clusters
-land — re-`grep` the anchor identifiers named per cluster before starting
-work on it, don't trust the numbers blindly.**
+**UPDATE (same pass, before cluster 1 execution started):** a concurrent
+hourly pass landed `ea6b4abda` ("decompose the Local CLI agent grid JSX into
+LocalCliSection + AgentModelPicker") while this plan was being written, taking
+the file from 3987 → 3004 lines. That commit fully covers clusters 6, 7, and
+8 below (agent-model-config rendering, Codex path-repair actions, and the
+agent-grid portion of the JSX breakdown — the BYOK-form portion of cluster 8's
+JSX, i.e. the `ByokKeyField`/`ByokProviderBaseUrl`/`ByokProviderPicker`/
+`ByokConnectionTestControl` composition, was *already* dumb-component-ized
+before this plan was written; only the agent-grid half was still inline).
+It also renamed the old inline `renderTestMessage` to a `rules.ts` function
+`formatConnectionTestMessage` (partial progress on cluster 3 — the function
+is extracted, but the state/refs/effects/handlers around it are not). Those
+three clusters are marked done below; their entries are kept (not deleted)
+as a record of what landed and where, per "correct just that cluster's entry."
+Re-profiled against the current file (3004 lines) before writing clusters
+2-5, 9-13, which remain accurate.
+
+**Line numbers are a snapshot at the commit noted per-cluster and will drift
+as clusters land — re-`grep` the anchor identifiers named per cluster before
+starting work on it, don't trust the numbers blindly.**
 
 ## What's left, by location
 
@@ -151,50 +168,28 @@ first.
 - **Risk**: high (widest blast radius of the BYOK clusters).
 - **Status**: pending.
 
-### 6. Agent model config rendering — **pending**
-- **Owns**: `agentModelSummary`, `renderAgentModelConfig` (~2091-2304) — a
-  large JSX-returning function per agent card. Depends on `cfg`/`setCfg` (via
-  its internal `setChoice`), `agentCustomModelIds`/`setAgentCustomModelIds`
-  (already from `useWiredDaemonAgents`), `amrCardStatus` (already from
-  `useWiredAmrAccount`), `t`, `SearchableModelSelect`/`Icon`,
-  `CUSTOM_MODEL_SENTINEL`, `shouldShowCustomModelInput` (existing rule).
-- **Coupling**: self-contained — only reads other clusters' hook outputs, does
-  not need to be read by them.
-- **Target shape**: `components/AgentModelConfigFields.tsx` (dumb component,
-  props in/JSX out) + `agentModelSummaryLabel` as a small rule if the summary
-  logic is pure enough (check — it calls `agentModelOptionLabel`, an existing
-  rule).
-- **Risk**: low-medium.
-- **Status**: pending.
+### 6. Agent model config rendering — **done**
+- Landed in `ea6b4abda` as `AgentModelPicker` (concurrent pass, see UPDATE
+  note above). Do not redo.
 
-### 7. Codex path-repair actions — **pending**
-- **Owns**: `applyCodexDetectedPath`, `clearCodexCustomPath` (~1211-1219) —
-  two 2-line handlers calling `setCfg` + `setAgentTestState` (the latter
-  already from `useWiredDaemonAgents`).
-- **Coupling**: low; likely folds into whichever component/hook ends up
-  owning the Codex-specific JSX (part of cluster 8's JSX breakdown) rather
-  than needing its own hook file.
-- **Risk**: low.
-- **Status**: pending.
+### 7. Codex path-repair actions — **done**
+- Landed in `ea6b4abda`: `applyCodexDetectedPath`/`clearCodexCustomPath` are
+  now passed into `LocalCliSection`'s `daemonAgents` prop bag rather than
+  living inline. Do not redo.
 
-### 8. Execution-section JSX breakdown — **pending**
-- **Owns**: the ~1100-line JSX block (~2703-3861): agent-scan loading card,
-  installed/unavailable agent groups + cards, the AMR account card
-  (`amrCardRef`/`amrHighlightActive`/`AmrLoginPill`), the BYOK connection
-  panel (API key / base URL / model fields + test button + test-result
-  message), the mode-toggle seg-control (~2606-2650, small, can fold into
-  whichever component wraps the section shell).
-- **Coupling**: depends on clusters 1-7 existing first (their hooks/dumb
-  components are the pieces this JSX gets rebuilt from) — do this last among
-  the BYOK-section clusters.
-- **Target shape**: several dumb components under `components/` — likely
-  `AgentScanCard`, `AgentList`/`AgentCard`, `AmrAccountCard`,
-  `ByokConnectionPanel`. Exact split TBD once clusters 1-7 land and the JSX's
-  remaining shape is clearer — don't over-plan this before its dependencies
-  exist.
-- **Risk**: high (largest JSX migration in the file), but should become
-  mechanical once the state/logic clusters feeding it are hook-ified.
-- **Status**: pending.
+### 8. Execution-section JSX breakdown — **done (agent-grid half); BYOK-form
+  half was already done before this plan)**
+- Landed in `ea6b4abda`: the agent-scan/agent-list/AMR-card JSX is now
+  `<LocalCliSection cfg setCfg agents apiProtocol locale amrAccount={...}
+  amrHighlight={...} daemonAgents={...} hoveredAgentCardId
+  setHoveredAgentCardId />` (anchor: search `LocalCliSection` — currently
+  ~line 2415). The BYOK-form JSX (API key / base URL / model-preset /
+  connection-test) was already composed from existing dumb components
+  (`ByokKeyField`, `ByokProviderBaseUrl`, `ByokProviderPicker`,
+  `ByokConnectionTestControl`) even before this pass. What's still genuinely
+  inline in the "execution" JSX block now: the mode-toggle seg-control
+  (~2321-2361, small) and the protocol-chips block that cluster 1 targets
+  (~2362-2405). Do not redo the agent-grid/BYOK-form composition.
 
 ### 9. PrivacySection relocation — **pending**
 - **Owns**: `apps/web/src/components/PrivacySection.tsx` (219 lines). Quick
@@ -226,6 +221,29 @@ first.
   top-level sections. Needs its own full profiling pass before extraction
   (treat as a nested instance of Phase 1 step 4) when picked up.
 - **Risk**: high (largest single remaining component in the whole area).
+- **Status**: pending.
+
+### 14. Autosave loop cluster — **pending** (missed in the first pass of this
+  plan; added on re-profiling after the concurrent `ea6b4abda` rebase)
+- **Owns**: `autosaveStatus` state, `autosaveSkipFirstRef`,
+  `autosaveTimerRef`, `autosaveSavedTimerRef`, `autosaveRetryTimerRef`,
+  `autosavePendingFlushRef`, `autosaveLatestRef`, `autosaveLastSavedRef`,
+  `mediaProvidersChangeVersionRef`, `lastSyncedMediaProvidersVersionRef`,
+  `autosaveRetryTick` state, the main debounced-save effect (~400 lines with
+  the retry/media-provider-sync branches), and the unmount-flush effect.
+  Anchor: search `autosaveStatus` (currently ~lines 1461-1650).
+- **Coupling**: reads `cfg`, `onPersist`, `isAutosaveDraftOnlyChange` (already
+  imported from `../App`), and `lastSavedAppearanceRef` (owned by the
+  appearance-revert effect right above it, ~lines 373-419 — small, could move
+  together or stay a shared ref passed as a hook param).
+- **Target shape**: `hooks/useAutosave.hooks.ts` — no new transport (calls
+  `onPersist` which is already an injected prop, not a `providers/` import,
+  so this hook likely needs no port at all, or a trivial
+  `scheduleTimeout`/`clearTimeout` DOM-timer port mirroring the pattern
+  already used by `OrbitPort.scheduleTimeout` if `window.setTimeout` needs to
+  move out of `features/**`).
+- **Risk**: medium (long effect, but single-owner and not shared by other
+  BYOK clusters — safe to do independently of clusters 2-5).
 - **Status**: pending.
 
 ### 13. `SettingsConfigProvider` cross-cutting context — **pending, deferred**
