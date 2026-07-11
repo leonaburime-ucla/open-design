@@ -20,7 +20,9 @@ import {
   subscribeOutsideClickAndEscape,
   uninstallCodexMcp,
 } from '../../providers/mcp';
-import type { AboutPort, IntegrationsPort, MediaProvidersPort, OrbitPort } from './ports';
+import { fetchAmrWalletSnapshot, fetchVelaLoginStatus } from '../../providers/daemon';
+import { subscribeAmrLoginStatusEvent, subscribeAmrWindowResync } from '../../providers/amr';
+import type { AboutPort, AmrAccountPort, IntegrationsPort, MediaProvidersPort, OrbitPort } from './ports';
 
 /** Default binding: the real Orbit status/template/connector/run transport +
  *  browser-subscription bridges. */
@@ -53,4 +55,13 @@ export const integrationsPort: IntegrationsPort = {
 /** Default binding: the About section's external-URL opener. */
 export const aboutPort: AboutPort = {
   openExternalUrl,
+};
+
+/** Default binding: the AMR account cluster's vela status/wallet transport +
+ *  the window-resync/login-status-event browser bridges. */
+export const amrAccountPort: AmrAccountPort = {
+  fetchLoginStatus: fetchVelaLoginStatus,
+  fetchWalletSnapshot: fetchAmrWalletSnapshot,
+  subscribeWindowResync: subscribeAmrWindowResync,
+  subscribeLoginStatusEvent: subscribeAmrLoginStatusEvent,
 };

@@ -219,3 +219,53 @@ export interface ByokFirstPartyBaseUrlHint {
   baseUrl: string;
   hostTypo: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// AMR account (vela sign-in / wallet) — the `AmrAccountPort` result types.
+// Defined in-slice per ADR 0002 rather than imported from
+// `providers/daemon`'s `VelaLoginStatus`/`VelaUser`/`VelaLiveAccount` — the
+// guard's provider-import rule is AST-level and flags even an `import type`
+// reaching past `dependencies.ts`. `dependencies.ts` binds the provider's
+// `fetchVelaLoginStatus`/`fetchAmrWalletSnapshot` structurally against this
+// mirror shape.
+// ---------------------------------------------------------------------------
+
+export interface AmrAccountUser {
+  id: string;
+  email: string;
+  name?: string;
+  image?: string | null;
+  plan?: string;
+  balanceUsd?: string | null;
+}
+
+export interface AmrLiveAccount {
+  plan?: string;
+  balanceUsd?: string | null;
+}
+
+export interface AmrLoginStatus {
+  loggedIn: boolean;
+  loginInFlight?: boolean;
+  profile: string;
+  user: AmrAccountUser | null;
+  account?: AmrLiveAccount;
+  configPath: string;
+  activationUrl?: string;
+  userCode?: string;
+  browserOpenFailed?: boolean;
+}
+
+/** The reason an `od:amr-login-status-change` event fired, mirrored in-slice
+ *  from `components/amrLoginPolling` so the port stays provider-import-free. */
+export type AmrLoginStatusEventReason =
+  | 'login-started'
+  | 'login-canceled'
+  | 'status-changed';
+
+/** The minimal agent-catalog shape `useAmrAccount` needs to tell whether the
+ *  AMR agent is currently available — not the full `AgentInfo`. */
+export interface AmrAgentPresence {
+  id: string;
+  available: boolean;
+}

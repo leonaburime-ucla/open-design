@@ -24,6 +24,7 @@ import {
   deriveOrbitLastRun,
   filterAndSortOrbitTemplates,
   findOrbitTemplate,
+  formatAmrWalletBalance,
   homeConfigPath,
   isOrbitRunDisabled,
   nextLegacyLastRunTemplateSkillId,
@@ -607,5 +608,25 @@ describe('testNotificationStatusText', () => {
     expect(testNotificationStatusText('permission-denied')).toBe('settings.notifyDesktopBlocked');
     expect(testNotificationStatusText('unsupported')).toBe('settings.notifyDesktopUnsupported');
     expect(testNotificationStatusText('failed')).toBe('settings.notifyTestFailed');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Execution mode: AMR account (vela sign-in / wallet)
+// ---------------------------------------------------------------------------
+
+describe('formatAmrWalletBalance', () => {
+  it('returns null for an absent or empty balance', () => {
+    expect(formatAmrWalletBalance('en', null)).toBeNull();
+    expect(formatAmrWalletBalance('en', undefined)).toBeNull();
+    expect(formatAmrWalletBalance('en', '')).toBeNull();
+  });
+
+  it('formats a parseable balance as locale currency', () => {
+    expect(formatAmrWalletBalance('en', '12.3')).toBe('$12.30');
+  });
+
+  it('falls back to a raw dollar-prefixed string for an unparseable balance', () => {
+    expect(formatAmrWalletBalance('en', 'not-a-number')).toBe('$not-a-number');
   });
 });

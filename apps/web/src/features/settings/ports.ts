@@ -1,9 +1,9 @@
 // Ports the settings slice depends on. Each interface is the boundary a
 // cluster's hook is injected with; `dependencies.ts` (the only feature file
 // allowed to import `providers/`) binds the real transport to it (ADR 0002).
-import type { ConnectorDetail } from '@open-design/contracts';
+import type { AmrWalletSnapshot, ConnectorDetail } from '@open-design/contracts';
 import type { AppConfig, OrbitRunStartResponse, OrbitStatusResponse, SkillSummary } from '../../types';
-import type { CodexInstallStatus, McpInstallInfo } from './types';
+import type { AmrLoginStatus, AmrLoginStatusEventReason, CodexInstallStatus, McpInstallInfo } from './types';
 
 /** Transport the Orbit automation section depends on. */
 export interface OrbitPort {
@@ -64,4 +64,18 @@ export interface IntegrationsPort {
 export interface AboutPort {
   /** Open a URL in the system browser (desktop) or a new tab (web). */
   openExternalUrl: (url: string) => void;
+}
+
+/** Transport the AMR account cluster (execution mode's vela sign-in/wallet
+ *  card) depends on. */
+export interface AmrAccountPort {
+  /** `GET /api/integrations/vela/status`. Resolves `null` on failure. */
+  fetchLoginStatus: () => Promise<AmrLoginStatus | null>;
+  /** `GET /api/integrations/vela/wallet`. Resolves `null` on failure. */
+  fetchWalletSnapshot: (options?: { refresh?: boolean }) => Promise<AmrWalletSnapshot | null>;
+  /** Re-check on window focus / tab visibility. Returns unsubscribe. */
+  subscribeWindowResync: (onResync: () => void) => () => void;
+  /** The cross-component `od:amr-login-status-change` signal (login started
+   *  elsewhere, e.g. `AmrLoginPill`/`InlineModelSwitcher`). Returns unsubscribe. */
+  subscribeLoginStatusEvent: (onEvent: (reason: AmrLoginStatusEventReason) => void) => () => void;
 }

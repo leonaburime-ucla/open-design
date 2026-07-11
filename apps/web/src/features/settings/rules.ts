@@ -1261,6 +1261,28 @@ export function agentRefreshOptionsForConfig(cfg: AppConfig): AgentRefreshOption
   };
 }
 
+/**
+ * Locale-aware currency formatting for the AMR wallet balance shown on the
+ * agent card (distinct from `providers/daemon`'s plain `formatVelaBalanceUsd`,
+ * which is a fixed `$X.XX` used by the `AmrLoginPill`). Returns `null` for an
+ * absent/unparseable balance so the caller can fall back to a loading or
+ * unavailable label.
+ */
+export function formatAmrWalletBalance(
+  locale: Locale,
+  balanceUsd: string | null | undefined,
+): string | null {
+  if (!balanceUsd) return null;
+  const amount = Number(balanceUsd);
+  if (!Number.isFinite(amount)) return `$${balanceUsd}`;
+  return new Intl.NumberFormat(locale, {
+    currency: 'USD',
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+    style: 'currency',
+  }).format(amount);
+}
+
 export function amrWalletValueLabel(input: {
   balance: string | null;
   loadingLabel: string;

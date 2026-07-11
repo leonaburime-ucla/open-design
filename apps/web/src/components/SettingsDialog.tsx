@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, Dispatch, SetStateAction } from 'react';
 import { VisuallyHidden } from '@open-design/components';
-import type { AmrWalletSnapshot } from '@open-design/contracts';
 import {
   agentIdToTracking,
   byokProtocolToTracking,
@@ -37,13 +36,7 @@ import { AmrLoginPill } from './AmrLoginPill';
 import { PlanBadge } from './PlanBadge';
 import { orderAgentsWithOpenDesignFirst } from './agentOrdering';
 import {
-  AMR_LOGIN_STATUS_EVENT,
-  amrLoginStatusEventReason,
-} from './amrLoginPolling';
-import {
   canUpgradeVelaPlan,
-  fetchAmrWalletSnapshot,
-  fetchVelaLoginStatus,
   formatVelaBalanceUsd,
   type VelaLoginStatus,
 } from '../providers/daemon';
@@ -133,6 +126,8 @@ import {
   updateAgentCliEnvValue,
   updateCurrentApiProtocolConfig,
   useWiredAbout,
+  useWiredAmrAccount,
+  formatAmrWalletBalance,
   type AgentRefreshOptions,
   type ByokFieldMissing,
   type ByokFirstPartyBaseUrlHint,
@@ -473,142 +468,23 @@ export function SettingsDialog({
   const [agentTestState, setAgentTestState] = useState<TestState>({
     status: 'idle',
   });
-  const [amrCardStatus, setAmrCardStatus] = useState<VelaLoginStatus | null>(null);
-  const [amrCardStatusReady, setAmrCardStatusReady] = useState(false);
-  const [amrWalletSnapshot, setAmrWalletSnapshot] = useState<AmrWalletSnapshot | null>(null);
-  const [amrWalletReady, setAmrWalletReady] = useState(false);
   const [hoveredAgentCardId, setHoveredAgentCardId] = useState<string | null>(null);
   const [providerTestState, setProviderTestState] = useState<TestState>({
     status: 'idle',
   });
 
-  useEffect(() => {
-    onAmrLoginStatusChange?.(amrCardStatus);
-  }, [amrCardStatus, onAmrLoginStatusChange]);
-
-  const formatAmrWalletBalance = useCallback((balanceUsd: string | null | undefined) => {
-    if (!balanceUsd) return null;
-    const amount = Number(balanceUsd);
-    if (!Number.isFinite(amount)) return `$${balanceUsd}`;
-    return new Intl.NumberFormat(locale, {
-      currency: 'USD',
-      maximumFractionDigits: 2,
-      minimumFractionDigits: 2,
-      style: 'currency',
-    }).format(amount);
-  }, [locale]);
-
-  const refreshAmrWalletSnapshot = useCallback(async (options: { refresh?: boolean } = {}) => {
-    setAmrWalletReady(false);
-    const next = await fetchAmrWalletSnapshot(options);
-    setAmrWalletSnapshot(next);
-    setAmrWalletReady(true);
-  }, []);
-
-  useEffect(() => {
-    const hasAmrAgent = agents.some((agent) => agent.id === 'amr' && agent.available);
-    if (!hasAmrAgent) {
-      setAmrCardStatus(null);
-      setAmrCardStatusReady(false);
-      setHoveredAgentCardId(null);
-      return;
-    }
-    let cancelled = false;
-    // Refetch in place on every agents refresh, but do NOT flip
-    // `amrCardStatusReady` back to false here. The post-sign-in model-catalog
-    // rescan loop hands down a fresh `agents` array on each retry; tearing the
-    // pill down to the hidden `--placeholder` between the reset and the async
-    // status read made the Sign out action blink out and back on every tick.
-    // Readiness latches true after the first read and only resets when AMR
-    // becomes unavailable (handled above).
-    void fetchVelaLoginStatus().then((next) => {
-      if (!cancelled) {
-        setAmrCardStatus(next);
-        setAmrCardStatusReady(true);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [agents]);
-
-  useEffect(() => {
-    const hasAmrAgent = agents.some((agent) => agent.id === 'amr' && agent.available);
-    if (!hasAmrAgent || amrCardStatus?.loggedIn !== true) {
-      setAmrWalletSnapshot(null);
-      setAmrWalletReady(false);
-      return;
-    }
-    let cancelled = false;
-    setAmrWalletReady(false);
-    void fetchAmrWalletSnapshot().then((next) => {
-      if (cancelled) return;
-      setAmrWalletSnapshot(next);
-      setAmrWalletReady(true);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [
+  const {
+    amrCardStatus,
+    setAmrCardStatus,
+    amrCardStatusReady,
+    amrWalletSnapshot,
+    amrWalletReady,
+  } = useWiredAmrAccount({
     agents,
-    amrCardStatus?.loggedIn,
-    amrCardStatus?.profile,
-    amrCardStatus?.user?.id,
-    amrCardStatus?.user?.email,
-  ]);
+    onAmrLoginStatusChange,
+    onAmrAgentUnavailable: () => setHoveredAgentCardId(null),
+  });
 
-  // Reconcile AMR sign-in state whenever the user returns to the window. The
-  // vela device-login flow completes in an external browser / AMR console; if
-  // the in-pill poll has already timed out (or the login finished fully
-  // out-of-band), the card would otherwise keep showing the stale signed-out
-  // state until Settings is closed and reopened. Refetching on focus /
-  // visibility keeps the signed-in state, email, and Sign out action live.
-  useEffect(() => {
-    const hasAmrAgent = agents.some((agent) => agent.id === 'amr' && agent.available);
-    if (!hasAmrAgent) return;
-    let cancelled = false;
-    // Passive read only. Push the daemon's current status down into the card;
-    // the pill mirrors it via `initialStatus` (and clears any stale login error
-    // when it sees a signed-in status). Do NOT republish the login-state-change
-    // event here — that restarts the pill's poll/pending machine on every focus
-    // and, while the external browser is stealing and returning focus during a
-    // login, ping-pongs the action between "Signing in…" and "Authorize".
-    const resyncAmrStatus = () => {
-      if (document.visibilityState === 'hidden') return;
-      void fetchVelaLoginStatus().then((next) => {
-        if (cancelled || !next) return;
-        setAmrCardStatus(next);
-        if (next.loggedIn) void refreshAmrWalletSnapshot({ refresh: true });
-      });
-    };
-    window.addEventListener('focus', resyncAmrStatus);
-    document.addEventListener('visibilitychange', resyncAmrStatus);
-    return () => {
-      cancelled = true;
-      window.removeEventListener('focus', resyncAmrStatus);
-      document.removeEventListener('visibilitychange', resyncAmrStatus);
-    };
-  }, [agents, refreshAmrWalletSnapshot]);
-
-  useEffect(() => {
-    const hasAmrAgent = agents.some((agent) => agent.id === 'amr' && agent.available);
-    if (!hasAmrAgent) return;
-    let cancelled = false;
-    const resyncAmrStatus = (event: Event) => {
-      const reason = amrLoginStatusEventReason(event);
-      if (reason === 'login-canceled') return;
-      void fetchVelaLoginStatus().then((next) => {
-        if (cancelled || !next) return;
-        setAmrCardStatus(next);
-        setAmrCardStatusReady(true);
-      });
-    };
-    window.addEventListener(AMR_LOGIN_STATUS_EVENT, resyncAmrStatus);
-    return () => {
-      cancelled = true;
-      window.removeEventListener(AMR_LOGIN_STATUS_EVENT, resyncAmrStatus);
-    };
-  }, [agents]);
   const [byokPreconditionNotice, setByokPreconditionNotice] = useState<{
     action: ByokPreconditionAction;
     field?: ByokRequiredField;
@@ -3259,7 +3135,7 @@ export function SettingsDialog({
                               : null;
                           const amrWalletBalance =
                             amrWalletVisible && amrWalletSnapshot?.status === 'available'
-                              ? formatAmrWalletBalance(amrWalletSnapshot.balanceUsd)
+                              ? formatAmrWalletBalance(locale, amrWalletSnapshot.balanceUsd)
                               : null;
                           const amrCardBalanceLabel =
                             isAmrAgent && active && amrCardStatus?.loggedIn

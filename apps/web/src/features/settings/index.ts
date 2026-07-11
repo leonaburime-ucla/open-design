@@ -118,6 +118,15 @@ export type {
   ByokRequiredField,
   SettingsSection,
 } from './types';
+
+// AMR account cluster (vela sign-in status + wallet-balance card) of the
+// execution-mode section. `formatAmrWalletBalance` is the locale-aware
+// currency formatter the card renders; `useWiredAmrAccount` owns the
+// status/wallet state + its window-resync/login-status-event bridges.
+export { formatAmrWalletBalance } from './rules';
+export { useWiredAmrAccount } from './hooks/useAmrAccount.hooks';
+export type { AmrAccountController, AmrAccountInput } from './hooks/useAmrAccount.hooks';
+export type { AmrAgentPresence, AmrLoginStatus } from './types';
 export {
   ACCOUNT_MODEL_SOURCE_LABEL_HIDDEN,
   AGENT_CLI_AUTH_ENV_KEYS,
