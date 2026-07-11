@@ -1,20 +1,28 @@
 // Pure rules for the settings slice: provider-model cache keying/merging, the
-// Composio credential-state derivation, and the Orbit automation section's
+// Composio credential-state derivation, the Orbit automation section's
 // business logic (template selection, last-run resolution, meter/gate
-// derivation). No React, no transport, no DOM, so they test against
+// derivation), and the media-providers section's catalogue sort/row-state
+// derivation. No React, no transport, no DOM, so they test against
 // `../../types`/`@open-design/contracts` with zero doubles (ADR 0002).
 import type { ConnectorDetail } from '@open-design/contracts';
 import { useT } from '../../i18n';
-import { DEFAULT_ORBIT } from '../../state/config';
+import { DEFAULT_ORBIT, isStoredMediaProviderEntryPresent } from '../../state/config';
+import type { MediaProvider } from '../../media/models';
 import type {
   ApiProtocol,
   AppConfig,
+  MediaProviderCredentials,
   OrbitRunSummary,
   OrbitStatusResponse,
   ProviderModelOption,
   SkillSummary,
 } from '../../types';
-import type { ComposioCredentialState, OrbitConfigGateCopyKeys, OrbitMeterSegments } from './types';
+import type {
+  ComposioCredentialState,
+  MediaProviderRowState,
+  OrbitConfigGateCopyKeys,
+  OrbitMeterSegments,
+} from './types';
 
 type Translate = ReturnType<typeof useT>;
 
@@ -255,4 +263,62 @@ export function orbitConfigGateCopyKeys(composioApiKeyConfigured: boolean): Orbi
   return composioApiKeyConfigured
     ? { bodyKey: 'settings.orbit.gateBody', actionKey: 'settings.orbit.gateAction' }
     : { bodyKey: 'settings.orbit.gateBodyNoKey', actionKey: 'settings.orbit.gateActionNoKey' };
+}
+
+// ---------------------------------------------------------------------------
+// Media providers section
+// ---------------------------------------------------------------------------
+
+/**
+ * The "available" catalogue: providers with a real daemon integration,
+ * sorted configured-first, then alphabetically by label.
+ */
+export function sortAvailableMediaProviders(
+  providers: readonly MediaProvider[],
+  mediaProviders: AppConfig['mediaProviders'] | undefined,
+): MediaProvider[] {
+  return providers
+    .filter((p) => p.integrated)
+    .slice()
+    .sort((a, b) => {
+      const aConfigured = isStoredMediaProviderEntryPresent(mediaProviders?.[a.id]);
+      const bConfigured = isStoredMediaProviderEntryPresent(mediaProviders?.[b.id]);
+      if (aConfigured !== bConfigured) return aConfigured ? -1 : 1;
+      return a.label.localeCompare(b.label);
+    });
+}
+
+/** The "coming soon" catalogue: providers with no daemon integration yet, alphabetical. */
+export function sortComingSoonMediaProviders(providers: readonly MediaProvider[]): MediaProvider[] {
+  return providers
+    .filter((p) => !p.integrated)
+    .slice()
+    .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+/**
+ * Reject a docs URL that is not `https:`. Duplicated from the orchestrator's
+ * module-private `sanitizeHttpsUrl` (used by several of its own sections) —
+ * a small enough pure helper that a slice-local copy is cheaper than
+ * threading a shared import across the ADR 0002 boundary.
+ */
+export function sanitizeMediaProviderDocsUrl(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' ? parsed.toString() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Per-row derived display state (saved badge, key tail, clearability) for one media-provider card. */
+export function deriveMediaProviderRowState(
+  entry: MediaProviderCredentials,
+): MediaProviderRowState {
+  const hasPendingEdit = Boolean(entry.apiKey.trim());
+  const isSavedState = Boolean((hasPendingEdit || entry.apiKeyConfigured) && !hasPendingEdit);
+  const tail = entry.apiKeyTail?.trim();
+  const clearable = isStoredMediaProviderEntryPresent(entry);
+  return { hasPendingEdit, isSavedState, tail, clearable };
 }

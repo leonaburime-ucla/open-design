@@ -27,3 +27,8 @@ export { ConnectorSection } from './components/ConnectorSection';
 // there for its backward-compatible re-export.
 export { configForManualOrbitRun, isOrbitRunDisabled } from './rules';
 export { OrbitSection } from './components/OrbitSection';
+
+// Media-providers section. Its reload transport is an injected caller
+// callback (no port); the only owned transport is the reload-notice
+// auto-dismiss timer bridge in `providers/media-providers`.
+export { MediaProvidersSection } from './components/MediaProvidersSection';

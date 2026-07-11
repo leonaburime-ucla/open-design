@@ -15,6 +15,7 @@ import {
   configForManualOrbitRun,
   countConnectedConnectors,
   deriveEffectiveOrbitTemplateId,
+  deriveMediaProviderRowState,
   deriveOrbitLastRun,
   filterAndSortOrbitTemplates,
   findOrbitTemplate,
@@ -23,7 +24,11 @@ import {
   orbitConfigGateCopyKeys,
   orbitLiveArtifactHref,
   orbitTriggerLabelKey,
+  sanitizeMediaProviderDocsUrl,
+  sortAvailableMediaProviders,
+  sortComingSoonMediaProviders,
 } from '../../../src/features/settings/rules';
+import type { MediaProvider } from '../../../src/media/models';
 
 describe('providerModelsCacheKey', () => {
   it('fingerprints the API key instead of embedding the raw secret', () => {
@@ -344,5 +349,85 @@ describe('orbitConfigGateCopyKeys', () => {
       bodyKey: 'settings.orbit.gateBodyNoKey',
       actionKey: 'settings.orbit.gateActionNoKey',
     });
+  });
+});
+
+function mediaProvider(over: Partial<Omit<MediaProvider, 'id'>> & { id?: string } = {}): MediaProvider {
+  return { id: 'openai', label: 'OpenAI', hint: '', integrated: true, ...over } as MediaProvider;
+}
+
+describe('sortAvailableMediaProviders', () => {
+  const providers: MediaProvider[] = [
+    mediaProvider({ id: 'zeta', label: 'Zeta' }),
+    mediaProvider({ id: 'alpha', label: 'Alpha' }),
+    mediaProvider({ id: 'beta', label: 'Beta' }),
+    mediaProvider({ id: 'gamma', label: 'Gamma', integrated: false }),
+  ];
+
+  it('excludes non-integrated providers and sorts alphabetically with no configured entries', () => {
+    const result = sortAvailableMediaProviders(providers, undefined);
+    expect(result.map((p) => p.id)).toEqual(['alpha', 'beta', 'zeta']);
+  });
+
+  it('sorts configured providers first, then alphabetically within each group', () => {
+    const result = sortAvailableMediaProviders(providers, {
+      zeta: { apiKey: 'sk', baseUrl: '', apiKeyConfigured: true },
+    });
+    expect(result.map((p) => p.id)).toEqual(['zeta', 'alpha', 'beta']);
+  });
+});
+
+describe('sortComingSoonMediaProviders', () => {
+  it('keeps only non-integrated providers, sorted alphabetically', () => {
+    const providers: MediaProvider[] = [
+      mediaProvider({ id: 'a', label: 'Zed Provider', integrated: false }),
+      mediaProvider({ id: 'b', label: 'Alpha Provider', integrated: false }),
+      mediaProvider({ id: 'c', label: 'Integrated', integrated: true }),
+    ];
+    expect(sortComingSoonMediaProviders(providers).map((p) => p.id)).toEqual(['b', 'a']);
+  });
+});
+
+describe('sanitizeMediaProviderDocsUrl', () => {
+  it('keeps a well-formed https URL', () => {
+    expect(sanitizeMediaProviderDocsUrl('https://example.com/docs')).toBe('https://example.com/docs');
+  });
+
+  it('rejects a non-https URL', () => {
+    expect(sanitizeMediaProviderDocsUrl('http://example.com')).toBeUndefined();
+  });
+
+  it('rejects an unparsable URL and a missing one', () => {
+    expect(sanitizeMediaProviderDocsUrl('not a url')).toBeUndefined();
+    expect(sanitizeMediaProviderDocsUrl(undefined)).toBeUndefined();
+  });
+});
+
+describe('deriveMediaProviderRowState', () => {
+  it('is empty (no pending edit, not saved, not clearable) for a blank entry', () => {
+    expect(deriveMediaProviderRowState({ apiKey: '', baseUrl: '' })).toEqual({
+      hasPendingEdit: false,
+      isSavedState: false,
+      tail: undefined,
+      clearable: false,
+    });
+  });
+
+  it('is a pending edit while the user is typing a new/replacement key', () => {
+    const state = deriveMediaProviderRowState({ apiKey: 'sk-new', baseUrl: '' });
+    expect(state.hasPendingEdit).toBe(true);
+    expect(state.isSavedState).toBe(false);
+  });
+
+  it('is saved once configured with no unsaved draft over it, tail included', () => {
+    const state = deriveMediaProviderRowState({
+      apiKey: '',
+      baseUrl: '',
+      apiKeyConfigured: true,
+      apiKeyTail: '••••1234',
+    });
+    expect(state.isSavedState).toBe(true);
+    expect(state.tail).toBe('••••1234');
+    expect(state.clearable).toBe(true);
   });
 });

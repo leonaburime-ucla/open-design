@@ -48,3 +48,21 @@ export interface OrbitConfigGateCopyKeys {
   bodyKey: 'settings.orbit.gateBody' | 'settings.orbit.gateBodyNoKey';
   actionKey: 'settings.orbit.gateAction' | 'settings.orbit.gateActionNoKey';
 }
+
+/** A transient reload notice shown by the media-providers section. */
+export interface MediaProvidersReloadNotice {
+  kind: 'error' | 'success';
+  message: string;
+}
+
+/** Per-row derived display state for one media-provider card. */
+export interface MediaProviderRowState {
+  /** True when the user has typed an unsaved key over the row. */
+  hasPendingEdit: boolean;
+  /** True when a key is saved on the daemon side with no unsaved draft over it. */
+  isSavedState: boolean;
+  /** The last-4 tail of the saved key for the status badge, if any. */
+  tail: string | undefined;
+  /** True when the row has any persisted credential to clear. */
+  clearable: boolean;
+}

@@ -10,7 +10,8 @@ import {
   subscribeWindowFocus,
 } from '../../providers/orbit';
 import { fetchConnectors, fetchDesignTemplates } from '../../providers/registry';
-import type { OrbitPort } from './ports';
+import { scheduleMediaProvidersReloadNoticeTimeout } from '../../providers/media-providers';
+import type { MediaProvidersPort, OrbitPort } from './ports';
 
 /** Default binding: the real Orbit status/template/connector/run transport +
  *  browser-subscription bridges. */
@@ -22,4 +23,9 @@ export const orbitPort: OrbitPort = {
   subscribeStatusPolling: subscribeOrbitStatusPolling,
   subscribeWindowFocus,
   scheduleTimeout: scheduleOrbitTimeout,
+};
+
+/** Default binding: the media-providers section's timer bridge. */
+export const mediaProvidersPort: MediaProvidersPort = {
+  scheduleReloadNoticeTimeout: scheduleMediaProvidersReloadNoticeTimeout,
 };

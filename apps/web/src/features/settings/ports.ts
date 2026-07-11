@@ -28,3 +28,12 @@ export interface OrbitPort {
   /** Run a callback once after a delay (the "Copied" flash reset). Returns cancel. */
   scheduleTimeout: (onTimeout: () => void, delayMs: number) => () => void;
 }
+
+/** Browser-subscription bridge the media-providers section depends on. All of
+ *  its actual data transport (`onReloadMediaProviders`) is injected as a
+ *  caller callback rather than owned by this port — the section itself
+ *  fetches nothing. */
+export interface MediaProvidersPort {
+  /** Auto-dismiss the reload-success notice after a delay. Returns cancel. */
+  scheduleReloadNoticeTimeout: (onTimeout: () => void, delayMs: number) => () => void;
+}
