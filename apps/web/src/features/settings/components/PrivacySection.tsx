@@ -1,75 +1,36 @@
+// Privacy settings section: the anonymous metrics/content telemetry
+// toggles, the installation id display + delete-my-data action, and the
+// first-run consent card. State + the telemetry-patch actions live in the
+// feature-local `usePrivacy` hook; this component layers analytics tracking
+// on top and renders the exact markup the dialog mounts.
+//
+// Consumed by the SettingsDialog orchestrator through the slice barrel
+// (ADR 0002).
 import type { Dispatch, SetStateAction } from 'react';
-import { useAnalytics } from '../analytics/provider';
-import { trackSettingsPrivacyClick } from '../analytics/events';
-import { useT } from '../i18n';
-import { Icon } from './Icon';
-import type { AppConfig, TelemetryConfig } from '../types';
+import { useAnalytics } from '../../../analytics/provider';
+import { trackSettingsPrivacyClick } from '../../../analytics/events';
+import { useT } from '../../../i18n';
+import { Icon } from '../../../components/Icon';
+import type { AppConfig } from '../../../types';
+import { usePrivacy } from '../hooks/usePrivacy.hooks';
 
 interface Props {
   cfg: AppConfig;
   setCfg: Dispatch<SetStateAction<AppConfig>>;
 }
 
-function generateInstallationId(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  // Older webviews / test runners that lack crypto.randomUUID. The output
-  // is opaque and non-PII; we only need uniqueness across installs.
-  return `inst-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-}
-
 export function PrivacySection({ cfg, setCfg }: Props): JSX.Element {
   const t = useT();
   const analytics = useAnalytics();
-  const telemetry: TelemetryConfig = cfg.telemetry ?? {};
-  // `privacyDecisionAt` gates the consent surface. installationId is only
-  // the anonymous reporting id and can be rotated by Delete my data without
-  // making the first-run banner appear again.
-  const hasMadeConsentDecision = cfg.privacyDecisionAt != null;
-
-  function patchTelemetry(patch: Partial<TelemetryConfig>): void {
-    setCfg((c) => {
-      const nextTelemetry = { ...(c.telemetry ?? {}), ...patch };
-      const shouldHaveId = Object.values(nextTelemetry).some((v) => v === true);
-      return {
-        ...c,
-        installationId:
-          shouldHaveId && !c.installationId
-            ? generateInstallationId()
-            : c.installationId,
-        privacyDecisionAt: Date.now(),
-        telemetry: nextTelemetry,
-      };
-    });
-  }
-
-  function shareUsage(): void {
-    setCfg((c) => ({
-      ...c,
-      installationId: generateInstallationId(),
-      privacyDecisionAt: Date.now(),
-      telemetry: { metrics: true, content: true },
-    }));
-  }
-
-  function declineUsage(): void {
-    setCfg((c) => ({
-      ...c,
-      installationId: null,
-      privacyDecisionAt: Date.now(),
-      telemetry: { metrics: false, content: false },
-    }));
-  }
-
-  function deleteMyData(): void {
-    setCfg((c) => ({
-      ...c,
-      installationId: generateInstallationId(),
-      privacyDecisionAt: c.privacyDecisionAt ?? Date.now(),
-      telemetry: { metrics: false, content: false },
-    }));
-  }
+  const {
+    telemetry,
+    installationId,
+    hasMadeConsentDecision,
+    patchTelemetry,
+    shareUsage,
+    declineUsage,
+    deleteMyData,
+  } = usePrivacy({ cfg, setCfg });
 
   return (
     <section className="settings-section">
@@ -119,7 +80,7 @@ export function PrivacySection({ cfg, setCfg }: Props): JSX.Element {
               <input
                 type="text"
                 readOnly
-                value={cfg.installationId ?? t('settings.privacyOptedOut')}
+                value={installationId ?? t('settings.privacyOptedOut')}
                 aria-label={t('settings.privacyInstallationId')}
               />
             </div>
