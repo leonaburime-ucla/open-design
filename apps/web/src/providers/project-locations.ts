@@ -1,3 +1,7 @@
+// Transport for the settings slice's Project Locations section: the
+// project-folder list fetch/update, the folder-scan trigger, and the
+// native/system folder-picker dialog. Kept out of the slice so its hook
+// reaches this only through the injected `ProjectLocationsPort` (ADR 0002).
 import type {
   ProjectLocation,
   ProjectLocationsResponse,

@@ -107,6 +107,7 @@ import {
   OrbitSection,
   persistByokProviderConfigDraft,
   PrivacySection,
+  ProjectLocationsSection,
   providerConnectionTestKey,
   providerFamilyLabel,
   providerModelsCacheKey,
@@ -205,7 +206,6 @@ import { Toast } from './Toast';
 import { PetSettings } from './pet/PetSettings';
 import { McpClientSection } from './McpClientSection';
 import { DesignSystemsSection } from './DesignSystemsSection';
-import { ProjectLocationsSection } from './ProjectLocationsSection';
 import { RoutinesSection } from './RoutinesSection';
 import { ConnectorsBrowser } from './ConnectorsBrowser';
 import { MemoryModelInline } from './MemoryModelInline';

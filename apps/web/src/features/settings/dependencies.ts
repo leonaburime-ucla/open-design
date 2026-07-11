@@ -30,6 +30,12 @@ import {
 import { subscribeAmrLoginStatusEvent, subscribeAmrWindowResync } from '../../providers/amr';
 import { scheduleAgentRescanNoticeTimeout, subscribeAgentInstallReturn } from '../../providers/agents';
 import { testAgent } from '../../providers/connection-test';
+import {
+  fetchProjectLocations,
+  openProjectLocationFolderDialog,
+  scanProjectLocations,
+  updateProjectLocations,
+} from '../../providers/project-locations';
 import type {
   AboutPort,
   AmrAccountPort,
@@ -38,6 +44,7 @@ import type {
   IntegrationsPort,
   MediaProvidersPort,
   OrbitPort,
+  ProjectLocationsPort,
 } from './ports';
 
 /** Default binding: the real Orbit status/template/connector/run transport +
@@ -96,4 +103,13 @@ export const daemonAgentPort: DaemonAgentPort = {
   subscribeInstallReturn: subscribeAgentInstallReturn,
   canUpgradeVelaPlan,
   formatVelaBalanceUsd,
+};
+
+/** Default binding: the Project Locations section's fetch/update/scan/
+ *  open-folder-dialog transport. */
+export const projectLocationsPort: ProjectLocationsPort = {
+  fetchLocations: fetchProjectLocations,
+  updateLocations: updateProjectLocations,
+  scanLocations: scanProjectLocations,
+  openFolderDialog: openProjectLocationFolderDialog,
 };

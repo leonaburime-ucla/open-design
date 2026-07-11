@@ -220,3 +220,22 @@ export type {
   ByokFieldFocusController,
   ByokFieldFocusInput,
 } from './hooks/useByokFieldFocus.hooks';
+
+// Project Locations section: the built-in default location card, the
+// editable list of external project folders, and the add-folder/remove/
+// default-selection controls. Transport (fetch/update/scan/open-folder-
+// dialog) lives in `providers/project-locations`, reached only through the
+// injected `ProjectLocationsPort`.
+export {
+  externalLocations,
+  locationLabel,
+  projectLocationDefaultControlLabel,
+  toConfigLocations,
+} from './rules';
+export type { DraftLocation } from './types';
+export { ProjectLocationsSection } from './components/ProjectLocationsSection';
+export { useWiredProjectLocations } from './hooks/useProjectLocations.hooks';
+export type {
+  ProjectLocationsController,
+  ProjectLocationsInput,
+} from './hooks/useProjectLocations.hooks';

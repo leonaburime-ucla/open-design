@@ -44,9 +44,10 @@ defer the most-entangled derived-state cluster until its dependents exist.
 
 ### Standalone leaf components NOT yet moved into the slice
 
-`PrivacySection.tsx`, `ProjectLocationsSection.tsx`, `DesignSystemsSection.tsx`
-(651 lines), `pet/PetSettings.tsx` (1132 lines) still live under
-`apps/web/src/components/`. SettingsDialog.tsx already renders each as a
+`DesignSystemsSection.tsx` (651 lines) and `pet/PetSettings.tsx` (1132 lines)
+still live under `apps/web/src/components/` (`PrivacySection.tsx` and
+`ProjectLocationsSection.tsx` are done — clusters 9 and 10 below).
+SettingsDialog.tsx already renders each as a
 2-6 line composition (`<XSection cfg={cfg} setCfg={setCfg} .../>`), so they
 don't inflate the orchestrator's own line count or violate the "thin shell"
 end state directly — but the overall ADR-0002 goal is every section living in
@@ -237,13 +238,36 @@ first.
   was already a thin composition line — doesn't change the orchestrator's
   line count, as expected for a leaf relocation.
 
-### 10. ProjectLocationsSection relocation — **pending**
+### 10. ProjectLocationsSection relocation — **done**
 - **Owns**: `apps/web/src/components/ProjectLocationsSection.tsx` (239
   lines). Has its own `useState`/`useEffect` (loading/saving/status/error) —
   check for `fetch`/daemon calls that need a new `providers/` route before
   moving in; do not redeclare any DTO already in `packages/contracts`.
 - **Risk**: low-medium.
-- **Status**: pending.
+- **Status**: **done**. Unlike cluster 9, this component owned its own
+  transport (`fetchProjectLocations`/`updateProjectLocations`/
+  `scanProjectLocations`/`openProjectLocationFolderDialog`, each a thin
+  `fetch()` wrapper previously in `state/project-locations.ts`) — moved
+  verbatim to `providers/project-locations.ts` (a flat single-adapter
+  resource file) and bound as `ProjectLocationsPort` in `dependencies.ts`.
+  `state/project-locations.ts` had exactly one consumer (this component), so
+  it was deleted outright rather than kept as a second copy. `locationLabel`/
+  `externalLocations`/`toConfigLocations` moved to `rules.ts` verbatim
+  (already pure); the `defaultControlLabel` closure was also made pure as
+  `projectLocationDefaultControlLabel(t, effectiveDefaultLocationId,
+  locationId)` in `rules.ts`, with the hook keeping a one-line closure over
+  it for the JSX. `hooks/useProjectLocations.hooks.ts` owns
+  `locations`/`drafts`/`loading`/`saving`/`status`/`error` state, the
+  `draftsRef` sync effect, the initial-fetch effect, and the
+  `handleDefaultLocationChange`/`save`/`runScan`/`handleAddFolder`/
+  `removeDraft` handlers. `DraftLocation` is a new in-slice UI type in
+  `types.ts`. No existing test file covered this component (verified via
+  `find`/`git log -- '*ProjectLocationsSection*'` across history), so there
+  was nothing to move; the existing `SettingsDialog.*.test.tsx` suites still
+  exercise it indirectly and stay green. SettingsDialog's own
+  `<ProjectLocationsSection cfg={cfg} setCfg={setCfg}
+  onProjectsRefresh={onProjectsRefresh} />` call site is unchanged (only the
+  import source moved to the barrel).
 
 ### 11. DesignSystemsSection relocation — **pending**
 - **Owns**: `apps/web/src/components/DesignSystemsSection.tsx` (651 lines) —

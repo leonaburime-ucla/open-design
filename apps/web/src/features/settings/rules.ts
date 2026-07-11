@@ -4,7 +4,7 @@
 // derivation), and the media-providers section's catalogue sort/row-state
 // derivation. No React, no transport, no DOM, so they test against
 // `../../types`/`@open-design/contracts` with zero doubles (ADR 0002).
-import type { AmrWalletSnapshot, ConnectorDetail } from '@open-design/contracts';
+import type { AmrWalletSnapshot, ConnectorDetail, ProjectLocation } from '@open-design/contracts';
 import { validateBaseUrl } from '@open-design/contracts/api/connectionTest';
 import { useT } from '../../i18n';
 import type { Locale } from '../../i18n';
@@ -49,6 +49,7 @@ import type {
   ByokProviderPreset,
   ByokRequiredField,
   ComposioCredentialState,
+  DraftLocation,
   MediaProviderRowState,
   McpClient,
   McpInstallInfo,
@@ -1747,5 +1748,44 @@ export function nextTelemetryConfigPatch(
     privacyDecisionAt: Date.now(),
     telemetry: nextTelemetry,
   };
+}
+
+/** The trailing path segment of a project-location path, for display in the
+ *  Project Locations section's draft rows — falls back to the full path if
+ *  it has no separator. */
+export function locationLabel(locationPath: string): string {
+  return locationPath.split(/[\\/]/).filter(Boolean).pop() || locationPath;
+}
+
+/** Maps daemon `ProjectLocation`s to the Project Locations section's editable
+ *  draft-row shape, dropping the built-in default location (which renders as
+ *  its own fixed card, not a draft row). */
+export function externalLocations(locations: ProjectLocation[]): DraftLocation[] {
+  return locations
+    .filter((location) => !location.builtIn)
+    .map((location) => ({ id: location.id, path: location.path }));
+}
+
+/** Maps daemon `ProjectLocation`s to the `cfg.projectLocations` persisted
+ *  shape (id/name/path only), dropping the built-in default location. */
+export function toConfigLocations(
+  locations: ProjectLocation[],
+): NonNullable<AppConfig['projectLocations']> {
+  return locations
+    .filter((location) => !location.builtIn)
+    .map((location) => ({ id: location.id, name: location.name, path: location.path }));
+}
+
+/** Label for the Project Locations default-location radio control: the
+ *  "default" badge when the row already is the default, an actionable
+ *  "Make default" otherwise. */
+export function projectLocationDefaultControlLabel(
+  t: Translate,
+  effectiveDefaultLocationId: string,
+  locationId: string,
+): string {
+  return effectiveDefaultLocationId === locationId
+    ? t('settings.projectLocationsDefaultBadge')
+    : t('settings.projectLocationsMakeDefault');
 }
 

@@ -308,3 +308,11 @@ export type TestState =
   | { status: 'idle' }
   | { status: 'running' }
   | { status: 'done'; result: ConnectionTestResponse };
+
+/** A single editable row in the Project Locations section's draft list. `id`
+ *  is set once the location has been saved to the daemon; a freshly-added
+ *  folder (before its first successful save) has none yet. */
+export interface DraftLocation {
+  id?: string;
+  path: string;
+}

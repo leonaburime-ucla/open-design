@@ -1,7 +1,13 @@
 // Ports the settings slice depends on. Each interface is the boundary a
 // cluster's hook is injected with; `dependencies.ts` (the only feature file
 // allowed to import `providers/`) binds the real transport to it (ADR 0002).
-import type { AmrWalletSnapshot, ConnectorDetail } from '@open-design/contracts';
+import type {
+  AmrWalletSnapshot,
+  ConnectorDetail,
+  ProjectLocation,
+  ScanProjectLocationsResponse,
+  UpdateProjectLocationsRequest,
+} from '@open-design/contracts';
 import type {
   AgentTestRequest,
   AppConfig,
@@ -118,4 +124,18 @@ export interface DaemonAgentPort {
   canUpgradeVelaPlan: (plan?: string | null) => boolean;
   /** Fixed `$X.XX` formatting for the AMR card's plan-status balance. */
   formatVelaBalanceUsd: (raw?: string | null) => string | null;
+}
+
+/** Transport the Project Locations section depends on. */
+export interface ProjectLocationsPort {
+  /** `GET /api/project-locations`. Resolves `[]` on failure — see the provider. */
+  fetchLocations: () => Promise<ProjectLocation[]>;
+  /** `PUT /api/project-locations`. Resolves `null` on failure. */
+  updateLocations: (
+    locations: UpdateProjectLocationsRequest['locations'],
+  ) => Promise<ProjectLocation[] | null>;
+  /** `POST /api/project-locations/scan`. Resolves `null` on failure. */
+  scanLocations: () => Promise<ScanProjectLocationsResponse | null>;
+  /** `POST /api/dialog/open-folder`. Resolves `null` when canceled or on failure. */
+  openFolderDialog: () => Promise<string | null>;
 }
