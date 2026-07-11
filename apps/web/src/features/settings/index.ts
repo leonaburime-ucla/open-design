@@ -47,3 +47,10 @@ export { IntegrationsSection } from './components/IntegrationsSection';
 // transport/DOM subscription the guard's port-binding rule targets); the
 // section component layers analytics tracking on top of the hook's actions.
 export { NotificationsSection } from './components/NotificationsSection';
+
+// Appearance section: the theme segmented control + accent-color swatch
+// picker, with the live-preview document effect. Reaches `state/appearance`
+// directly (a synchronous document-mutation helper, not the transport/DOM
+// subscription the guard's port-binding rule targets); the section component
+// layers analytics tracking on top of the hook's actions.
+export { AppearanceSection } from './components/AppearanceSection';
