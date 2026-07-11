@@ -61,3 +61,73 @@ export { AppearanceSection } from './components/AppearanceSection';
 // daemon-side project-metadata PATCH); the section component layers
 // analytics tracking on top of the hook's action.
 export { CritiqueTheaterSection } from './components/CritiqueTheaterSection';
+
+// Execution mode (BYOK provider config / local-CLI agent picker / AMR wallet)
+// pure rules + data. This is the largest remaining cluster of the
+// SettingsDialog decomposition: the JSX/state still live in the
+// orchestrator, but every pure derivation moved here so the orchestrator's
+// handlers and effects call through the barrel instead of declaring these
+// locally. Types are defined in-slice per ADR 0002.
+export {
+  agentRefreshOptionsForConfig,
+  amrWalletValueLabel,
+  applyApiProtocolConfig,
+  byokDraftBaseUrlHost,
+  byokErrorKindFromIssues,
+  byokFieldMissingFromIssues,
+  byokFirstPartyBaseUrlHint,
+  byokProviderDraftKey,
+  byokProviderKeyForConfig,
+  byokTrackingTestResult,
+  canFetchProviderModels,
+  canRunProviderConnectionTest,
+  cleanAgentVersionLabel,
+  codexPathRepairState,
+  codexPathStrings,
+  currentApiProtocolConfig,
+  defaultApiProtocolConfig,
+  deriveAboutUpdateControl,
+  displayAgentName,
+  hidesAccountModelSourceLabel,
+  isProviderModelDiscoveryUnsupported,
+  isValidApiBaseUrl,
+  missingByokConnectionFields,
+  missingByokModelFetchFields,
+  nextApiProtocolConfig,
+  persistByokProviderConfigDraft,
+  providerConnectionTestKey,
+  providerFamilyLabel,
+  reconcileAmrModelChoice,
+  reconcileAmrProfileEnv,
+  sanitizeHttpsUrl,
+  sanitizeSettingsSavePayload,
+  shouldEnableSettingsSave,
+  shouldShowCustomModelInput,
+  siblingProviderForProtocol,
+  switchApiProtocolConfig,
+  testStatusVariant,
+  apiModelOptionLabel,
+  updateAgentCliEnvValue,
+  updateCurrentApiProtocolConfig,
+} from './rules';
+export type {
+  AboutUpdateControl,
+  AgentRefreshOptions,
+  ByokFieldMissing,
+  ByokFirstPartyBaseUrlHint,
+  ByokRequiredField,
+  SettingsSection,
+} from './types';
+export {
+  ACCOUNT_MODEL_SOURCE_LABEL_HIDDEN,
+  AGENT_CLI_AUTH_ENV_KEYS,
+  AGENT_CLI_BASE_URL_ENV_KEYS,
+  AGENT_CLI_ENV_FIELDS,
+  AGENT_SHORT_DESCRIPTIONS,
+  AMR_PROFILE_AGENT_ID,
+  AMR_PROFILE_ENV_KEY,
+  AMR_SIGN_IN_RESCAN_ATTEMPTS,
+  AMR_SIGN_IN_RESCAN_RETRY_MS,
+  API_KEY_CONSOLE_LINKS,
+  OPEN_DESIGN_RELEASES_URL,
+} from './constants';

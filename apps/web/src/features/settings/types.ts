@@ -3,7 +3,9 @@
 // these are the view-model shapes the slice's rules, hooks, and components pass
 // around. Per ADR 0002 they are never redeclared wire DTOs — they compose the
 // app's existing types into slice-local view models.
-import type { ProviderModelOption } from '../../types';
+import type { AppConfig, ProviderModelOption } from '../../types';
+import type { ByokDraftField } from '../../components/byok/validation';
+import type { Dict } from '../../i18n/types';
 
 /**
  * Hand-rolled per-provider model cache: a fingerprint key (protocol + base URL +
@@ -159,3 +161,61 @@ export type NotificationTestStatusKey =
   | 'settings.notifyDesktopBlocked'
   | 'settings.notifyDesktopUnsupported'
   | 'settings.notifyTestFailed';
+
+// ---------------------------------------------------------------------------
+// Execution mode (BYOK / local-CLI agent / AMR) section
+// ---------------------------------------------------------------------------
+
+/** The sidebar section the settings dialog is currently showing. */
+export type SettingsSection =
+  | 'execution'
+  | 'instructions'
+  | 'media'
+  | 'composio'
+  | 'orbit'
+  | 'routines'
+  | 'integrations'
+  | 'mcpClient'
+  | 'language'
+  | 'appearance'
+  | 'critiqueTheater'
+  | 'notifications'
+  | 'pet'
+  | 'designSystems'
+  | 'projectLocations'
+  | 'memory'
+  | 'privacy'
+  // 'library' is consumed by the EntryShell library route — App opens it
+  // via this same openSettings entry point, so SettingsSection must
+  // accept the token even though SettingsDialog itself has no Library
+  // section. Reconcile follow-up: route library through a dedicated
+  // navigate() call so openSettings only owns dialog-bound sections.
+  | 'library'
+  | 'about';
+
+export interface AgentRefreshOptions {
+  throwOnError?: boolean;
+  agentCliEnv?: AppConfig['agentCliEnv'];
+}
+
+type AboutUpdatePrimaryAction = 'check' | 'download' | 'install' | 'quit';
+type AboutUpdateTone = 'neutral' | 'success' | 'warning' | 'error';
+
+export interface AboutUpdateControl {
+  primaryAction: AboutUpdatePrimaryAction | null;
+  primaryLabelKey: keyof Dict | null;
+  showReleaseLink: boolean;
+  statusKey: keyof Dict;
+  statusTone: AboutUpdateTone;
+  statusVars?: Record<string, string | number>;
+}
+
+/** A missing/invalid BYOK draft field, derived from `ByokDraftIssue[]`. */
+export type ByokRequiredField = ByokDraftField;
+export type ByokFieldMissing = 'api_key' | 'base_url' | 'model' | 'multiple' | 'none';
+
+/** A first-party base URL suggestion for a BYOK draft that looks like a typo'd host. */
+export interface ByokFirstPartyBaseUrlHint {
+  baseUrl: string;
+  hostTypo: boolean;
+}
