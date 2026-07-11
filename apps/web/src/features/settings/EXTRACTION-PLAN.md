@@ -214,13 +214,28 @@ first.
   (~2321-2361, small) and the protocol-chips block that cluster 1 targets
   (~2362-2405). Do not redo the agent-grid/BYOK-form composition.
 
-### 9. PrivacySection relocation — **pending**
+### 9. PrivacySection relocation — **done**
 - **Owns**: `apps/web/src/components/PrivacySection.tsx` (219 lines). Quick
   check before starting: confirm it's genuinely prop-only (cfg/setCfg +
   analytics) with no internal fetch/window use — if so this is close to a
   pure file-move + barrel wiring, the cheapest of the four leaf relocations.
 - **Risk**: low.
-- **Status**: pending.
+- **Status**: **done**. Confirmed prop-only (no fetch/window/DOM — only
+  `crypto.randomUUID`/`Date.now`/`Math.random`, all plain JS globals the
+  guard doesn't forbid). `generateInstallationId` + the telemetry-patch
+  merge/mint-id branching (`nextTelemetryConfigPatch`) moved to `rules.ts`;
+  `hooks/usePrivacy.hooks.ts` owns `cfg.telemetry`/`installationId`/
+  `privacyDecisionAt` derivation + the four actions (`patchTelemetry`,
+  `shareUsage`, `declineUsage`, `deleteMyData`) — no port/`useWiredX` needed
+  (no transport, mirrors `useCritiqueTheaterSettings`'s no-port shape); the
+  `ToggleRow`/`ConsentCard` subcomponents moved as-is (component-internal,
+  not exported) into `components/PrivacySection.tsx`. Old
+  `components/PrivacySection.tsx` deleted; its test moved to
+  `tests/features/settings/PrivacySection.test.tsx` importing the barrel.
+  SettingsDialog's own `<PrivacySection cfg={cfg} setCfg={setCfg} />` call
+  site is unchanged (only the import source moved to the barrel) since it
+  was already a thin composition line — doesn't change the orchestrator's
+  line count, as expected for a leaf relocation.
 
 ### 10. ProjectLocationsSection relocation — **pending**
 - **Owns**: `apps/web/src/components/ProjectLocationsSection.tsx` (239

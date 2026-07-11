@@ -4,9 +4,9 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useState } from 'react';
 
-import { PrivacySection } from '../../src/components/PrivacySection';
-import { I18nProvider } from '../../src/i18n';
-import type { AppConfig } from '../../src/types';
+import { PrivacySection } from '../../../src/features/settings';
+import { I18nProvider } from '../../../src/i18n';
+import type { AppConfig } from '../../../src/types';
 
 const baseConfig: AppConfig = {
   mode: 'api',

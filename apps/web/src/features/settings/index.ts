@@ -195,6 +195,14 @@ export { LanguageSection } from './components/LanguageSection';
 // Custom-instructions section: a single free-text field on `cfg.customInstructions`.
 export { InstructionsSection } from './components/InstructionsSection';
 
+// Privacy section: the anonymous metrics/content telemetry toggles, the
+// installation id display + delete-my-data action, and the first-run
+// consent card. No transport — state lives entirely on `cfg`/`setCfg`.
+export { generateInstallationId, nextTelemetryConfigPatch } from './rules';
+export { PrivacySection } from './components/PrivacySection';
+export { usePrivacy } from './hooks/usePrivacy.hooks';
+export type { PrivacyController, PrivacyInput } from './hooks/usePrivacy.hooks';
+
 // BYOK field-focus + precondition-notice cluster of the execution-mode
 // section: the four field refs (API key/base URL/model select/custom model)
 // and the missing-field/draft-validation notice banner state. The

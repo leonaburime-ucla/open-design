@@ -36,6 +36,7 @@ import type {
   ProviderModelOption,
   ProviderModelsResponse,
   SkillSummary,
+  TelemetryConfig,
 } from '../../types';
 import type { CompletionNotificationResult } from '../../utils/notifications';
 import type { UpdaterModel } from '../../lib/updater';
@@ -1718,5 +1719,33 @@ export function formatConnectionTestMessage(
     default:
       return t('settings.testUnknown', { detail: result.detail ?? '' });
   }
+}
+
+/** An opaque, non-PII per-install id for anonymous telemetry reporting.
+ *  Falls back to a `Date`/`Math.random` composite for older webviews/test
+ *  runners that lack `crypto.randomUUID`. */
+export function generateInstallationId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `inst-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+/** The `cfg` patch for a telemetry-preference change: merges `patch` into
+ *  the current telemetry flags, stamps the consent decision timestamp, and
+ *  mints an installation id the first time any flag turns on (never
+ *  reissues one that already exists). */
+export function nextTelemetryConfigPatch(
+  cfg: Pick<AppConfig, 'telemetry' | 'installationId'>,
+  patch: Partial<TelemetryConfig>,
+): Pick<AppConfig, 'installationId' | 'privacyDecisionAt' | 'telemetry'> {
+  const nextTelemetry = { ...(cfg.telemetry ?? {}), ...patch };
+  const shouldHaveId = Object.values(nextTelemetry).some((v) => v === true);
+  return {
+    installationId:
+      shouldHaveId && !cfg.installationId ? generateInstallationId() : cfg.installationId ?? null,
+    privacyDecisionAt: Date.now(),
+    telemetry: nextTelemetry,
+  };
 }
 
