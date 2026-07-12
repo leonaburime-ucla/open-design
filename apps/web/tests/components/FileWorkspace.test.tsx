@@ -2910,3 +2910,45 @@ describe('FileWorkspace empty-project generation contract', () => {
     },
   );
 });
+
+describe('FileWorkspace injectable hooks', () => {
+  // Proves the useX -> useWiredX default-parameter seam actually works: a
+  // fake useWorkspaceTabBarDom (the smallest controller — just
+  // `{ tabsOverflowing }`) can force the overflow CSS state jsdom itself
+  // never reaches (no ResizeObserver-driven real layout), without the test
+  // touching any other hook's wiring.
+  it('renders with an injected fake hook instead of the real wired one', () => {
+    const container = renderWorkspace(
+      <FileWorkspace
+        projectId="project-1"
+        projectKind="prototype"
+        files={[]}
+        liveArtifacts={[]}
+        onRefreshFiles={vi.fn()}
+        isDeck={false}
+        tabsState={{ tabs: [], active: DESIGN_FILES_TAB }}
+        onTabsStateChange={vi.fn()}
+        useWorkspaceTabBarDom={() => ({ tabsOverflowing: true })}
+      />,
+    );
+
+    expect(container.querySelector('.ws-tabs-bar.is-overflowing')).toBeTruthy();
+  });
+
+  it('falls back to the real wired hook when nothing is injected', () => {
+    const container = renderWorkspace(
+      <FileWorkspace
+        projectId="project-1"
+        projectKind="prototype"
+        files={[]}
+        liveArtifacts={[]}
+        onRefreshFiles={vi.fn()}
+        isDeck={false}
+        tabsState={{ tabs: [], active: DESIGN_FILES_TAB }}
+        onTabsStateChange={vi.fn()}
+      />,
+    );
+
+    expect(container.querySelector('.ws-tabs-bar.is-overflowing')).toBeNull();
+  });
+});

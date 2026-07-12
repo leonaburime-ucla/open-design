@@ -74,25 +74,49 @@ import {
   QUESTIONS_TAB,
   scrollWorkspaceTabsWithWheel,
   Tab,
-  useBrowserTabs,
-  useTabReorderDnd,
+  useBrowserTabs as useBrowserTabsImpl,
+  useTabReorderDnd as useTabReorderDndImpl,
   useWiredDesignFilesPanelState,
   useWiredFileOperations,
   useWiredProjectFolders,
   useWiredSketches,
   useWiredWorkspaceKeyboardShortcuts,
   useWiredWorkspaceTabBarDom,
-  useWorkspaceContextTracking,
-  useWorkspaceLauncher,
-  useWorkspaceTabActivation,
-  useWorkspaceTabRequests,
+  useWorkspaceContextTracking as useWorkspaceContextTrackingImpl,
+  useWorkspaceLauncher as useWorkspaceLauncherImpl,
+  useWorkspaceTabActivation as useWorkspaceTabActivationImpl,
+  useWorkspaceTabRequests as useWorkspaceTabRequestsImpl,
   type BrowserAttentionRequest,
   type BrowserOpenRequest,
+  type BrowserTabsController,
   type BrowserWorkspaceTab,
+  type DesignFilesPanelStateController,
   type DesignSystemReviewAgentTask,
   type DesignSystemReviewDecision,
   type DesignSystemReviewDetails,
+  type FileOperationsController,
+  type ProjectFoldersController,
+  type SketchesController,
+  type TabReorderDndController,
+  type UseBrowserTabsParams,
+  type UseDesignFilesPanelStateParams,
+  type UseFileOperationsParams,
+  type UseProjectFoldersParams,
+  type UseSketchesParams,
+  type UseTabReorderDndParams,
+  type UseWorkspaceLauncherParams,
+  type UseWorkspaceTabActivationParams,
+  type WorkspaceContextTrackingController,
+  type WorkspaceContextTrackingParams,
+  type WorkspaceKeyboardShortcutsController,
+  type WorkspaceKeyboardShortcutsParams,
+  type WorkspaceLauncherController,
   type WorkspaceOrderedTab,
+  type WorkspaceTabActivationController,
+  type WorkspaceTabBarDomController,
+  type WorkspaceTabBarDomParams,
+  type WorkspaceTabRequestsController,
+  type WorkspaceTabRequestsParams,
 } from '../features/file-workspace';
 // Re-exported so `./FileWorkspace` stays a stable import path for the
 // existing test suite / external consumers (e.g. `ProjectView.tsx`) now that
@@ -248,6 +272,33 @@ interface Props {
   focusQuestionsRequest?: { nonce: number } | null;
 }
 
+// Injectable hooks for the orchestrator. Each defaults to its real (wired or
+// pure) hook, so production callers pass nothing while tests swap a hook for
+// a fake — mirrors `MemorySection.tsx`'s `MemorySectionHooks`. Per-hook
+// injection (not one bag) keeps each seam independently overridable.
+interface FileWorkspaceHooks {
+  useProjectFolders?: (params: UseProjectFoldersParams) => ProjectFoldersController;
+  useSketches?: (params: UseSketchesParams) => SketchesController;
+  useFileOperations?: (params: UseFileOperationsParams) => FileOperationsController;
+  useBrowserTabs?: (params: UseBrowserTabsParams) => BrowserTabsController;
+  useWorkspaceContextTracking?: (
+    params: WorkspaceContextTrackingParams,
+  ) => WorkspaceContextTrackingController;
+  useWorkspaceTabActivation?: (
+    params: UseWorkspaceTabActivationParams,
+  ) => WorkspaceTabActivationController;
+  useWorkspaceTabRequests?: (params: WorkspaceTabRequestsParams) => WorkspaceTabRequestsController;
+  useWorkspaceLauncher?: (params: UseWorkspaceLauncherParams) => WorkspaceLauncherController;
+  useTabReorderDnd?: (params: UseTabReorderDndParams) => TabReorderDndController;
+  useDesignFilesPanelState?: (
+    params: UseDesignFilesPanelStateParams,
+  ) => DesignFilesPanelStateController;
+  useWorkspaceKeyboardShortcuts?: (
+    params: WorkspaceKeyboardShortcutsParams,
+  ) => WorkspaceKeyboardShortcutsController;
+  useWorkspaceTabBarDom?: (params: WorkspaceTabBarDomParams) => WorkspaceTabBarDomController;
+}
+
 // Re-exported so `./FileWorkspace` stays a stable import path for external
 // consumers (e.g. `ProjectView.tsx`) now that these live in the slice.
 export { DESIGN_FILES_TAB, DESIGN_SYSTEM_TAB };
@@ -334,7 +385,19 @@ export function FileWorkspace({
   questionsGenerating = false,
   onSubmitQuestionForm,
   focusQuestionsRequest = null,
-}: Props) {
+  useProjectFolders = useWiredProjectFolders,
+  useSketches = useWiredSketches,
+  useFileOperations = useWiredFileOperations,
+  useBrowserTabs = useBrowserTabsImpl,
+  useWorkspaceContextTracking = useWorkspaceContextTrackingImpl,
+  useWorkspaceTabActivation = useWorkspaceTabActivationImpl,
+  useWorkspaceTabRequests = useWorkspaceTabRequestsImpl,
+  useWorkspaceLauncher = useWorkspaceLauncherImpl,
+  useTabReorderDnd = useTabReorderDndImpl,
+  useDesignFilesPanelState = useWiredDesignFilesPanelState,
+  useWorkspaceKeyboardShortcuts = useWiredWorkspaceKeyboardShortcuts,
+  useWorkspaceTabBarDom = useWiredWorkspaceTabBarDom,
+}: Props & FileWorkspaceHooks) {
   const t = useT();
   // The chat column only shows a compact Questions banner; the form itself
   // lives here, including after submission when a banner click can reopen the
@@ -418,7 +481,7 @@ export function FileWorkspace({
     [liveArtifacts],
   );
 
-  const { uploadDir, setUploadDir, projectFolders, refreshProjectFolders } = useWiredProjectFolders({
+  const { uploadDir, setUploadDir, projectFolders, refreshProjectFolders } = useProjectFolders({
     projectId,
   });
 
@@ -438,7 +501,7 @@ export function FileWorkspace({
     removeSketchEntry,
     removeSketchEntries,
     renameSketchEntry,
-  } = useWiredSketches({
+  } = useSketches({
     projectId,
     uploadDir,
     activeTab,
@@ -465,7 +528,7 @@ export function FileWorkspace({
     handleDeleteMany,
     handleRename,
     createMarkdownDocument,
-  } = useWiredFileOperations({
+  } = useFileOperations({
     projectId,
     projectKind,
     files,
@@ -713,14 +776,14 @@ export function FileWorkspace({
     showLibraryPicker,
     setShowLibraryPicker,
     handleLibraryPickerConfirm,
-  } = useWiredDesignFilesPanelState({
+  } = useDesignFilesPanelState({
     projectId,
     uploadDir,
     onRefreshFiles,
     openFile,
   });
 
-  const { quickSwitcherOpen, setQuickSwitcherOpen } = useWiredWorkspaceKeyboardShortcuts({
+  const { quickSwitcherOpen, setQuickSwitcherOpen } = useWorkspaceKeyboardShortcuts({
     workspaceTabIds,
     openWorkspaceTabLauncher,
     closeActiveWorkspaceTab,
@@ -728,7 +791,7 @@ export function FileWorkspace({
     activateWorkspaceTabByIndex,
   });
 
-  const { tabsOverflowing } = useWiredWorkspaceTabBarDom({
+  const { tabsOverflowing } = useWorkspaceTabBarDom({
     tabsBarRef,
     activeTab,
     browserTabsCount: browserTabs.length,

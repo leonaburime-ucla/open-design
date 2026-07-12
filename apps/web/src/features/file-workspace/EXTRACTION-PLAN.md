@@ -1,5 +1,61 @@
 # FileWorkspace.tsx extraction plan
 
+## Injectable hooks (DONE)
+
+Found on re-reading SKILL.md's Definition-of-Done checklist directly (not
+caught by either Phase 8.5 audit pass, since both were scoped to "hidden
+logic in the orchestrator," not to this separate checklist item): **"Each
+feature hook call is injectable: an optional `<Name>Hooks` prop per hook,
+defaulting to the real wired hook"** (see SKILL.md Phase 8 "Injectable
+hooks" and the Definition of Done), mirroring `MemorySection.tsx`'s
+`MemorySectionHooks` shape.
+
+All 12 of the orchestrator's feature-hook calls are now injectable via a
+`FileWorkspaceHooks` interface (one optional prop per hook, each
+destructured with a default pointing at the real hook):
+`useProjectFolders`/`useSketches`/`useFileOperations`/`useBrowserTabs`/
+`useWorkspaceContextTracking`/`useWorkspaceTabActivation`/
+`useWorkspaceTabRequests`/`useWorkspaceLauncher`/`useTabReorderDnd`/
+`useDesignFilesPanelState`/`useWorkspaceKeyboardShortcuts`/
+`useWorkspaceTabBarDom`.
+
+Gotchas hit exactly as anticipated:
+- **TDZ prop-vs-default-identifier collision** (SKILL.md Phase 6): the 6
+  hooks with an existing `useWiredX` name (`useWiredProjectFolders`, etc.)
+  got a prop name WITHOUT the `Wired` prefix — already distinct from the
+  import, safe as-is (e.g. prop `useProjectFolders` defaults to
+  `useWiredProjectFolders`). The 6 hooks with no wired/unwired distinction
+  (`useBrowserTabs`, `useWorkspaceContextTracking`,
+  `useWorkspaceTabActivation`, `useWorkspaceTabRequests`,
+  `useWorkspaceLauncher`, `useTabReorderDnd`) needed their import aliased
+  (`useBrowserTabs as useBrowserTabsImpl`, etc.) so the prop name could match
+  the hook's natural name without colliding with its own default.
+- **No `Props & FileWorkspaceHooks = {}` object-level default**: unlike
+  `MemorySectionProps` (mostly optional), `FileWorkspace`'s `Props` has
+  several required fields (`projectId`, `files`, `liveArtifacts`,
+  `onRefreshFiles`, `isDeck`, `tabsState`, `onTabsStateChange`) — a bare `{}`
+  default wouldn't satisfy the type. The signature is
+  `{ ...destructured, useX = useWiredX, ... }: Props & FileWorkspaceHooks)`
+  (no object-level default); each hook prop still defaults individually,
+  since destructuring defaults apply per-property regardless of whether the
+  whole parameter object has one.
+- **The 6 already-shadowed call sites needed NO edits**: `useBrowserTabs(...)`
+  etc. in the render body already resolve to the newly-destructured
+  parameter (which shadows the aliased module import) purely through normal
+  JS scoping — only the 6 `useWiredX(...)` call sites needed rewriting to
+  the new (un-prefixed) prop names.
+
+Two new orchestrator-level tests (`tests/components/FileWorkspace.test.tsx`,
+"FileWorkspace injectable hooks") prove the seam actually works: one injects
+a fake `useWorkspaceTabBarDom` (the smallest controller —
+`{ tabsOverflowing }`) to force the `.is-overflowing` CSS class jsdom can
+never reach on its own (no real ResizeObserver-driven layout), the other
+confirms the real wired hook still runs when nothing is injected.
+
+Everything in this file — all numbered clusters, both Phase 8.5 audit
+passes, and injectable hooks — is now complete.
+
+
 Full upfront inventory (SKILL.md Phase 1 step 4), taken against the
 orchestrator at commit `b45fcbc0e` (2156 lines). Work the clusters below
 top-to-bottom; mark a cluster `done` in this file as part of the pass's
