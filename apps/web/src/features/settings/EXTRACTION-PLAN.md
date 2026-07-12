@@ -353,28 +353,62 @@ first.
 - **Risk**: high (largest single remaining component in the whole area).
 - **Status**: pending.
 
-### 14. Autosave loop cluster — **pending** (missed in the first pass of this
-  plan; added on re-profiling after the concurrent `ea6b4abda` rebase)
-- **Owns**: `autosaveStatus` state, `autosaveSkipFirstRef`,
+### 14. Autosave loop cluster — **done**
+- **Owned**: `autosaveStatus` state, `autosaveSkipFirstRef`,
   `autosaveTimerRef`, `autosaveSavedTimerRef`, `autosaveRetryTimerRef`,
   `autosavePendingFlushRef`, `autosaveLatestRef`, `autosaveLastSavedRef`,
   `mediaProvidersChangeVersionRef`, `lastSyncedMediaProvidersVersionRef`,
-  `autosaveRetryTick` state, the main debounced-save effect (~400 lines with
-  the retry/media-provider-sync branches), and the unmount-flush effect.
-  Anchor: search `autosaveStatus` (currently ~lines 1461-1650).
-- **Coupling**: reads `cfg`, `onPersist`, `isAutosaveDraftOnlyChange` (already
-  imported from `../App`), and `lastSavedAppearanceRef` (owned by the
-  appearance-revert effect right above it, ~lines 373-419 — small, could move
-  together or stay a shared ref passed as a hook param).
-- **Target shape**: `hooks/useAutosave.hooks.ts` — no new transport (calls
-  `onPersist` which is already an injected prop, not a `providers/` import,
-  so this hook likely needs no port at all, or a trivial
-  `scheduleTimeout`/`clearTimeout` DOM-timer port mirroring the pattern
-  already used by `OrbitPort.scheduleTimeout` if `window.setTimeout` needs to
-  move out of `features/**`).
-- **Risk**: medium (long effect, but single-owner and not shared by other
-  BYOK clusters — safe to do independently of clusters 2-5).
-- **Status**: pending.
+  `autosaveRetryTick` state, the main debounced-save effect, and the
+  unmount-flush effect.
+- **Coupling**: took `cfg`, `onPersist`, `isAutosaveDraftOnlyChange` (still
+  imported from `../App` by the orchestrator, injected into the hook as a
+  param rather than imported inside the slice — keeps the slice app-root-
+  free) and `lastSavedAppearanceRef` (owned by the appearance-revert effect
+  right above it) as hook params, exactly as anticipated. The one coupling
+  this entry's original write-up missed: `pendingMediaProviderEditIds`'s
+  *setter* (state itself stays orchestrator-owned, since the Media Providers
+  section's JSX also reads it directly) and `mediaProvidersChangeVersionRef`
+  (fully absorbed into the hook, previously incremented by an inline
+  `MediaProvidersSection onChange` closure ~2046). Resolved by exposing a
+  `recordMediaProviderEdit(providerId)` action on the controller that the
+  orchestrator's `<MediaProvidersSection onChange={recordMediaProviderEdit}>`
+  now calls directly (its signature already matched 1:1) instead of owning
+  the version-bump + pending-set-update inline.
+- **Landed shape**: `AutosavePort` (`ports.ts`) — a single generic
+  `scheduleTimeout(onTimeout, delayMs)` (mirrors `OrbitPort.scheduleTimeout`)
+  reused for all three of the loop's timers (debounce/saved-flash/retry),
+  since they're functionally identical; bound in `dependencies.ts` via
+  `providers/autosave.ts`'s `scheduleAutosaveTimeout` (verbatim copy of
+  `scheduleOrbitTimeout`'s SSR-guarded shape). `hooks/useAutosave.hooks.ts`
+  owns the state/refs/effects exactly as before extraction, translating
+  `window.setTimeout`/`clearTimeout` + numeric-handle refs into
+  `port.scheduleTimeout`'s returned cancel-closure + refs typed
+  `(() => void) | null`. The `AutosaveController` exposes
+  `autosaveLastSavedRef` directly (not just a read) because the
+  `initial`-prop AMR-reconciliation effect (declared *before* this hook in
+  the render, since it needs the ref to already exist) mutates
+  `.current` fields directly — mirrors how `useByokModelDiscovery` exposes
+  raw state setters for `setByokProvider` to write through. The
+  orchestrator's `useWiredAutosave(...)` call site had to move earlier than
+  the block's original declaration point (right after
+  `lastSavedAppearanceRef`'s own `useRef`, before the AMR-reconciliation
+  effect) — safe because nothing before that point reads the controller,
+  same "hook call site moves earlier/later in the render" pattern already
+  used by clusters 3/4's siblings. `AutosaveStatus` (previously an inline
+  union literal) moved to `types.ts`.
+- **Risk**: medium, realized close to expected — the only surprise was the
+  `pendingMediaProviderEditIds`-setter/`mediaProvidersChangeVersionRef`
+  coupling to the still-far-below Media Providers JSX, not flagged in the
+  original write-up above (found by grepping every read site of the refs
+  being moved, not just the effect block itself — worth doing that grep
+  before every future cluster's extraction, not just this one).
+- **Status**: **done**. `pnpm --filter @open-design/web typecheck`; the new
+  `useAutosave.hooks.ts` unit tests (7 tests against a hand-written fake
+  `AutosavePort`) plus the full `tests/features/settings` suite (293 tests
+  across 29 files); the existing `SettingsDialog.orbit/.media/.execution
+  .test.tsx` suites (155 tests) all green; `pnpm guard` prints the
+  boundary-check-passed line. `SettingsDialog.tsx` went from 2163 → 2012
+  lines.
 
 ### 13. `SettingsConfigProvider` cross-cutting context — **pending, deferred**
 - The ADR (`docs/adr/0002-frontend-vertical-slice-decomposition.md:28`)
