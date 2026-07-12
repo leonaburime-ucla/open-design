@@ -153,6 +153,16 @@ export interface DaemonAgentPort {
   formatVelaBalanceUsd: (raw?: string | null) => string | null;
 }
 
+/** Timer bridge the autosave loop depends on. It owns no data transport of
+ *  its own — persistence goes through the caller-injected `onPersist` — only
+ *  the debounced-save / "Saved" flash / media-provider-sync-retry timers. */
+export interface AutosavePort {
+  /** Run `onTimeout` once after `delayMs`. Returns cancel. Reused for all
+   *  three of the loop's timers (debounce, saved-flash, retry) — they are
+   *  functionally identical, mirroring `OrbitPort.scheduleTimeout`. */
+  scheduleTimeout: (onTimeout: () => void, delayMs: number) => () => void;
+}
+
 /** Transport the Project Locations section depends on. */
 export interface ProjectLocationsPort {
   /** `GET /api/project-locations`. Resolves `[]` on failure — see the provider. */

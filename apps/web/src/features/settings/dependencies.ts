@@ -10,6 +10,7 @@ import {
   subscribeWindowFocus,
 } from '../../providers/orbit';
 import { fetchConnectors, fetchDesignTemplates, openExternalUrl } from '../../providers/registry';
+import { scheduleAutosaveTimeout } from '../../providers/autosave';
 import { scheduleMediaProvidersReloadNoticeTimeout } from '../../providers/media-providers';
 import { scheduleByokFieldFocusTimeout } from '../../providers/byok-focus';
 import {
@@ -40,6 +41,7 @@ import {
 import type {
   AboutPort,
   AmrAccountPort,
+  AutosavePort,
   ByokConnectionTestPort,
   ByokFieldFocusPort,
   ByokModelDiscoveryPort,
@@ -120,6 +122,12 @@ export const daemonAgentPort: DaemonAgentPort = {
   subscribeInstallReturn: subscribeAgentInstallReturn,
   canUpgradeVelaPlan,
   formatVelaBalanceUsd,
+};
+
+/** Default binding: the autosave loop's debounced-save/saved-flash/retry
+ *  timer bridge. */
+export const autosavePort: AutosavePort = {
+  scheduleTimeout: scheduleAutosaveTimeout,
 };
 
 /** Default binding: the Project Locations section's fetch/update/scan/

@@ -250,6 +250,17 @@ export type {
   ByokModelDiscoveryInput,
 } from './hooks/useByokModelDiscovery.hooks';
 
+// Autosave loop: the debounced localStorage/daemon sync every committed
+// `cfg` edit schedules, the footer status indicator's state machine, the
+// media-provider force-sync retry loop, and the unmount flush. Reaches the
+// browser only through the injected `AutosavePort`'s timer bridge;
+// `isAutosaveDraftOnlyChange` (shared with the broader `App.tsx` persist
+// flow) and the live-appearance-preview revert ref are taken as hook params
+// rather than imported, so this slice stays app-root-free.
+export type { AutosaveStatus } from './types';
+export { useWiredAutosave } from './hooks/useAutosave.hooks';
+export type { AutosaveController, AutosaveInput } from './hooks/useAutosave.hooks';
+
 // Project Locations section: the built-in default location card, the
 // editable list of external project folders, and the add-folder/remove/
 // default-selection controls. Transport (fetch/update/scan/open-folder-

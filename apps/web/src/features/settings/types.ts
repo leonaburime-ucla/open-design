@@ -331,3 +331,8 @@ export interface DraftLocation {
   id?: string;
   path: string;
 }
+
+/** The autosave loop's footer status indicator: `'idle'` = no draft to
+ *  flush, `'pending'` = scheduled, `'saving'` = request in flight, `'saved'`
+ *  = recent successful sync, `'error'` = recent failure. */
+export type AutosaveStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'error';

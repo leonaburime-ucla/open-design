@@ -119,6 +119,7 @@ import {
   useAmrHighlight,
   useWiredAbout,
   useWiredAmrAccount,
+  useWiredAutosave,
   useWiredByokConnectionTest,
   useWiredByokFieldFocus,
   useWiredByokModelDiscovery,
@@ -340,6 +341,19 @@ export function SettingsDialog({
   const lastSavedAppearanceRef = useRef({
     theme: initial.theme ?? 'system',
     accentColor: resolveAccentColor(initial.accentColor),
+  });
+
+  // Autosave loop — moved to the settings slice's `useWiredAutosave` hook.
+  // Called this early (before the `initial`-prop AMR-reconciliation effect
+  // right below) because that effect writes through the hook's exposed
+  // `autosaveLastSavedRef`. Its transport reaches only the injected
+  // `AutosavePort`'s timer bridge (ADR 0002).
+  const { autosaveStatus, autosaveLastSavedRef, recordMediaProviderEdit } = useWiredAutosave({
+    cfg,
+    onPersist,
+    isAutosaveDraftOnlyChange,
+    lastSavedAppearanceRef,
+    setPendingMediaProviderEditIds,
   });
 
   // settings_view — fire on dialog open and on every section switch so the
@@ -704,163 +718,6 @@ export function SettingsDialog({
   );
   const baseUrlValid = isValidApiBaseUrl(cfg.baseUrl);
   const baseUrlInvalid = Boolean(cfg.baseUrl.trim() && !baseUrlValid);
-  // Autosave loop. Every committed edit to `cfg` schedules a debounced
-  // sync to localStorage + the daemon. We keep a 400ms debounce so rapid
-  // typing in text fields doesn't flood the daemon with PUTs while still
-  // feeling near-instant for toggles/selects (which fire once and settle).
-  // The Composio API key field is intentionally excluded from this loop —
-  // see ConnectorSection for the explicit "Save key" gesture.
-  // The status here drives the footer indicator: 'idle' = no draft to
-  // flush, 'pending' = scheduled, 'saving' = request in flight, 'saved'
-  // = recent successful sync, 'error' = recent failure.
-  const [autosaveStatus, setAutosaveStatus] =
-    useState<'idle' | 'pending' | 'saving' | 'saved' | 'error'>('idle');
-  // Skip the very first effect tick so just opening the dialog doesn't
-  // appear to "save" anything before the user has touched a field.
-  const autosaveSkipFirstRef = useRef(true);
-  const autosaveTimerRef = useRef<number | null>(null);
-  const autosaveSavedTimerRef = useRef<number | null>(null);
-  const autosaveRetryTimerRef = useRef<number | null>(null);
-  const autosavePendingFlushRef = useRef(false);
-  const autosaveLatestRef = useRef<AppConfig>(cfg);
-  // Baseline used by the draft-only detector: the snapshot at the most
-  // recent successful autosave (or the initial cfg on mount). Compared
-  // against the current snapshot to decide whether the only edits
-  // since last save are intentionally-stripped fields like the
-  // Composio API key — in which case we must NOT flash "All changes
-  // saved", because the draft has not actually been persisted.
-  const autosaveLastSavedRef = useRef<AppConfig>(cfg);
-  const mediaProvidersChangeVersionRef = useRef(0);
-  const lastSyncedMediaProvidersVersionRef = useRef(0);
-  const [autosaveRetryTick, setAutosaveRetryTick] = useState(0);
-  autosaveLatestRef.current = cfg;
-  useEffect(() => {
-    if (autosaveSkipFirstRef.current) {
-      autosaveSkipFirstRef.current = false;
-      autosaveLastSavedRef.current = cfg;
-      return;
-    }
-    setAutosaveStatus('pending');
-    if (autosaveSavedTimerRef.current != null) {
-      window.clearTimeout(autosaveSavedTimerRef.current);
-      autosaveSavedTimerRef.current = null;
-    }
-    if (autosaveRetryTimerRef.current != null) {
-      window.clearTimeout(autosaveRetryTimerRef.current);
-      autosaveRetryTimerRef.current = null;
-    }
-    if (autosaveTimerRef.current != null) {
-      window.clearTimeout(autosaveTimerRef.current);
-    }
-    autosavePendingFlushRef.current = true;
-    autosaveTimerRef.current = window.setTimeout(() => {
-      autosavePendingFlushRef.current = false;
-      autosaveTimerRef.current = null;
-      const snapshot = autosaveLatestRef.current;
-      const mediaProvidersVersion = mediaProvidersChangeVersionRef.current;
-      const persistOptions = {
-        forceMediaProviderSync: mediaProvidersVersion > lastSyncedMediaProvidersVersionRef.current,
-      };
-      // Draft-only edit (e.g. the user is mid-typing the Composio API
-      // key, which only commits via the explicit "Save key" gesture):
-      // the persisted shape would be identical to what is already on
-      // disk, so a save would be a no-op that mis-reports "Saved" and
-      // makes users trust that a sensitive key was persisted when it
-      // was not. Skip the persist and settle the indicator to idle.
-      // The forced media-provider sync path still runs because that
-      // is a real outbound effect even when the persisted shape
-      // hasn't changed.
-      if (
-        !persistOptions.forceMediaProviderSync
-        && isAutosaveDraftOnlyChange(snapshot, autosaveLastSavedRef.current)
-      ) {
-        setAutosaveStatus('idle');
-        return;
-      }
-      setAutosaveStatus('saving');
-      void (async () => {
-        try {
-          await onPersist(snapshot, persistOptions);
-          autosaveLastSavedRef.current = snapshot;
-          lastSavedAppearanceRef.current = {
-            theme: snapshot.theme ?? 'system',
-            accentColor: resolveAccentColor(snapshot.accentColor),
-          };
-          // If a newer edit landed while the request was in flight,
-          // leave the status as 'pending' so the next debounce tick
-          // owns the indicator instead of flashing "Saved".
-          if (autosaveLatestRef.current !== snapshot) {
-            setAutosaveStatus('pending');
-            return;
-          }
-          if (persistOptions.forceMediaProviderSync) {
-            lastSyncedMediaProvidersVersionRef.current = mediaProvidersVersion;
-            setPendingMediaProviderEditIds(new Set());
-          }
-          setAutosaveStatus('saved');
-          autosaveSavedTimerRef.current = window.setTimeout(() => {
-            autosaveSavedTimerRef.current = null;
-            // Settle to idle after a moment so the indicator doesn't
-            // stay on "Saved" forever and become noise.
-            setAutosaveStatus((curr) => (curr === 'saved' ? 'idle' : curr));
-          }, 1800);
-        } catch {
-          if (
-            persistOptions.forceMediaProviderSync
-            && autosaveLatestRef.current === snapshot
-            && mediaProvidersChangeVersionRef.current === mediaProvidersVersion
-            && lastSyncedMediaProvidersVersionRef.current < mediaProvidersVersion
-          ) {
-            setAutosaveStatus('pending');
-            autosaveRetryTimerRef.current = window.setTimeout(() => {
-              autosaveRetryTimerRef.current = null;
-              if (
-                autosaveLatestRef.current !== snapshot
-                || mediaProvidersChangeVersionRef.current !== mediaProvidersVersion
-                || lastSyncedMediaProvidersVersionRef.current >= mediaProvidersVersion
-              ) {
-                return;
-              }
-              setAutosaveRetryTick((tick) => tick + 1);
-            }, 1500);
-            return;
-          }
-          setAutosaveStatus('error');
-        }
-      })();
-    }, 400);
-    return () => {
-      if (autosaveTimerRef.current != null) {
-        window.clearTimeout(autosaveTimerRef.current);
-        autosaveTimerRef.current = null;
-      }
-    };
-  }, [cfg, onPersist, autosaveRetryTick]);
-  // Flush any pending autosave on unmount so a fast-closing dialog
-  // never strands an in-flight edit. We also clear the "Saved" toast
-  // timer to avoid setState after unmount.
-  useEffect(() => {
-    return () => {
-      if (autosavePendingFlushRef.current) {
-        const mediaProvidersVersion = mediaProvidersChangeVersionRef.current;
-        // Best-effort flush; if it rejects, localStorage already has
-        // the latest copy from the synchronous saveConfig call inside
-        // onPersist.
-        autosavePendingFlushRef.current = false;
-        void Promise.resolve(onPersist(autosaveLatestRef.current, {
-          forceMediaProviderSync: mediaProvidersVersion > lastSyncedMediaProvidersVersionRef.current,
-        })).catch(() => undefined);
-      }
-      if (autosaveSavedTimerRef.current != null) {
-        window.clearTimeout(autosaveSavedTimerRef.current);
-        autosaveSavedTimerRef.current = null;
-      }
-      if (autosaveRetryTimerRef.current != null) {
-        window.clearTimeout(autosaveRetryTimerRef.current);
-        autosaveRetryTimerRef.current = null;
-      }
-    };
-  }, [onPersist]);
 
   // Global Escape closes the dialog. With no footer button anymore the
   // close affordances are: top-right X · backdrop click · Escape.
@@ -2042,15 +1899,7 @@ export function SettingsDialog({
               mediaProvidersNotice={mediaProvidersNotice}
               onReloadMediaProviders={onReloadMediaProviders}
               pendingLocalProviderIds={pendingMediaProviderEditIds}
-              onChange={(providerId) => {
-                mediaProvidersChangeVersionRef.current += 1;
-                setPendingMediaProviderEditIds((current) => {
-                  if (current.has(providerId)) return current;
-                  const next = new Set(current);
-                  next.add(providerId);
-                  return next;
-                });
-              }}
+              onChange={recordMediaProviderEdit}
             />
           ) : null}
           {activeSection === 'integrations' ? <IntegrationsSection /> : null}
