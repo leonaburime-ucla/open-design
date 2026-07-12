@@ -22,6 +22,7 @@ import {
   loadedSketchStateFromDocument,
   maxBrowserTabSequence,
   mergeSketchSaveOptions,
+  nonceRequestForFile,
   orderWorkspaceTabs,
   parentDirForProjectFile,
   reanchorBrowserTabsToCurrentOrder,
@@ -579,5 +580,20 @@ describe('fileTabRenderInfo', () => {
 
     const untitled = fileTabRenderInfo('chat:conv-2', {}, [], [], [], conversations, (key) => key);
     expect(untitled.label).toBe('workspace.sideChatDefaultTitle');
+  });
+});
+
+describe('nonceRequestForFile', () => {
+  it('returns null when there is no request', () => {
+    expect(nonceRequestForFile(null, 'a.md')).toBeNull();
+    expect(nonceRequestForFile(undefined, 'a.md')).toBeNull();
+  });
+
+  it('returns null when the request targets a different file', () => {
+    expect(nonceRequestForFile({ name: 'b.md', nonce: 1 }, 'a.md')).toBeNull();
+  });
+
+  it('scopes the request to just its nonce when it matches the active file', () => {
+    expect(nonceRequestForFile({ name: 'a.md', nonce: 3 }, 'a.md')).toEqual({ nonce: 3 });
   });
 });

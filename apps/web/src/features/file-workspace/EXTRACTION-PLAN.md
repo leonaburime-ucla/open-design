@@ -504,3 +504,56 @@ parallelizable per SKILL.md Phase 1 step 5 if a future pass has budget for
 worktree-isolated subagents. Cluster 5 also does not share state with 2 or
 4 directly. Cluster 3 must NOT be parallelized with anything — it is the
 integration point for all of them.
+
+## Phase 8.5 audit — two independent passes (DONE)
+
+Per AGENTS.md's completion instructions, a "zero standalone functions" grep
+is a symptom check, not the audit — two independent passes were run against
+the orchestrator, each fully fresh (no shared context with the other or with
+the extraction work itself).
+
+**Pass 1** (against the file right after cluster 3 + cluster 6 landed, at
+1413 lines) found and fixed 4 things, each its own commit:
+1. Two `useMemo` bodies (`activeFile`, `activeLiveArtifact`) had real
+   branching logic a plain grep can't see (`useMemo` isn't a `function`
+   declaration) — extracted to `rules.ts` as `activeFileForTab`/
+   `activeLiveArtifactForTab`. 1413 → 1390 lines.
+2. ~45 unused imports accumulated silently across MANY prior extraction
+   passes (this repo's tsconfig doesn't enable `noUnusedLocals`, so normal
+   `tsc -b --noEmit` never caught them) — pruned via
+   `npx tsc --noEmit --noUnusedLocals --noUnusedParameters`. Two dead
+   hook-return destructures (`activeWorkspaceContext`, `activateWorkspaceTab`
+   — both fully owned by their hooks now, no orchestrator call site) and two
+   stale inline comments referencing outdated extraction states, same commit.
+   1390 → 1340 lines.
+3. The `orderedWorkspaceTabs.map()` JSX body computed each tab's
+   label/kind/dirtyMark/iconNameOverride inline with real branching
+   (terminal ordinal numbering, side-chat title lookup) — this is Phase
+   8.5's item-1 blind spot exactly (nested in JSX, not top-level). Extracted
+   to `rules.ts` as `browserTabRenderInfo`/`fileTabRenderInfo`. 1340 → 1316
+   lines.
+
+**Pass 2** (fresh subagent, no memory of pass 1's reasoning, against the
+1316-line post-fix file) independently re-verified all of pass 1's fixes
+(re-ran the `noUnusedLocals` check, diffed the map-body extraction, grepped
+for the two removed destructures, re-enumerated every remaining
+`useState`/`useRef`/`useMemo`/`useEffect`) and found 2 more:
+1. Nine inline JSX handlers passed to `DesignFilesPanel`
+   (`onOpenFile`/`onDeleteFile`/`onUpload`/etc.) each track a
+   `trackFileManagerClick` analytics event then delegate to an
+   already-extracted handler. **Judged compliant, not fixed**: this is the
+   established "track then delegate" pattern used throughout this file
+   (also present in `DesignFilesPanel.tsx` itself), and Phase 8's own
+   completion bar explicitly names "cross-cutting concerns (analytics)" as
+   allowed to stay in the orchestrator. A shared `trackedClick(...)` helper
+   would have to span both `FileWorkspace.tsx` and `DesignFilesPanel.tsx` —
+   out of scope for a FileWorkspace-only decomposition and not requested.
+2. `shareRequest`/`downloadRequest` passed to `FileViewer` via two
+   near-identical 5-line ternaries (`x && x.name === activeFile.name ?
+   { nonce: x.nonce } : null`) — pure, duplicated derivation, a clean
+   Phase-8-step-1 candidate. Extracted to `rules.ts` as
+   `nonceRequestForFile`. 1316 → 1309 lines.
+
+Both passes are considered complete: pass 2 found nothing pass 1 missed
+beyond the two items above, both of which are now resolved (one fixed, one
+consciously judged compliant with a documented rationale).

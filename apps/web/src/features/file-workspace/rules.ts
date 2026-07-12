@@ -365,6 +365,16 @@ export function fileTabRenderInfo(
   return { label, iconNameOverride, kind, liveArtifact, isPending };
 }
 
+// Scopes a named, nonce-bumped file request (shareRequest/downloadRequest)
+// down to just its nonce, but only when it targets the currently active
+// file — the consuming FileViewer only acts on a request addressed to it.
+export function nonceRequestForFile(
+  request: { name: string; nonce: number } | null | undefined,
+  activeFileName: string,
+): { nonce: number } | null {
+  return request && request.name === activeFileName ? { nonce: request.nonce } : null;
+}
+
 // --- Design-system project: pure section/status/manifest/color/todo helpers ---
 // Moved out of components/FileWorkspace.tsx (DesignSystemProjectPanel's module-
 // scope helpers) as part of the ADR-0002 vertical-slice decomposition.

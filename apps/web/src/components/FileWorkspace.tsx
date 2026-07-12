@@ -70,6 +70,7 @@ import {
   isBrowserTabId,
   isLiveArtifactImplementationPath,
   isSketchName,
+  nonceRequestForFile,
   QUESTIONS_TAB,
   scrollWorkspaceTabsWithWheel,
   Tab,
@@ -1242,16 +1243,8 @@ export function FileWorkspace({
             onOpenFileReplacing={openFileReplacing}
             commentPortalId={commentPortalId}
             onCommentModeChange={onCommentModeChange}
-            shareRequest={
-              shareRequest && shareRequest.name === activeFile.name
-                ? { nonce: shareRequest.nonce }
-                : null
-            }
-            downloadRequest={
-              downloadRequest && downloadRequest.name === activeFile.name
-                ? { nonce: downloadRequest.nonce }
-                : null
-            }
+            shareRequest={nonceRequestForFile(shareRequest, activeFile.name)}
+            downloadRequest={nonceRequestForFile(downloadRequest, activeFile.name)}
             slideNavRequest={deliverableSlideNavForActiveFile(
               slideNavRequest,
               activeFile.name,
