@@ -37,7 +37,7 @@ without churning code paths.
   last." A stray late panelist event from round 1 must NOT corrupt
   round 2's bucket. See `withRound` in the web reducer for the parallel.
 - **No `apps/daemon/src/agents/registry.ts`.** The plan refers to that
-  path historically; the actual adapter registry is `runtimes/registry.ts`
+  path historically; the actual adapter registry is `runtimes/registry/registry.ts`
   in this repo. Phase 10 routing extensions land here in
   `adapter-degraded.ts` instead.
 - **Designer weight is frozen at 0.0 until v2 cast config lands.**

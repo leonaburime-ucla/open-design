@@ -110,7 +110,7 @@ When adding a user-facing capability, close the loop in one change: contract typ
 - Parser changes belong beside the matching runtime stream helper and should include focused parser tests.
 - Runtime definition changes belong in `src/runtimes/defs/`.
 - For agent-stream/parser changes, replay a mock CLI trace from `mocks/` when practical instead of burning provider budget.
-- Preserve Claude stream-json bookkeeping in `src/runtimes/claude-stream.ts` and `src/server.ts`; do not close stdin on `tool_use` stop reasons.
+- Preserve Claude stream-json bookkeeping in `src/runtimes/stream/claude-stream.ts` and `src/server.ts`; do not close stdin on `tool_use` stop reasons.
 
 ## Tests
 

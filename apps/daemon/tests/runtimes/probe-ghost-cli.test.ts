@@ -1,7 +1,7 @@
 /**
  * Regression coverage for issue #658: Open Design kept advertising
  * `Codex CLI` in Settings > Local CLI after the user had uninstalled
- * the binary. The probe in `apps/daemon/src/runtimes/detection.ts`
+ * the binary. The probe in `apps/daemon/src/runtimes/detection/detection.ts`
  * swallowed every `--version` failure and returned `available: true`
  * anyway, so a leftover wrapper shim made Settings think the CLI was
  * alive when its underlying interpreter was gone.

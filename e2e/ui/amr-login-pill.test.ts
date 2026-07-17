@@ -52,7 +52,7 @@ async function wireDaemonMocks(page: Page, state: VelaMockState) {
   });
 
   // Only AMR present — keeps the card layout deterministic regardless
-  // of whatever else `runtimes/registry.ts` later adds.
+  // of whatever else `runtimes/registry/registry.ts` later adds.
   await routeAgents(page, [
     {
       id: 'amr',

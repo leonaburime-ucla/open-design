@@ -6283,7 +6283,7 @@ export async function startServer({
     };
     // Tear the failed attempt down now (moving the run to `queued`), then wait
     // out the policy's backoff before re-spawning. Stays cancel-aware: a cancel
-    // or shutdown during the backoff window clears the timer (runtimes/runs.ts)
+    // or shutdown during the backoff window clears the timer (runtimes/runs/runs.ts)
     // and finalizes the queued run, and the callback re-checks cancel/terminal
     // state in case it fires first.
     const scheduleRetryRestart = (delayMs) => {
