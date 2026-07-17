@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { DEFAULT_MODEL_OPTION, execAgentFile, parsePiModels } from './shared.js';
-import type { RuntimeAgentDef } from '../types.js';
+import type { RuntimeAgentDef } from '../core/index.js';
 
 export const piAgentDef = {
     id: 'pi',

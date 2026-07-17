@@ -1,16 +1,16 @@
-import { execAgentFile } from './invocation.js';
-import { AGENT_DEFS } from './registry.js';
 import {
+  execAgentFile,
   DEFAULT_MODEL_OPTION,
   getRememberedLiveModels,
   rememberLiveModels,
-} from './models.js';
-import { applyAgentLaunchEnv, resolveAgentLaunch } from './launch.js';
-import { spawnEnvForAgent } from './env.js';
-import { probeAgentAuthStatus } from './auth.js';
-import { agentCapabilities } from './capabilities.js';
-import { installMetaForAgent } from './metadata.js';
-import { resolveAmrProfile } from '../integrations/vela.js';
+  agentCapabilities,
+  installMetaForAgent,
+} from '../core/index.js';
+import { AGENT_DEFS } from '../registry/index.js';
+import { applyAgentLaunchEnv, resolveAgentLaunch } from '../launch/index.js';
+import { spawnEnvForAgent } from '../env/index.js';
+import { probeAgentAuthStatus } from '../auth/index.js';
+import { resolveAmrProfile } from '../../integrations/vela.js';
 import {
   buildAuthDiagnostic,
   buildExecutableDiagnostic,
@@ -24,7 +24,7 @@ import type {
   RuntimeCapabilityMap,
   RuntimeModelSource,
   RuntimeModelOption,
-} from './types.js';
+} from '../core/index.js';
 
 type FetchedRuntimeModels = {
   models: RuntimeModelOption[];

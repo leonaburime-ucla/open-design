@@ -1,5 +1,5 @@
-import { execAgentFile } from './invocation.js';
-import type { RuntimeAgentDef, RuntimeEnv } from './types.js';
+import { execAgentFile } from '../core/index.js';
+import type { RuntimeAgentDef, RuntimeEnv } from '../core/index.js';
 
 export type AgentAuthProbeResult = {
   status: 'ok' | 'missing' | 'unknown';

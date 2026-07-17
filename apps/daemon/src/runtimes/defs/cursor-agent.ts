@@ -1,7 +1,7 @@
 import { DEFAULT_MODEL_OPTION } from './shared.js';
-import { agentCapabilities } from '../capabilities.js';
-import type { RuntimeAgentDef } from '../types.js';
-import type { RuntimeModelOption } from '../types.js';
+import { agentCapabilities } from '../core/index.js';
+import type { RuntimeAgentDef } from '../core/index.js';
+import type { RuntimeModelOption } from '../core/index.js';
 
 export function parseCursorAgentModels(stdout: string): RuntimeModelOption[] | null {
   const lines = String(stdout || '')

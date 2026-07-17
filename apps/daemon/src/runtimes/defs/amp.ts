@@ -1,5 +1,5 @@
 import { DEFAULT_MODEL_OPTION } from './shared.js';
-import type { RuntimeAgentDef } from '../types.js';
+import type { RuntimeAgentDef } from '../core/index.js';
 
 // Amp CLI (https://ampcode.com) is a full agentic coding CLI, argv-shaped
 // much like Claude Code: it has a headless execute mode and emits a

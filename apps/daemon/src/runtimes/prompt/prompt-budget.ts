@@ -1,4 +1,4 @@
-import type { RuntimeAgentDef, RuntimePromptBudgetError } from './types.js';
+import type { RuntimeAgentDef, RuntimePromptBudgetError } from '../core/index.js';
 
 function promptArgvBudgetMessage(
   def: RuntimeAgentDef,

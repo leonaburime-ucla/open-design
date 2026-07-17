@@ -1,6 +1,6 @@
-import { agentCapabilities } from '../capabilities.js';
+import { agentCapabilities } from '../core/index.js';
 import { DEFAULT_MODEL_OPTION } from './shared.js';
-import type { RuntimeAgentDef } from '../types.js';
+import type { RuntimeAgentDef } from '../core/index.js';
 
 // Codebuddy Code (https://www.codebuddy.cn) — a Claude Code–compatible CLI
 // that ships as `codebuddy` (short alias: `cbc`). The argument surface is a

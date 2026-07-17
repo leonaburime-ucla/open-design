@@ -3,18 +3,17 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { mergeProxyAwareEnv, resolveSystemProxyEnv } from '@open-design/platform';
-import { readAppConfigSync } from '../app-config.js';
-import { resolveProjectRelativePath } from '../home-expansion.js';
-import { expandConfiguredEnv } from './paths.js';
-import { resolveAmrOpenCodeExecutable } from './executables.js';
-import { amrVelaProfileEnv } from '../integrations/vela-profile.js';
-import { resolveProjectRootFromNestedModule } from '../project-root.js';
+import { readAppConfigSync } from '../../app-config.js';
+import { resolveProjectRelativePath } from '../../home-expansion.js';
+import { expandConfiguredEnv, resolveAmrOpenCodeExecutable } from '../core/index.js';
+import { amrVelaProfileEnv } from '../../integrations/vela-profile.js';
+import { resolveProjectRootFromNestedModule } from '../../project-root.js';
 import {
   applySandboxRuntimeEnv,
   isSandboxModeEnabled,
   resolveSandboxRuntimeConfig,
   type SandboxRuntimeConfig,
-} from '../sandbox-mode.js';
+} from '../../sandbox-mode.js';
 
 type RuntimeEnvMap = NodeJS.ProcessEnv | Record<string, string>;
 type SpawnEnvOptions = {

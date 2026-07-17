@@ -1,7 +1,7 @@
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import type { RuntimeAgentDef } from './types.js';
+import type { RuntimeAgentDef } from '../core/index.js';
 
 export type PreparedPromptFile = {
   path: string;

@@ -1,7 +1,7 @@
 import os from 'node:os';
 import path from 'node:path';
 import { detectAcpModels, DEFAULT_MODEL_OPTION } from './shared.js';
-import type { RuntimeAgentDef } from '../types.js';
+import type { RuntimeAgentDef } from '../core/index.js';
 
 // Design instructions injected into Reasonix's ACP system prompt via
 // REASONIX_ACP_SYSTEM_APPEND. This ensures the model follows Open Design's

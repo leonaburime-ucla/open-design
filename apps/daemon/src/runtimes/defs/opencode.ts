@@ -1,6 +1,6 @@
 import { DEFAULT_MODEL_OPTION, parseLineSeparatedModels } from './shared.js';
-import { agentCapabilities } from '../capabilities.js';
-import type { RuntimeAgentDef } from '../types.js';
+import { agentCapabilities } from '../core/index.js';
+import type { RuntimeAgentDef } from '../core/index.js';
 
 const SKIP_PERMISSIONS_FLAG = '--dangerously-skip-permissions';
 

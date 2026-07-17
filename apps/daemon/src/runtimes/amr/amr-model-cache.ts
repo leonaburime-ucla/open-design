@@ -1,5 +1,5 @@
 import type { AmrModelsResponse } from '@open-design/contracts';
-import type { RuntimeModelOption } from './types.js';
+import type { RuntimeModelOption } from '../core/index.js';
 
 type RemoteCacheEntry = {
   models: RuntimeModelOption[];

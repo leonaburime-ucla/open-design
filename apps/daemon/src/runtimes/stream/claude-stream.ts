@@ -19,7 +19,7 @@
  * `tool_use` event when that block stops.
  */
 
-import { createRoleMarkerGuard, type RoleMarkerGuard } from '../role-marker-guard.js';
+import { createRoleMarkerGuard, type RoleMarkerGuard } from '../../role-marker-guard.js';
 
 type StreamEvent = Record<string, unknown>;
 type EventSink = (event: StreamEvent) => void;

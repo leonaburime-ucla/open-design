@@ -1,11 +1,8 @@
-import {
-  applyAgentLaunchEnv,
-  getAgentDef,
-  resolveAgentLaunch,
-  spawnEnvForAgent,
-} from '../agents.js';
-import { agentCliEnvForAgent, type readAppConfig } from '../app-config.js';
-import { readVelaCredentialRevision } from '../integrations/vela.js';
+import { applyAgentLaunchEnv, resolveAgentLaunch } from '../launch/index.js';
+import { getAgentDef } from '../registry/index.js';
+import { spawnEnvForAgent } from '../env/index.js';
+import { agentCliEnvForAgent, type readAppConfig } from '../../app-config.js';
+import { readVelaCredentialRevision } from '../../integrations/vela.js';
 
 export interface ResolveAmrModelProbeDeps {
   dataDir: string;

@@ -5,8 +5,8 @@ import {
   renderCodexImagegenOverride,
   resolveCodexImagegenModelId,
   shouldRenderCodexImagegenOverride,
-} from '../prompts/system.js';
-import { renderResearchCommandContract } from '../prompts/research-contract.js';
+} from '../../prompts/system.js';
+import { renderResearchCommandContract } from '../../prompts/research-contract.js';
 
 export const MAX_CHAT_IMAGE_BYTES = 1024 * 1024;
 export const UPLOAD_DIR = path.join(os.tmpdir(), 'od-uploads');

@@ -1,7 +1,7 @@
-import { agentBinEnvKey, agentSearchDirs } from './executables.js';
-import type { AgentLaunchResolution } from './launch.js';
-import type { AgentAuthProbeResult } from './auth.js';
-import type { AgentDiagnostic, RuntimeAgentDef } from './types.js';
+import { agentBinEnvKey, agentSearchDirs } from '../core/index.js';
+import type { AgentLaunchResolution } from '../launch/index.js';
+import type { AgentAuthProbeResult } from '../auth/index.js';
+import type { AgentDiagnostic, RuntimeAgentDef } from '../core/index.js';
 import type { AgentFixIntent } from '@open-design/contracts';
 
 // Cap on how many searched dirs we attach to a `not-on-path` diagnostic.

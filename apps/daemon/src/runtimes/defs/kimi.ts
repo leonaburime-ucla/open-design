@@ -1,5 +1,5 @@
 import { detectAcpModels, DEFAULT_MODEL_OPTION } from './shared.js';
-import type { RuntimeAgentDef } from '../types.js';
+import type { RuntimeAgentDef } from '../core/index.js';
 
 export const kimiAgentDef = {
     id: 'kimi',

@@ -1,6 +1,6 @@
 import { DEFAULT_MODEL_OPTION, clampCodexReasoning } from './shared.js';
-import type { RuntimeModelOption } from '../types.js';
-import type { RuntimeAgentDef } from '../types.js';
+import type { RuntimeModelOption } from '../core/index.js';
+import type { RuntimeAgentDef } from '../core/index.js';
 
 export function parseCodexDebugModels(stdout: string): RuntimeModelOption[] | null {
   let parsed: unknown;

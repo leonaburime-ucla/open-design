@@ -1,7 +1,7 @@
-import { agentCapabilities } from '../capabilities.js';
+import { agentCapabilities } from '../core/index.js';
 import { DEFAULT_MODEL_OPTION } from './shared.js';
-import { loadMmdRouteModels } from '../mmd-routes.js';
-import type { RuntimeAgentDef } from '../types.js';
+import { loadMmdRouteModels } from '../core/index.js';
+import type { RuntimeAgentDef } from '../core/index.js';
 
 const CLAUDE_FALLBACK_MODELS = [
   DEFAULT_MODEL_OPTION,

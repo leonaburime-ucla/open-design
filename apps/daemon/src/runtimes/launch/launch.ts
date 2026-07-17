@@ -1,7 +1,7 @@
 import { accessSync, closeSync, constants, openSync, readdirSync, readSync, realpathSync, statSync } from 'node:fs';
 import path, { delimiter } from 'node:path';
-import { inspectAgentExecutableResolution, userToolchainBinDirs } from './executables.js';
-import type { RuntimeAgentDef } from './types.js';
+import { inspectAgentExecutableResolution, userToolchainBinDirs } from '../core/index.js';
+import type { RuntimeAgentDef } from '../core/index.js';
 
 export type AgentLaunchKind = 'selected' | 'codex-native';
 

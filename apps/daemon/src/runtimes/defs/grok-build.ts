@@ -1,6 +1,6 @@
 import { DEFAULT_MODEL_OPTION } from './shared.js';
-import type { RuntimeModelOption } from '../types.js';
-import type { RuntimeAgentDef } from '../types.js';
+import type { RuntimeModelOption } from '../core/index.js';
+import type { RuntimeAgentDef } from '../core/index.js';
 
 const GROK_MODEL_ID_RE = /^\*?\s*-?\s*(grok-[a-z0-9][a-z0-9._-]*)(?:\s+\(default\))?\s*$/i;
 

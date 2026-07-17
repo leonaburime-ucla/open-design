@@ -7,17 +7,17 @@ import {
   isSandboxModeEnabled,
   resolveSandboxRuntimeConfigFromEnv,
   sandboxAgentProfilesConfigPath,
-} from '../sandbox-mode.js';
-import { DEFAULT_MODEL_OPTION, sanitizeCustomModel } from './models.js';
+} from '../../sandbox-mode.js';
+import { DEFAULT_MODEL_OPTION, sanitizeCustomModel } from '../core/index.js';
 import type {
   RuntimeAgentDef,
   RuntimeBuildOptions,
   RuntimeModelOption,
-} from './types.js';
+} from '../core/index.js';
 
 const RUNTIME_PROJECT_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
-  '../../../..',
+  '../../../../..',
 );
 
 function isInsideDir(parent: string, child: string): boolean {

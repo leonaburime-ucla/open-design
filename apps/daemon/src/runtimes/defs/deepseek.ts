@@ -1,5 +1,5 @@
 import { DEFAULT_MODEL_OPTION } from './shared.js';
-import type { RuntimeAgentDef } from '../types.js';
+import type { RuntimeAgentDef } from '../core/index.js';
 
 export const deepseekAgentDef = {
     id: 'deepseek',

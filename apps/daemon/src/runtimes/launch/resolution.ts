@@ -1,5 +1,5 @@
-import { getAgentDef } from './registry.js';
-import { resolveAgentExecutable } from './executables.js';
+import { getAgentDef } from '../registry/index.js';
+import { resolveAgentExecutable } from '../core/index.js';
 
 // Resolve the absolute path of an agent's binary on the current PATH.
 // Used by the chat handler so spawn() gets the same executable that

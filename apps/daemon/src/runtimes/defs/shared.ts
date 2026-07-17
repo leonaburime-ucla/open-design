@@ -1,8 +1,8 @@
 import { detectAcpModels } from '../../acp.js';
 import { parsePiModels } from '../../pi-rpc.js';
-import { execAgentFile } from '../invocation.js';
-import { DEFAULT_MODEL_OPTION } from '../models.js';
-import type { RuntimeModelOption } from '../types.js';
+import { execAgentFile } from '../core/index.js';
+import { DEFAULT_MODEL_OPTION } from '../core/index.js';
+import type { RuntimeModelOption } from '../core/index.js';
 
 export { detectAcpModels, parsePiModels, execAgentFile, DEFAULT_MODEL_OPTION };
 
