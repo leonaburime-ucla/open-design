@@ -65,6 +65,35 @@ export const CAPABILITY_BARREL_DOMAINS: CapabilityBarrelDomain[] = [
       ['adapter', 'origin'],
     ],
   },
+  {
+    name: 'runtimes',
+    root: 'apps/daemon/src/runtimes',
+    subdirs: [
+      'core',
+      'defs',
+      'auth',
+      'env',
+      'registry',
+      'launch',
+      'detection',
+      'amr',
+      'prompt',
+      'stream',
+      'runs',
+    ],
+    foundation: 'core',
+    allowedEdges: [
+      ['registry', 'defs'],
+      ['launch', 'registry'],
+      ['detection', 'registry'],
+      ['detection', 'launch'],
+      ['detection', 'env'],
+      ['detection', 'auth'],
+      ['amr', 'launch'],
+      ['amr', 'registry'],
+      ['amr', 'env'],
+    ],
+  },
 ];
 
 export type BarrelImportViolation = {
