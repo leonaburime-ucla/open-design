@@ -6,7 +6,7 @@ import { spawn } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createChatRunService } from '../../src/runtimes/runs.js';
+import { createChatRunService } from '../../src/runtimes/runs/runs.js';
 
 describe('chat run service shutdown', () => {
   it('retains structured error details on failed run status bodies', async () => {

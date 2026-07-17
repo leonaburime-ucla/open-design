@@ -1,7 +1,7 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
-import { createQoderStreamHandler } from '../../src/runtimes/qoder-stream.js';
+import { createQoderStreamHandler } from '../../src/runtimes/stream/qoder-stream.js';
 
 type QoderEvent = Record<string, unknown>;
 

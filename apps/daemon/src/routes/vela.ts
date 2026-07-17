@@ -34,12 +34,12 @@ import {
   clearVelaWalletSnapshotCache,
   velaWalletSnapshotReader,
 } from '../integrations/vela-wallet.js';
-import { amrModelLoadingCache } from '../runtimes/amr-model-cache.js';
+import { amrModelLoadingCache } from '../runtimes/index.js';
 import {
   fetchVelaBillingSummary,
   fetchVelaPresetModels,
   fetchVelaRemoteModelsWithRetry,
-} from '../runtimes/defs/amr.js';
+} from '../runtimes/index.js';
 
 const AMR_API_PROXY_PREFIX = '/api/integrations/vela/api-proxy';
 const AMR_API_UPSTREAM_ORIGIN = 'https://amr-api.open-design.ai';

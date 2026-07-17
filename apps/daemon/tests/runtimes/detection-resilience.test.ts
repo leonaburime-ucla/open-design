@@ -7,8 +7,8 @@
 // isolation invariant: one broken adapter must not blank the picker.
 import { afterEach, expect, test, vi } from 'vitest';
 
-vi.mock('../../src/runtimes/launch.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../src/runtimes/launch.js')>();
+vi.mock('../../src/runtimes/launch/launch.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/runtimes/launch/launch.js')>();
   return {
     ...actual,
     resolveAgentLaunch: vi.fn(actual.resolveAgentLaunch),
@@ -16,9 +16,9 @@ vi.mock('../../src/runtimes/launch.js', async (importOriginal) => {
   };
 });
 
-import * as launchModule from '../../src/runtimes/launch.js';
-import { detectAgents } from '../../src/runtimes/detection.js';
-import { AGENT_DEFS } from '../../src/runtimes/registry.js';
+import * as launchModule from '../../src/runtimes/launch/launch.js';
+import { detectAgents } from '../../src/runtimes/detection/detection.js';
+import { AGENT_DEFS } from '../../src/runtimes/registry/registry.js';
 
 const mockedResolveAgentLaunch = vi.mocked(launchModule.resolveAgentLaunch);
 const mockedApplyAgentLaunchEnv = vi.mocked(launchModule.applyAgentLaunchEnv);

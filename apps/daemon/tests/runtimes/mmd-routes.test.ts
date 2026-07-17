@@ -15,7 +15,7 @@ import {
   parseMmdRouteModelIds,
   resolveMmdRouteLaunchEnv,
   resolveMmdRoutesFile,
-} from '../../src/runtimes/mmd-routes.js';
+} from '../../src/runtimes/core/mmd-routes.js';
 
 test('mmd route parser reads route keys without exposing provider secrets', () => {
   const ids = parseMmdRouteModelIds({

@@ -36,17 +36,9 @@ import {
 } from '@open-design/platform';
 import { attachAcpSession } from './acp.js';
 import { attachPiRpcSession } from './pi-rpc.js';
-import { createClaudeStreamHandler } from './runtimes/claude-stream.js';
 import { diagnoseClaudeCliFailure } from './claude-diagnostics.js';
 import { createCopilotStreamHandler } from './copilot-stream.js';
-import { createJsonEventStreamHandler } from './runtimes/json-event-stream.js';
 import { agentCliEnvForAgent, validateAgentCliEnv } from './app-config.js';
-import {
-  classifyAgentAuthFailure,
-  cursorAuthGuidance,
-  probeAgentAuthStatus,
-} from './runtimes/auth.js';
-import { loadMmdRouteLaunchEnv } from './runtimes/mmd-routes.js';
 import {
   buildLegacyMaxTokensParam,
   buildMaxCompletionTokensParam,
@@ -55,9 +47,18 @@ import {
 } from './integrations/openai-chat-token-params.js';
 import { aihubmixHeaders } from './integrations/aihubmix.js';
 import type { AgentCliEnvPrefs } from './app-config.js';
-import type { RuntimeAgentDef } from './runtimes/types.js';
-import { resolveModelForAgent } from './runtimes/models.js';
-import { preparePromptFileForAgent, type PreparedPromptFile } from './runtimes/prompt-file.js';
+import {
+  createClaudeStreamHandler,
+  createJsonEventStreamHandler,
+  classifyAgentAuthFailure,
+  cursorAuthGuidance,
+  probeAgentAuthStatus,
+  loadMmdRouteLaunchEnv,
+  resolveModelForAgent,
+  preparePromptFileForAgent,
+  type RuntimeAgentDef,
+  type PreparedPromptFile,
+} from './runtimes/index.js';
 import {
   isBlockedExternalApiHostname,
   isLoopbackApiHost,

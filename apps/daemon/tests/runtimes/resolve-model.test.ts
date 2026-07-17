@@ -23,8 +23,8 @@ import {
   preferFreshLiveModels,
   rememberLiveModels,
   resolveModelForAgent,
-} from '../../src/runtimes/models.js';
-import type { RuntimeAgentDef } from '../../src/runtimes/types.js';
+} from '../../src/runtimes/core/models.js';
+import type { RuntimeAgentDef } from '../../src/runtimes/core/types.js';
 
 function defWith(fallbackIds: string[]): RuntimeAgentDef {
   return {

@@ -35,13 +35,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const execAgentFileMock = vi.fn();
 const resolveAgentLaunchMock = vi.fn();
 
-vi.mock('../../src/runtimes/invocation.js', () => ({
+vi.mock('../../src/runtimes/core/invocation.js', () => ({
   execAgentFile: (...args: unknown[]) =>
     (execAgentFileMock as unknown as (...args: unknown[]) => unknown)(...args),
 }));
 
-vi.mock('../../src/runtimes/launch.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../src/runtimes/launch.js')>();
+vi.mock('../../src/runtimes/launch/launch.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/runtimes/launch/launch.js')>();
   return {
     ...actual,
     resolveAgentLaunch: (
@@ -95,7 +95,7 @@ describe('probe (issue #658) — ghost CLI after the binary is uninstalled', () 
   for (const failingCode of ['ENOENT', 'EACCES', 'ENOTDIR'] as const) {
     it(`marks the agent unavailable when the version probe rejects with ${failingCode}`, async () => {
       execAgentFileMock.mockRejectedValue(spawnError(failingCode));
-      const { detectAgents } = await import('../../src/runtimes/detection.js');
+      const { detectAgents } = await import('../../src/runtimes/detection/detection.js');
 
       const agents = await detectAgents();
       const codex = agents.find((agent) => agent.id === 'codex');
@@ -114,7 +114,7 @@ describe('probe (issue #658) — ghost CLI after the binary is uninstalled', () 
       // rather than an ENOENT string, so the old guard missed these
       // and still reported the agent as available.
       execAgentFileMock.mockRejectedValue(exitCodeError(stalenessExit));
-      const { detectAgents } = await import('../../src/runtimes/detection.js');
+      const { detectAgents } = await import('../../src/runtimes/detection/detection.js');
 
       const agents = await detectAgents();
       const codex = agents.find((agent) => agent.id === 'codex');
@@ -129,7 +129,7 @@ describe('probe (issue #658) — ghost CLI after the binary is uninstalled', () 
     // adapters whose --version flag is missing legitimately exit
     // non-zero and have always shown up as "available, version=null".
     execAgentFileMock.mockRejectedValue(spawnError('ETIMEDOUT'));
-    const { detectAgents } = await import('../../src/runtimes/detection.js');
+    const { detectAgents } = await import('../../src/runtimes/detection/detection.js');
 
     const agents = await detectAgents();
     const codex = agents.find((agent) => agent.id === 'codex');
@@ -141,7 +141,7 @@ describe('probe (issue #658) — ghost CLI after the binary is uninstalled', () 
 
   it('keeps available=true on a generic non-zero exit (e.g. exit 1 from an adapter with no --version flag)', async () => {
     execAgentFileMock.mockRejectedValue(exitCodeError(1));
-    const { detectAgents } = await import('../../src/runtimes/detection.js');
+    const { detectAgents } = await import('../../src/runtimes/detection/detection.js');
 
     const agents = await detectAgents();
     const codex = agents.find((agent) => agent.id === 'codex');
@@ -153,7 +153,7 @@ describe('probe (issue #658) — ghost CLI after the binary is uninstalled', () 
 
   it('returns the parsed version on a clean --version run', async () => {
     execAgentFileMock.mockResolvedValue({ stdout: 'codex 1.2.3\n', stderr: '' });
-    const { detectAgents } = await import('../../src/runtimes/detection.js');
+    const { detectAgents } = await import('../../src/runtimes/detection/detection.js');
 
     const agents = await detectAgents();
     const codex = agents.find((agent) => agent.id === 'codex');
@@ -174,7 +174,7 @@ describe('probe (issue #658) — ghost CLI after the binary is uninstalled', () 
       childPathPrepend: ['/fake/bin'],
       diagnostic: null,
     }));
-    const { detectAgents } = await import('../../src/runtimes/detection.js');
+    const { detectAgents } = await import('../../src/runtimes/detection/detection.js');
 
     await detectAgents();
 
@@ -200,7 +200,7 @@ describe('probe (issue #658) — ghost CLI after the binary is uninstalled', () 
       childPathPrepend: ['/fake/bin'],
       diagnostic: null,
     }));
-    const { detectAgents } = await import('../../src/runtimes/detection.js');
+    const { detectAgents } = await import('../../src/runtimes/detection/detection.js');
 
     await detectAgents();
 
@@ -239,7 +239,7 @@ describe('probe (issue #658) — ghost CLI after the binary is uninstalled', () 
       };
     });
     execAgentFileMock.mockResolvedValue({ stdout: 'agent 1.2.3\n', stderr: '' });
-    const { detectAgents } = await import('../../src/runtimes/detection.js');
+    const { detectAgents } = await import('../../src/runtimes/detection/detection.js');
 
     const agents = await detectAgents();
     const traeCli = agents.find((agent) => agent.id === 'trae-cli');
@@ -267,13 +267,13 @@ describe('probe (issue #658) — ghost CLI after the binary is uninstalled', () 
     // from the resolution diagnostic — not from `available`.
     const {
       resolveAgentLaunch: realResolveAgentLaunch,
-    } = await vi.importActual<typeof import('../../src/runtimes/launch.js')>(
-      '../../src/runtimes/launch.js',
+    } = await vi.importActual<typeof import('../../src/runtimes/launch/launch.js')>(
+      '../../src/runtimes/launch/launch.js',
     );
     const {
       inspectAgentExecutableResolution,
-    } = await vi.importActual<typeof import('../../src/runtimes/executables.js')>(
-      '../../src/runtimes/executables.js',
+    } = await vi.importActual<typeof import('../../src/runtimes/core/executables.js')>(
+      '../../src/runtimes/core/executables.js',
     );
     // Drive the resolver through its real path so a future refactor
     // that diverges resolution from detection trips this assertion.
@@ -292,7 +292,7 @@ describe('probe (issue #658) — ghost CLI after the binary is uninstalled', () 
     // override that points at a non-existent file. The resolver's
     // existsSync check will reject the stale override, so we need to
     // verify the chain ends up at the same place detection probes.
-    const { detectAgents } = await import('../../src/runtimes/detection.js');
+    const { detectAgents } = await import('../../src/runtimes/detection/detection.js');
     const agents = await detectAgents(configuredEnv);
     const codex = agents.find((agent) => agent.id === 'codex');
 

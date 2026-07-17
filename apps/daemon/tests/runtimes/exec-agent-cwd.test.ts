@@ -13,7 +13,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { describe, it, expect } from 'vitest';
 
-import { execAgentFile } from '../../src/runtimes/invocation.js';
+import { execAgentFile } from '../../src/runtimes/core/invocation.js';
 
 const PRINT_CWD = 'process.stdout.write(process.cwd())';
 // `process.cwd()` reports the realpath, while os.tmpdir() / mkdtemp can sit

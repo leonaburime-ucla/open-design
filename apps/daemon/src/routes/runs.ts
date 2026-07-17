@@ -75,14 +75,14 @@ import {
   parseRunToolBundleForRequest,
   validateRunToolBundleForAgent,
 } from '../run-tool-bundle.js';
-import type { DetectedAgent, RuntimeAgentDef } from '../runtimes/types.js';
+import type { DetectedAgent, RuntimeAgentDef } from '../runtimes/index.js';
 import {
   countDesignSystemPreviewModules,
   countNewArtifacts,
   deriveActivationMilestones,
   didRunCreateDesignSystemFile,
   runAskedUserQuestion,
-} from '../runtimes/run-artifacts.js';
+} from '../runtimes/index.js';
 
 type SqliteDb = Database.Database;
 type JsonRecord = Record<string, unknown>;

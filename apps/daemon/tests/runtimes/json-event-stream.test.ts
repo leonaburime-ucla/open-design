@@ -1,6 +1,6 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { createJsonEventStreamHandler } from '../../src/runtimes/json-event-stream.js';
+import { createJsonEventStreamHandler } from '../../src/runtimes/stream/json-event-stream.js';
 
 type JsonStreamEvent = Record<string, unknown>;
 

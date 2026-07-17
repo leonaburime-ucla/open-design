@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'vitest';
-import { openDesignAmrTraceEnv } from '../../src/runtimes/env.js';
+import { openDesignAmrTraceEnv } from '../../src/runtimes/env/env.js';
 
 test('openDesignAmrTraceEnv builds Open Design trace identity env for AMR only', () => {
   const amrEnv = openDesignAmrTraceEnv({

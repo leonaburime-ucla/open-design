@@ -74,7 +74,7 @@ export function registerDaemonRoutes(app: Express, deps: RegisterDaemonRoutesDep
       });
     }
     try {
-      const { launchAgentInSystemTerminal } = await import('../runtimes/terminal-launch.js');
+      const { launchAgentInSystemTerminal } = await import('../runtimes/index.js');
       const result = await launchAgentInSystemTerminal('agy');
       if (result.ok) {
         return res.json({ ok: true, platform: result.platform, via: result.via });

@@ -3,7 +3,7 @@ import {
   AGENT_DEFS, amp, assert, chmodSync, claude, codex, cursorAgent, detectAgents, grokBuild, join, mkdtempSync, rmSync, tmpdir, withEnvSnapshot, withPlatform, writeFileSync,
 } from './helpers/test-helpers.js';
 import { codexNeedsDangerFullAccessSandbox } from '../../src/runtimes/defs/codex.js';
-import { readLocalAgentProfileDefs } from '../../src/runtimes/registry.js';
+import { readLocalAgentProfileDefs } from '../../src/runtimes/registry/registry.js';
 
 test('AGENT_DEFS ids are unique', () => {
   const ids = AGENT_DEFS.map((a) => a.id);

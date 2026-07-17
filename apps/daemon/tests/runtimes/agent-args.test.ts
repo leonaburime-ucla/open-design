@@ -4,7 +4,7 @@ import {
   AGENT_DEFS, aider, antigravity, assert, claude, codex, copilot, cursorAgent, deepseek, devin, detectAgents, grokBuild, join, kilo, kimi, kiro, mkdtempSync, opencode, pi, qoder, qwen, rmSync, spawnEnvForAgent, tmpdir, vibe, writeFileSync, chmodSync,
 } from './helpers/test-helpers.js';
 import { writeAntigravityModelSelection } from '../../src/runtimes/defs/antigravity.js';
-import { agentCapabilities } from '../../src/runtimes/capabilities.js';
+import { agentCapabilities } from '../../src/runtimes/core/capabilities.js';
 import type { TestAgentDef } from './helpers/test-helpers.js';
 
 // ---- Cursor Agent --trust capability (issue #4461) -------------------------

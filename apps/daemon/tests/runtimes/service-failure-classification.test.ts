@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classifyAgentServiceFailure } from '../../src/runtimes/auth.js';
+import { classifyAgentServiceFailure } from '../../src/runtimes/auth/auth.js';
 
 describe('classifyAgentServiceFailure', () => {
   it('classifies auth failures (Claude Code / codex style)', () => {

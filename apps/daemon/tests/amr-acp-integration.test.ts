@@ -23,7 +23,7 @@ import { describe, expect, it } from 'vitest';
 
 import { attachAcpSession, detectAcpModels } from '../src/acp.js';
 import { classifyAmrAccountFailure } from '../src/integrations/vela-errors.js';
-import { AmrModelLoadingCache } from '../src/runtimes/amr-model-cache.js';
+import { AmrModelLoadingCache } from '../src/runtimes/amr/amr-model-cache.js';
 import {
   amrAgentDef,
   fetchVelaPresetModels,
@@ -31,7 +31,7 @@ import {
   parseVelaModelJson,
   parseVelaModels,
 } from '../src/runtimes/defs/amr.js';
-import { getAgentDef } from '../src/runtimes/registry.js';
+import { getAgentDef } from '../src/runtimes/registry/registry.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FAKE_VELA = path.join(HERE, 'fixtures', 'fake-vela.mjs');

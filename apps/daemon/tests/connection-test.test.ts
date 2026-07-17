@@ -24,7 +24,7 @@ import {
 } from '../src/connectionTest.js';
 import { listProviderModels } from '../src/integrations/provider-models.js';
 import { startServer } from '../src/server.js';
-import { rememberLiveModels } from '../src/runtimes/models.js';
+import { rememberLiveModels } from '../src/runtimes/core/models.js';
 
 type FetchInput = Parameters<typeof fetch>[0];
 type FetchInit = Parameters<typeof fetch>[1];

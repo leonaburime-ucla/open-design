@@ -17,9 +17,9 @@ import {
   detectAcpModels,
 } from '../../src/runtimes/defs/shared.js';
 import { traeCliAgentDef } from '../../src/runtimes/defs/trae-cli.js';
-import { installMetaForAgent } from '../../src/runtimes/metadata.js';
-import { getAgentDef } from '../../src/runtimes/registry.js';
-import type { RuntimeAgentDef, RuntimeEnv } from '../../src/runtimes/types.js';
+import { installMetaForAgent } from '../../src/runtimes/core/metadata.js';
+import { getAgentDef } from '../../src/runtimes/registry/registry.js';
+import type { RuntimeAgentDef, RuntimeEnv } from '../../src/runtimes/core/types.js';
 
 const rootUrl = new URL('../../../../', import.meta.url);
 

@@ -6,7 +6,7 @@ import type {
 } from '@open-design/contracts/analytics';
 
 import { classifyAmrAccountFailure } from './integrations/vela-errors.js';
-import { classifyAgentServiceFailure } from './runtimes/auth.js';
+import { classifyAgentServiceFailure } from './runtimes/index.js';
 import type { RunResult, RunStatusForAnalytics } from './run-result.js';
 
 export interface RunEventForFailureClassification {

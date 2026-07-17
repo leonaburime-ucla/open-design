@@ -20,7 +20,7 @@ vi.mock('../src/integrations/vela-errors.js', () => ({
   },
 }));
 
-vi.mock('../src/runtimes/auth.js', () => ({
+vi.mock('../src/runtimes/auth/auth.js', () => ({
   classifyAgentServiceFailure(text: string) {
     const value = String(text || '').toLowerCase();
     if (

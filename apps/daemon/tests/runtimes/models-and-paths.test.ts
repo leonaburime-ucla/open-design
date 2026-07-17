@@ -6,9 +6,9 @@ import {
   isKnownModel,
   rememberLiveModels,
   sanitizeCustomModel,
-} from '../../src/runtimes/models.js';
-import { expandConfiguredEnv, expandHomePath } from '../../src/runtimes/paths.js';
-import type { RuntimeAgentDef } from '../../src/runtimes/types.js';
+} from '../../src/runtimes/core/models.js';
+import { expandConfiguredEnv, expandHomePath } from '../../src/runtimes/core/paths.js';
+import type { RuntimeAgentDef } from '../../src/runtimes/core/types.js';
 
 function defWith(id: string, fallbackIds: string[]): RuntimeAgentDef {
   return {

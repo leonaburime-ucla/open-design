@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { launchAgentInSystemTerminal } from '../../src/runtimes/terminal-launch.js';
+import { launchAgentInSystemTerminal } from '../../src/runtimes/launch/terminal-launch.js';
 
 describe('launchAgentInSystemTerminal', () => {
   // Surfaces a `system-terminal launch is not supported on ${platform}`

@@ -8,7 +8,7 @@ import {
   readLatestOpenCodeLogTail,
   readOpenCodeServiceFailure,
   resolveOpenCodeLogDir,
-} from '../../src/runtimes/opencode-log.js';
+} from '../../src/runtimes/auth/opencode-log.js';
 
 // Faithful `service=llm` error line for an over-quota opencode-go call. The
 // embedded request body carries decoy phrases ("api key", "rate limit")

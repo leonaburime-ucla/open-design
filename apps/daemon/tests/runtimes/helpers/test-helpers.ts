@@ -22,7 +22,7 @@ import {
   resolveAgentExecutable,
   spawnEnvForAgent,
 } from '../../../src/agents.js';
-import type { RuntimeAgentDef } from '../../../src/runtimes/types.js';
+import type { RuntimeAgentDef } from '../../../src/runtimes/core/types.js';
 
 export {
   assert,

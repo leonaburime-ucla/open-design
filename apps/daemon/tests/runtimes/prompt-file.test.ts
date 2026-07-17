@@ -2,7 +2,7 @@ import { test } from 'vitest';
 import { promises as fs } from 'node:fs';
 import { dirname } from 'node:path';
 import { assert, minimalAgentDef } from './helpers/test-helpers.js';
-import { preparePromptFileForAgent } from '../../src/runtimes/prompt-file.js';
+import { preparePromptFileForAgent } from '../../src/runtimes/prompt/prompt-file.js';
 
 test('preparePromptFileForAgent writes prompt content and cleans up for prompt-file adapters', async () => {
   const prompt = 'large composed prompt\nwith unicode: 汉字';

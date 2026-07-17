@@ -7,8 +7,8 @@ import * as platform from '@open-design/platform';
 import {
   assert, chmodSync, detectAgents, inspectAgentExecutableResolution, join, minimalAgentDef, mkdirSync, mkdtempSync, opencode, resolveAgentExecutable, rmSync, spawnEnvForAgent, tmpdir, withEnvSnapshot, withPlatform, writeFileSync,
 } from './helpers/test-helpers.js';
-import { isCursorAuthFailureText } from '../../src/runtimes/auth.js';
-import { getRememberedLiveModels } from '../../src/runtimes/models.js';
+import { isCursorAuthFailureText } from '../../src/runtimes/auth/auth.js';
+import { getRememberedLiveModels } from '../../src/runtimes/core/models.js';
 
 const fsTest = process.platform === 'win32' ? test.skip : test;
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
@@ -1078,7 +1078,7 @@ test('Cursor auth matcher covers current unauthenticated Cursor error records', 
 // AGENT_AUTH_REQUIRED with actionable guidance.
 test('antigravity auth matcher covers agy print-mode + log-file auth signals', async () => {
   const { isAntigravityAuthFailureText, antigravityAuthGuidance, classifyAgentAuthFailure } =
-    await import('../../src/runtimes/auth.js');
+    await import('../../src/runtimes/auth/auth.js');
 
   // print-mode stdout shape — user-visible
   assert.equal(

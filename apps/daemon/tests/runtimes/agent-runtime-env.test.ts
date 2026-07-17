@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { SIDECAR_ENV } from '@open-design/sidecar-proto';
 
 import { createAgentRuntimeEnv, createAgentRuntimeToolPrompt } from '../../src/server.js';
-import { applyAgentLaunchEnv } from '../../src/runtimes/launch.js';
+import { applyAgentLaunchEnv } from '../../src/runtimes/launch/launch.js';
 
 describe('agent runtime tool environment', () => {
   it('injects daemon URL and run-scoped tool token into agent sessions', () => {

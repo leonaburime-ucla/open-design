@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { resolveOnPath } from "../runtimes/executables.js";
+import { resolveOnPath } from "../runtimes/index.js";
 
 /**
  * Optional system-Chrome fallback for the prefetch pipeline.

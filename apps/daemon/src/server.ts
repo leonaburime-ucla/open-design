@@ -86,8 +86,6 @@ import {
   resolveSafePromptImagePaths,
   selectPromptImagePaths,
   validateCodexGeneratedImagesDir,
-} from './runtimes/chat-prompt-inputs.js';
-import {
   applyClaudeStreamJsonRunBookkeeping,
   assertValidRuntimeDefInactivityTimeoutMs,
   bufferedAntigravityGeminiFirstTokenAt,
@@ -98,7 +96,7 @@ import {
   resolveChatRunArtifactQuietPeriodMs,
   resolveChatRunInactivityTimeoutMs,
   resolveChatRunShutdownGraceMs,
-} from './runtimes/chat-run-lifecycle.js';
+} from './runtimes/index.js';
 export {
   composeLiveInstructionPrompt,
   formatDesignFilesWorkspaceHint,
@@ -116,8 +114,6 @@ export {
   resolveSafePromptImagePaths,
   selectPromptImagePaths,
   validateCodexGeneratedImagesDir,
-} from './runtimes/chat-prompt-inputs.js';
-export {
   applyClaudeStreamJsonRunBookkeeping,
   assertValidRuntimeDefInactivityTimeoutMs,
   bufferedAntigravityGeminiFirstTokenAt,
@@ -127,7 +123,7 @@ export {
   resolveActiveInactivityTimeoutMs,
   resolveChatRunArtifactQuietPeriodMs,
   resolveChatRunInactivityTimeoutMs,
-} from './runtimes/chat-run-lifecycle.js';
+} from './runtimes/index.js';
 
 export { resolveProjectRoot };
 import { createCommandInvocation } from '@open-design/platform';
@@ -151,9 +147,12 @@ import {
   preferFreshLiveModels,
   rememberLiveModels,
   resolveModelForAgent,
-} from './runtimes/models.js';
-import { loadMmdRouteLaunchEnv } from './runtimes/mmd-routes.js';
-import { preparePromptFileForAgent } from './runtimes/prompt-file.js';
+  loadMmdRouteLaunchEnv,
+  preparePromptFileForAgent,
+  amrModelLoadingCache,
+  fetchVelaPresetModels,
+  fetchVelaRemoteModelsWithRetry,
+} from './runtimes/index.js';
 import {
   readVelaLoginStatus,
   resolveAmrProfile,
@@ -162,11 +161,6 @@ import {
   amrAccountFailureDetails,
   classifyAmrAccountFailure,
 } from './integrations/vela-errors.js';
-import { amrModelLoadingCache } from './runtimes/amr-model-cache.js';
-import {
-  fetchVelaPresetModels,
-  fetchVelaRemoteModelsWithRetry,
-} from './runtimes/defs/amr.js';
 import { migrateLegacyDataDirSync } from './legacy-data-migrator.js';
 import {
   consumedImportNonces,
@@ -280,7 +274,6 @@ import { attachAcpSession } from './acp.js';
 import { attachPiRpcSession } from './pi-rpc.js';
 import { stageAmrImagePaths } from './media/amr-image-staging.js';
 import { ingestRoutineConnectorEvolution } from './automation-routine-evolution.js';
-import { createClaudeStreamHandler } from './runtimes/claude-stream.js';
 import { createAgentTitleMarkerStripper } from './title-marker.js';
 import { createRoleMarkerGuard } from './role-marker-guard.js';
 import { createToolLoopGuard, resolveToolLoopMode, type ToolLoopVerdict } from './tool-loop-guard.js';
@@ -299,22 +292,11 @@ import {
 } from './critique/rollout.js';
 import { narrowProjectCritiqueOverride } from './critique/spawn-inputs.js';
 import { createCopilotStreamHandler } from './copilot-stream.js';
-import { createJsonEventStreamHandler } from './runtimes/json-event-stream.js';
-import {
-  antigravityAuthGuidance,
-  antigravityQuotaGuidance,
-  classifyAgentAuthFailure,
-  classifyAgentServiceFailure,
-  cursorAuthGuidance,
-} from './runtimes/auth.js';
-import { readOpenCodeServiceFailure } from './runtimes/opencode-log.js';
 import { createAgentStderrVisibilityFilter } from './amr-stderr-filter.js';
-import { createQoderStreamHandler } from './runtimes/qoder-stream.js';
 import { subscribe as subscribeFileEvents } from './project-watchers.js';
 import { importFigmaFromBytes } from './figma/figma-import.js';
 import { renderDesignSystemPreview } from './design-systems/preview.js';
 import { renderDesignSystemShowcase } from './design-systems/showcase.js';
-import { createChatRunService } from './runtimes/runs.js';
 import {
   createRunLifecycleTracer,
   runLifecycleMarkersForStreamEvent,
@@ -327,10 +309,20 @@ import {
   scanRunEventsForUsageAnalytics,
 } from './run-analytics-observability.js';
 import {
+  createClaudeStreamHandler,
+  createJsonEventStreamHandler,
+  antigravityAuthGuidance,
+  antigravityQuotaGuidance,
+  classifyAgentAuthFailure,
+  classifyAgentServiceFailure,
+  cursorAuthGuidance,
+  readOpenCodeServiceFailure,
+  createQoderStreamHandler,
+  createChatRunService,
   countDesignSystemPreviewModules,
   countNewArtifacts,
   didRunCreateDesignSystemFile,
-} from './runtimes/run-artifacts.js';
+} from './runtimes/index.js';
 import {
   createRunArtifactBaselines,
   diffRunArtifacts,
@@ -571,7 +563,7 @@ import {
 } from './routes/static-resource.js';
 export { rewriteSkillAssetUrls } from './routes/static-resource.js';
 import { registerRoutineRoutes, routineDbRowToContract } from './routes/routine.js';
-import { resolveAmrModelProbe } from './runtimes/amr-model-probe.js';
+import { resolveAmrModelProbe } from './runtimes/index.js';
 import { createPluginInstallationHelpers, normalizeProjectPluginFolderPath, resolveProjectChildDirectory } from './services/plugin-installation.js';
 import { createPluginShareTaskStore } from './services/plugin-share-tasks.js';
 import { getRouteRegistrationInventory, installRouteRegistrationGuard } from './route-registration-guard.js';
@@ -6847,7 +6839,7 @@ export async function startServer({
         : null;
     if (antigravityConcreteModel) {
       const { acquireAntigravityModelLock } = await import(
-        './runtimes/defs/antigravity.js'
+        './runtimes/index.js'
       );
       antigravityModelLockRelease = await acquireAntigravityModelLock();
     }
@@ -7358,7 +7350,7 @@ export async function startServer({
         })();
         const watcherAbort = new AbortController();
         const { waitForAgyToReadModel } = await import(
-          './runtimes/defs/antigravity.js'
+          './runtimes/index.js'
         );
         void waitForAgyToReadModel(
           agentLogFilePath,

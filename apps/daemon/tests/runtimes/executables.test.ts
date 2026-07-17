@@ -3,7 +3,7 @@ import { relative, resolve } from 'node:path';
 import {
   assert, chmodSync, claude, codex, deepseek, join, minimalAgentDef, mkdirSync, mkdtempSync, resolveAgentExecutable, rmSync, tmpdir, withEnvSnapshot, withPlatform, writeFileSync,
 } from './helpers/test-helpers.js';
-import { codexAppBundleCandidates } from '../../src/runtimes/executables.js';
+import { codexAppBundleCandidates } from '../../src/runtimes/core/executables.js';
 
 const fsTest = process.platform === 'win32' ? test.skip : test;
 

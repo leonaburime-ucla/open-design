@@ -72,7 +72,7 @@ import {
   resolveModelAlias,
   resolveProviderConfig,
 } from './config.js';
-import { codexNeedsDangerFullAccessSandbox } from '../runtimes/defs/codex.js';
+import { codexNeedsDangerFullAccessSandbox } from '../runtimes/index.js';
 import {
   ensureProject,
   kindFor,

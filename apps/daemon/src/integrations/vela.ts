@@ -11,9 +11,7 @@ import type {
   TrackingPageName,
 } from '@open-design/contracts/analytics';
 
-import { resolveAgentLaunch } from '../runtimes/launch.js';
-import { spawnEnvForAgent } from '../runtimes/env.js';
-import { getAgentDef } from '../runtimes/registry.js';
+import { resolveAgentLaunch, spawnEnvForAgent, getAgentDef } from '../runtimes/index.js';
 import { resolveAmrProfile } from './vela-profile.js';
 
 export { resolveAmrProfile } from './vela-profile.js';
