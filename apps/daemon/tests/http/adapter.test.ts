@@ -90,6 +90,23 @@ describe('http adapter', () => {
     expect(res.json).toHaveBeenCalledWith({ error: { code: 'NOT_FOUND', message: 'gone' } });
   });
 
+  it('allows a same-origin request through when requireSameOrigin is set', async () => {
+    vi.mocked(isLocalSameOrigin).mockReturnValue(true);
+    const route = defineJsonRoute<void, { secret: number }, unknown>({
+      method: 'get',
+      path: '/secret',
+      requireSameOrigin: true,
+      parse: () => ok(undefined),
+      handle: () => ok({ secret: 42 }),
+    });
+    const app = makeApp();
+    mountJsonRoute(app as any, route, {}, adapter);
+    const res = makeRes();
+    await app.handlers['GET /secret']!({ body: {}, query: {}, params: {} }, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ secret: 42 });
+  });
+
   it('blocks cross-origin requests when requireSameOrigin is set', async () => {
     vi.mocked(isLocalSameOrigin).mockReturnValue(false);
     const route = defineJsonRoute<void, { secret: number }, unknown>({
@@ -125,6 +142,26 @@ describe('http adapter', () => {
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({
       error: { code: 'INTERNAL_ERROR', message: 'boom' },
+    });
+  });
+
+  it('catches a thrown non-Error value as INTERNAL_ERROR (500) via String(e)', async () => {
+    const route = defineJsonRoute<void, unknown, unknown>({
+      method: 'get',
+      path: '/boom-string',
+      parse: () => ok(undefined),
+      handle: () => {
+        // eslint-disable-next-line @typescript-eslint/no-throw-literal
+        throw 'boom-string';
+      },
+    });
+    const app = makeApp();
+    mountJsonRoute(app as any, route, {}, adapter);
+    const res = makeRes();
+    await app.handlers['GET /boom-string']!({ body: {}, query: {}, params: {} }, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({
+      error: { code: 'INTERNAL_ERROR', message: 'boom-string' },
     });
   });
 

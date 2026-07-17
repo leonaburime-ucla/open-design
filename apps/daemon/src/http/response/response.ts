@@ -1,14 +1,27 @@
+/** @module response/response
+ * Response-side serialization: writes a plain JSON body or a standard `ApiError` envelope onto
+ * an Express `Response`, and maps an `ApiErrorCode` to its default HTTP status. No internal
+ * dependencies — this is the terminal step of the Adapter's error-handling pipeline.
+ */
 import type { Response } from 'express';
 import { createApiErrorResponse, type ApiError, type ApiErrorCode } from '@open-design/contracts';
 
+/** Writes `body` as JSON with the given status code. */
 export function sendJson(res: Response, status: number, body: unknown): void {
   res.status(status).json(body);
 }
 
+/** Writes an `ApiError`, wrapped in the standard `{ error }` envelope, with the given status code. */
 export function sendApiError(res: Response, status: number, error: ApiError): void {
   res.status(status).json(createApiErrorResponse(error));
 }
 
+/**
+ * @internal
+ * Default HTTP status per `ApiErrorCode`. Codes not listed here fall back to 500 in
+ * `statusForError` — deliberately conservative, since an unmapped code is more likely a new
+ * server-side failure mode than a client error.
+ */
 const ERROR_STATUS_BY_CODE: Partial<Record<ApiErrorCode, number>> = {
   BAD_REQUEST: 400,
   UNAUTHORIZED: 401,
@@ -27,6 +40,7 @@ const ERROR_STATUS_BY_CODE: Partial<Record<ApiErrorCode, number>> = {
   UPSTREAM_UNAVAILABLE: 502,
 };
 
+/** Resolves the HTTP status to send for an `ApiError`, defaulting to 500 for unmapped codes. */
 export function statusForError(error: ApiError): number {
   return ERROR_STATUS_BY_CODE[error.code] ?? 500;
 }

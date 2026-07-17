@@ -50,12 +50,12 @@ export {
 import {
   createCompatApiError,
   createCompatApiErrorResponse,
-  sendApiError,
-} from './http/api-errors.js';
+  sendCompatApiError as sendApiError,
+} from './http/index.js';
 export {
   createCompatApiError,
   createCompatApiErrorResponse,
-} from './http/api-errors.js';
+} from './http/index.js';
 import {
   applyBakedPreviews,
   resolvePluginPreviewsDir,
