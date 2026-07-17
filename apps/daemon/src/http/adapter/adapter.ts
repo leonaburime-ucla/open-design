@@ -1,10 +1,18 @@
+/** @module adapter/adapter
+ * The module's top orchestration layer: wires request parsing, the same-origin guard, a
+ * route's `handle`, and response serialization into a single Express route handler. This is
+ * the only file in the module that knows about Express `req`/`res` on the mounting side. Reaches
+ * `core/` directly (foundation) and `request/`, `response/`, `origin/` through their barrels
+ * (declared `allowedEdges`).
+ */
 import type { Express, Request, Response } from 'express';
 import { createApiError } from '@open-design/contracts';
-import { rawInput } from './parse.js';
-import { sendApiError, sendJson, statusForError } from './response.js';
-import { guardSameOrigin, type OriginContext } from './origin-guard.js';
-import type { JsonRouteSpec } from './types.js';
+import { rawInput } from '../request/index.js';
+import { sendApiError, sendJson, statusForError } from '../response/index.js';
+import { guardSameOrigin, type OriginContext } from '../origin/index.js';
+import type { JsonRouteSpec } from '../core/types.js';
 
+/** Daemon startup state a mounted route needs to evaluate its same-origin guard. */
 export interface AdapterContext extends OriginContext {}
 
 /**

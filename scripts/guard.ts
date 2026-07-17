@@ -3,6 +3,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import ts from "typescript";
 
+import { checkCapabilityBarrelImports } from "./check-barrel-imports.ts";
 import { checkCrossAppImports } from "./check-cross-app-imports.ts";
 import { checkDesignSystemManifests } from "./check-design-system-manifests.ts";
 import { checkDesignSystemPackageQuality } from "./check-design-system-package-quality.ts";
@@ -1313,6 +1314,7 @@ const checks: GuardCheck[] = [
   { name: "design system A2 defaults parity", run: checkDesignSystemA2DefaultsParity },
   { name: "design system flag parity", run: checkDesignSystemFlagParity },
   { name: "design system component manifest extraction", run: checkComponentsManifestExtraction },
+  { name: "capability barrel imports", run: checkCapabilityBarrelImports },
 ];
 
 async function runChecks(): Promise<boolean> {
